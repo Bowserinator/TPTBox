@@ -1,0 +1,5 @@
+Write README
+Add LICENSE
+
+Rewrite build with meson
+
