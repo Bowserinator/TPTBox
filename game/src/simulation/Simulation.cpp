@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <tuple>
 #include <vector>
 
 Simulation::Simulation():
@@ -47,8 +48,8 @@ void Simulation::update() {
 
         std::vector<std::tuple<int, int, int>> next;
 
-        if (y > 1 ) { // && pmap[z][y - 1][x] > 0
-            /* // Scatter powder if empty space around
+        if (y > 1 && pmap[z][y - 1][x] > 0) {
+            // Scatter powder if empty space around
             for (int dx = -1; dx <= 1; dx++)
                 for (int dz = -1; dz <= 1; dz++) {
                     if (!dx && !dz) continue;
@@ -65,7 +66,7 @@ void Simulation::update() {
                 x = std::get<0>(next[j]);
                 y = std::get<1>(next[j]);
                 z = std::get<2>(next[j]);
-            }*/
+            }
 
             // Gas
             /*
