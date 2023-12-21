@@ -1,6 +1,5 @@
 Write README
 Add LICENSE
 
-Rewrite build with meson
 
 windows: make CC=gcc

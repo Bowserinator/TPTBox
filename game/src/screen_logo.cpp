@@ -1,11 +1,14 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "screens.h"
-#include "src/render/Camera.h"
+#include "rlgl.h"
+
+#include "src/render/camera/camera.h"
 #include "src/render/Particles.h"
 #include "src/simulation/Simulation.h"
 
 #include <algorithm>
+
 
 #if defined(PLATFORM_DESKTOP)
 #define GLSL_VERSION 330
@@ -13,7 +16,7 @@
 #define GLSL_VERSION 100
 #endif
 
-static Camera3D camera = {0};
+static RenderCamera render_camera;
 static Simulation sim;
 
 static double simTime = 0.0f;
@@ -26,10 +29,10 @@ static double fps = 1.0f;
 // Logo Screen Initialization logic
 void InitLogoScreen(void)
 {
-    camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
-    camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
-    camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;
+    render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
+    render_camera.camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
+    render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
+    render_camera.camera.fovy = 45.0f;
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
@@ -59,25 +62,17 @@ void UpdateLogoScreen(void)
 // Logo Screen Draw logic
 void DrawLogoScreen(void)
 {
-    UpdateSimCamera(&camera);
+    render_camera.updateControls();
+    // camera.updateViewProjMatrix();
+
     auto t = GetTime();
 
     ClearBackground(BLACK);
 
-    BeginMode3D(camera);
+    BeginMode3D(render_camera.camera);
 
-
-
-    // for (int i = 0; i <= sim.maxId; i++)
-    // {
-    //     const auto &part = sim.parts[i];
-    //     if (part.id == 0) continue;
-    //     Vector3 cubePosition = {(int)(part.x + 0.5f), (int)(part.y + 0.5f), (int)(part.z + 0.5f)};
-    //     char red = 255; // std::max(0, 255 - (int)part.y * 50);
-    //     DrawCubeParticle(cubePosition, Color{red, red, red, 255}, BLACK);
-    // }
     unsigned char red = 255;
-    DrawCubeParticle(sim, camera, Color{red, red, red, 255}, BLACK);
+    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
 
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);

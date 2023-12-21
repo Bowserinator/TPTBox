@@ -4,56 +4,12 @@
 #include "raylib.h"
 #include "rlgl.h"
 
-#include "./types.h"
+#include "./camera/camera.h"
 #include "../simulation/Simulation.h"
+#include "constants.h"
 
 #include <iostream>
 
-
-Mesh GenMeshCustom(void)
-{
-    Mesh mesh = { 0 };
-    mesh.triangleCount = 1;
-    mesh.vertexCount = mesh.triangleCount*3;
-    mesh.vertices = (float *)MemAlloc(mesh.vertexCount*3*sizeof(float));    // 3 vertices, 3 coordinates each (x, y, z)
-    mesh.texcoords = (float *)MemAlloc(mesh.vertexCount*2*sizeof(float));   // 3 vertices, 2 coordinates each (x, y)
-    mesh.normals = (float *)MemAlloc(mesh.vertexCount*3*sizeof(float));     // 3 vertices, 3 coordinates each (x, y, z)
-
-    // Vertex at (0, 0, 0)
-    mesh.vertices[0] = 0;
-    mesh.vertices[1] = 0;
-    mesh.vertices[2] = 0;
-    mesh.normals[0] = 0;
-    mesh.normals[1] = 1;
-    mesh.normals[2] = 0;
-    mesh.texcoords[0] = 0;
-    mesh.texcoords[1] = 0;
-
-    // Vertex at (1, 0, 2)
-    mesh.vertices[3] = 1;
-    mesh.vertices[4] = 0;
-    mesh.vertices[5] = 2;
-    mesh.normals[3] = 0;
-    mesh.normals[4] = 1;
-    mesh.normals[5] = 0;
-    mesh.texcoords[2] = 0.5f;
-    mesh.texcoords[3] = 1.0f;
-
-    // Vertex at (2, 0, 0)
-    mesh.vertices[6] = 2;
-    mesh.vertices[7] = 0;
-    mesh.vertices[8] = 0;
-    mesh.normals[6] = 0;
-    mesh.normals[7] = 1;
-    mesh.normals[8] = 0;
-    mesh.texcoords[4] = 1;
-    mesh.texcoords[5] =0;
-
-    // Upload mesh data from CPU (RAM) to GPU (VRAM) memory
-    UploadMesh(&mesh, false);
-
-    return mesh;
-}
 
 constexpr float width  = 1.0f;
 constexpr float height = 1.0f;
@@ -188,7 +144,7 @@ Model getMeshFromSim(Simulation &sim) {
 
     std::copy(vertices.begin(), vertices.end(), &mesh.vertices[0]);
     std::copy(texcoords.begin(), texcoords.end(), &mesh.texcoords[0]);
-std::copy(normals.begin(), normals.end(), &mesh.normals[0]);
+    std::copy(normals.begin(), normals.end(), &mesh.normals[0]);
 
 
 
@@ -203,25 +159,14 @@ std::copy(normals.begin(), normals.end(), &mesh.normals[0]);
     return mesh2;
 }
 
-void DrawCubeParticle(Simulation &sim, const Camera &camera, const Color color, const Color lineColor) {
+void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, const Color lineColor) {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
 
-
-
-   
-    // Calculate projection matrix (from perspective instead of frustum
-    Matrix matProj = MatrixIdentity();
-    matProj = MatrixPerspective(camera.fovy*DEG2RAD, ((double)width/(double)height), RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
-    Matrix godMatrix = MatrixMultiply(matProj, matView);
-
     rlBegin(RL_TRIANGLES);
 
     //auto mesh = getMeshFromSim(sim);
-
-    
     //DrawModel(mesh, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
 
     for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
@@ -232,18 +177,9 @@ void DrawCubeParticle(Simulation &sim, const Camera &camera, const Color color, 
         int py = (int)(sim.parts[i].y + 0.5f);
         int pz = (int)(sim.parts[i].z + 0.5f);
 
-        
-        // Convert world position vector to quaternion
-        /*Quaternion worldPos = { px, py, pz, 1.0f };
-        worldPos = QuaternionTransform(worldPos, godMatrix);
-        Vector3 ndcPos = { worldPos.x/worldPos.w, -worldPos.y/worldPos.w, worldPos.z/worldPos.w };
-        Vector2 val = { (ndcPos.x + 1.0f)/2.0f*(float)width, (ndcPos.y + 1.0f)/2.0f*(float)height };
-
-        // auto val = GetWorldToScreen(Vector3{(float)px, (float)py, (float)pz}, camera);
-
-        if (val.x < -10 || val.y < -10 || val.x > GetScreenWidth() +  10 || val.y > GetScreenHeight() + 10)
-            continue;*/
-
+        // TODO: const is dis to cube center
+        if (camera.sphereOutsideFrustum(px, py, pz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
+            continue;
 
         bool top = sim.pmap[pz][py + 1][px] == 0;
         bool bot = sim.pmap[pz][py - 1][px] == 0;
