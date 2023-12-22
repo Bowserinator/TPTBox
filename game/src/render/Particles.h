@@ -7,9 +7,10 @@
 #include "./camera/camera.h"
 #include "../simulation/Simulation.h"
 #include "constants.h"
+#include "greedy_mesh.h"
 
 #include <iostream>
-
+#include <cstring>
 #include <glad.h>
 
 
@@ -19,35 +20,28 @@ constexpr float length = 1.0f;
 
 static Mesh mesh = { 0 };
 static bool found = false;
-static std::vector<float> vertices;
-static std::vector<float> texcoords;
 
-void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) {
-    vertices.clear();
-    texcoords.clear();
+constexpr int BUFF_SIZE = sizeof(float) * 500000; // 10^6
 
-    constexpr int BUFF_SIZE = sizeof(float) * 10000000; // 10^7
+void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
     if (!found) {
-        SetTraceLogLevel(LOG_ERROR);
-    
-        mesh.vertices = (float *)MemAlloc(BUFF_SIZE * 3);    // 3 vertices, 3 coordinates each (x, y, z)
-        mesh.texcoords = (float *)MemAlloc(BUFF_SIZE * 2);   // 3 vertices, 2 coordinates each (x, y)
+        // SetTraceLogLevel(LOG_ERROR);
+
+        mesh.vertices = (float *)MemAlloc(sizeof(float) * BUFF_SIZE * 3);    // 3 vertices, 3 coordinates each (x, y, z)
+        mesh.texcoords = NULL; // (float *)MemAlloc(sizeof(float) * BUFF_SIZE * 3);   // 3 vertices, 2 coordinates each (x, y)
         mesh.colors = (unsigned char*)MemAlloc(BUFF_SIZE * 4);
     }
-    int vertex_count = 0;
-    int color_count = 0;
+    unsigned int vertex_count = 0;
+    unsigned int color_count = 0;
+    unsigned int triangle_count = 0;
 
 
-    auto pushVertices = [&color_count, &vertex_count](unsigned char red, float x, float y, float z) {
-        //vertices.push_back(x);
-        //vertices.push_back(y);
-        //vertices.push_back(z);
+    auto pushVertices = [&triangle_count, &color_count, &vertex_count](unsigned char red, float x, float y, float z) {
         mesh.vertices[vertex_count] = x;
         mesh.vertices[vertex_count + 1] = y;
         mesh.vertices[vertex_count + 2] = z;
+
         vertex_count += 3;
-        //texcoords.push_back(1);
-        //texcoords.push_back(0);
         mesh.colors[color_count] = red;
         mesh.colors[color_count + 1] = 0;
         mesh.colors[color_count + 2] = 0xAA;
@@ -55,10 +49,17 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
         color_count += 4;
     };
 
+    // 30 ms for 2 sides :sweat:
+    // maybe chunk sim
+    auto t = GetTime();
+
+    greedy_mesh_front_back(mesh, sim, camera, vertex_count, color_count, 1);
+    greedy_mesh_front_back(mesh, sim, camera, vertex_count, color_count, -1);
+
+  
     for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
         const auto &part = sim.parts[i];
         if (!part.id) continue;
-
         int px = (int)(sim.parts[i].x + 0.5f);
         int py = (int)(sim.parts[i].y + 0.5f);
         int pz = (int)(sim.parts[i].z + 0.5f);
@@ -68,9 +69,6 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
         float z = pz;
 
         unsigned char red = 0xFF;
-       //if (camera.sphereOutsideFrustum(px, py, pz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
-       //     continue;
-
 
         bool top = sim.pmap[pz][py + 1][px] == 0;
         bool bot = sim.pmap[pz][py - 1][px] == 0;
@@ -79,29 +77,32 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
         bool left = sim.pmap[pz][py][px - 1] == 0;
         bool right = sim.pmap[pz][py][px + 1] == 0;
 
-        // Front face
-        if (front) {
-            red = 0xAA;
-            pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
-            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
-            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+        if (camera.sphereOutsideFrustum(x, y, z, DIS_UNIT_CUBE_CENTER_TO_CORNER))
+            continue;
 
-            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Right
-            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
-            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
-        }
+        // Front face
+        // if (front) {
+        //     //red = 0xAA;
+        //     pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
+        //     pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+        //     pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+
+        //     pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Right
+        //     pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+        //     pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+        // }
 
         // Back face
-        if (back) {
-            red = 0xAA;
-            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
-            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
-            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+        // if (back) {
+        //     //red = 0xAA;
+        //     pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
+        //     pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+        //     pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
 
-            pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
-            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
-            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
-        }
+        //     pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
+        //     pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+        //     pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+        // }
 
         // Top face
         if (top) {
@@ -127,7 +128,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
 
         // Right face
         if (right) {
-            red = 0xCC;
+            //red = 0xCC;
             pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
             pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Left
@@ -139,7 +140,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
 
         // Left face
         if (left) {
-            red = 0xCC;
+           // red = 0xCC;
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Right
@@ -150,38 +151,49 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) 
         }
     }
 
-    mesh.triangleCount = vertex_count / 3;
-    mesh.vertexCount = vertex_count;
+    mesh.triangleCount = vertex_count / 9;
+    mesh.vertexCount = vertex_count / 3;
 
-
-    // if (found) {
-    //     MemFree(mesh.vertices);
-    //     MemFree(mesh.texcoords);
-    //     MemFree(mesh.normals);
-    // }
-
-    
     if (!found) {
         found = true;
         UploadMesh(&mesh, true);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[0]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*BUFF_SIZE * 3, 0, GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[3]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(unsigned char)*BUFF_SIZE * 4, 0, GL_DYNAMIC_DRAW);
     } else {
-        UpdateMeshBuffer(mesh, 0, &mesh.vertices[0], sizeof(float) * vertex_count, 0);
-        UpdateMeshBuffer(mesh, 3, &mesh.colors[0], sizeof(unsigned char) * color_count, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[0]);
+        void *data = glMapBufferRange( GL_ARRAY_BUFFER, 0, sizeof(float) * vertex_count, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+        std::memcpy( data, &mesh.vertices[0], sizeof(float) * vertex_count);
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[3]);
+        data = glMapBufferRange( GL_ARRAY_BUFFER, 0, sizeof(char) * color_count, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+        std::memcpy( data, &mesh.colors[0], sizeof(char) * color_count);
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        // glBindBuffer(GL_ARRAY_BUFFER, mesh.vboId[3]);
+        // //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(char) * color_count, mesh.colors);
+        // data = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+        // std::memcpy( data, mesh.colors, sizeof(unsigned char) * color_count);
+        // glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        //UpdateMeshBuffer(mesh, 0, &mesh.vertices[0], sizeof(float) * vertex_count, 0);
+        //UpdateMeshBuffer(mesh, 3, mesh.colors, sizeof(unsigned char) * color_count, 0);
         // UpdateMeshBuffer(mesh, 1, &texcoords[0], sizeof(float) * texcoords.size(), 0);
     }
-
 }
 
-void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, const Color lineColor, Texture2D &texture) {
+void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, const Color lineColor) {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
-
-    getMeshFromSim(sim, camera, texture);
+    
+    getMeshFromSim(sim, camera);
     DrawMesh(mesh, LoadMaterialDefault(), MatrixIdentity()); 
-    //auto mesh2 = getMeshFromSim(sim, camera, texture);
-    //DrawModelWires(mesh2, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
-    // UnloadModel(mesh2);
+
     return;
 
 

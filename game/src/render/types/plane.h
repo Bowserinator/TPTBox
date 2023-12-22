@@ -32,6 +32,15 @@ public:
         distance = numbers.w / mag;
     }
 
+    Plane(const Plane &other) {
+        normal = Vector3{other.normal.x, other.normal.y, other.normal.z};
+        distance = other.distance;
+    }
+    Plane& operator=(const Plane& other) {
+        normal = Vector3{other.normal.x, other.normal.y, other.normal.z};
+        distance = other.distance;
+    }
+
     /**
      * @brief Get signed distance from point to plane (positive in direction
      *        of normal vector ("above" the plane), else negative)

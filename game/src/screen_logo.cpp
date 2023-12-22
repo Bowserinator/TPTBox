@@ -29,10 +29,12 @@ static Texture2D texture;
 // Logo Screen Initialization logic
 void InitLogoScreen(void)
 {
+    render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
     render_camera.camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
     render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
     render_camera.camera.fovy = 45.0f;
+
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
@@ -44,7 +46,7 @@ void InitLogoScreen(void)
     // Create a column of powder
     for (int x = 0; x < 50; x++)
         for (int z = 0;z < 50; z++)
-            for (int y = 0; y < 90; y++)
+            for (int y = 1; y < 90; y++)
                 sim.create_part(x + 10, y, z + 10, 1);
 
 }
@@ -58,7 +60,7 @@ void UpdateLogoScreen(void)
          if (sim.pmap[z][90][x] == 0)
              sim.create_part(x, 90, z, 1);
      */
-    sim.update();
+   // sim.update();
 
     simTime = GetTime() - t;
 }
@@ -74,12 +76,18 @@ void DrawLogoScreen(void)
 
     BeginMode3D(render_camera.camera);
 
+    rlEnableWireMode();
+
     unsigned char red = 255;
     auto t = GetTime();
-    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK, texture);
+
+    
+    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
      drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
+
+    rlDisableWireMode();
     EndMode3D();
 
     /*DrawRectangle(10, 10, 320, 93, Fade(SKYBLUE, 0.5f));

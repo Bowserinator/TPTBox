@@ -47,9 +47,9 @@ int main(void)
 {
     // Initialization
     //---------------------------------------------------------
-    SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
 
     InitWindow(screenWidth, screenHeight, "raylib game template");
+    SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
 
     InitAudioDevice();      // Initialize audio device
 
@@ -59,7 +59,7 @@ int main(void)
     fxCoin = LoadSound("resources/coin.wav");
 
     SetMusicVolume(music, 1.0f);
-    PlayMusicStream(music);
+    //PlayMusicStream(music);
 
     // Setup and init first screen
     currentScreen = LOGO;

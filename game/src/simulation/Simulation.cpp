@@ -53,7 +53,7 @@ void Simulation::update() {
             for (int dx = -1; dx <= 1; dx++)
                 for (int dz = -1; dz <= 1; dz++) {
                     if (!dx && !dz) continue;
-                    if ((int)z + dz < 1 || z + dz >= ZRES - 1 || (int)x + dx < 1 || x + dx >= XRES - 1) continue;
+                    if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
 
                     if (pmap[z + dz][y - 1][x + dx] == 0) {
                         auto n = std::make_tuple(x + dx, y - 1, z + dz);
@@ -67,7 +67,6 @@ void Simulation::update() {
                 y = std::get<1>(next[j]);
                 z = std::get<2>(next[j]);
             }
-
             // Gas
             /*
             for (int dx = -1; dx <= 1; dx++)
