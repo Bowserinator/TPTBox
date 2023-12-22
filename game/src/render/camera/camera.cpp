@@ -6,6 +6,7 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
     if (!_viewProjMatrixUpdated) {
         updateViewProjMatrix();
         generateFrustum();
+        _viewProjMatrixUpdated = true;
     }
 
     // If distance to plane is "below" the plane and more than
@@ -93,6 +94,9 @@ void RenderCamera::updateControls() {
 }
 
 
+// Logic for this code is from
+// https://gdbooks.gitbooks.io/3dcollisions/content/Chapter6/frustum.html
+// Another useful resource: https://www.flipcode.com/archives/Frustum_Culling.shtml
 void RenderCamera::generateFrustum() {
     const auto &vp = viewProjMatrix;
     const Vector4 row1{ vp.m0, vp.m4, vp.m8, vp.m12 };
@@ -113,5 +117,4 @@ void RenderCamera::updateViewProjMatrix() {
     const Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD, aspectRatio, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     const Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
     viewProjMatrix = MatrixMultiply(matView, matProj);
-    _viewProjMatrixUpdated = true;
 }

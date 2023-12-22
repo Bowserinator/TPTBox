@@ -10,27 +10,49 @@
 
 #include <iostream>
 
+#include <glad.h>
+
 
 constexpr float width  = 1.0f;
 constexpr float height = 1.0f;
 constexpr float length = 1.0f;
 
+static Mesh mesh = { 0 };
+static bool found = false;
+static std::vector<float> vertices;
+static std::vector<float> texcoords;
 
-Model getMeshFromSim(Simulation &sim) {
+void getMeshFromSim(Simulation &sim, RenderCamera & camera, Texture2D &texture) {
+    vertices.clear();
+    texcoords.clear();
 
-    std::vector<float> vertices;
-    std::vector<float> normals;
-    std::vector<float> texcoords;
+    constexpr int BUFF_SIZE = sizeof(float) * 10000000; // 10^7
+    if (!found) {
+        SetTraceLogLevel(LOG_ERROR);
+    
+        mesh.vertices = (float *)MemAlloc(BUFF_SIZE * 3);    // 3 vertices, 3 coordinates each (x, y, z)
+        mesh.texcoords = (float *)MemAlloc(BUFF_SIZE * 2);   // 3 vertices, 2 coordinates each (x, y)
+        mesh.colors = (unsigned char*)MemAlloc(BUFF_SIZE * 4);
+    }
+    int vertex_count = 0;
+    int color_count = 0;
 
-    auto pushVertices = [&vertices, &normals, &texcoords](float x, float y, float z) {
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-        normals.push_back(0);
-        normals.push_back(1);
-        normals.push_back(0);
-        texcoords.push_back(1);
-        texcoords.push_back(0);
+
+    auto pushVertices = [&color_count, &vertex_count](unsigned char red, float x, float y, float z) {
+        //vertices.push_back(x);
+        //vertices.push_back(y);
+        //vertices.push_back(z);
+        mesh.vertices[vertex_count] = x;
+        mesh.vertices[vertex_count + 1] = y;
+        mesh.vertices[vertex_count + 2] = z;
+        vertex_count += 3;
+        //texcoords.push_back(1);
+        //texcoords.push_back(0);
+        mesh.colors[color_count] = red;
+        mesh.colors[color_count + 1] = 0;
+        mesh.colors[color_count + 2] = 0xAA;
+        mesh.colors[color_count + 3] = 0xFF;
+        color_count += 4;
     };
 
     for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
@@ -45,17 +67,9 @@ Model getMeshFromSim(Simulation &sim) {
         float y = py;
         float z = pz;
 
-        
-        // Convert world position vector to quaternion
-        /*Quaternion worldPos = { px, py, pz, 1.0f };
-        worldPos = QuaternionTransform(worldPos, godMatrix);
-        Vector3 ndcPos = { worldPos.x/worldPos.w, -worldPos.y/worldPos.w, worldPos.z/worldPos.w };
-        Vector2 val = { (ndcPos.x + 1.0f)/2.0f*(float)width, (ndcPos.y + 1.0f)/2.0f*(float)height };
-
-        // auto val = GetWorldToScreen(Vector3{(float)px, (float)py, (float)pz}, camera);
-
-        if (val.x < -10 || val.y < -10 || val.x > GetScreenWidth() +  10 || val.y > GetScreenHeight() + 10)
-            continue;*/
+        unsigned char red = 0xFF;
+       //if (camera.sphereOutsideFrustum(px, py, pz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
+       //     continue;
 
 
         bool top = sim.pmap[pz][py + 1][px] == 0;
@@ -65,110 +79,113 @@ Model getMeshFromSim(Simulation &sim) {
         bool left = sim.pmap[pz][py][px - 1] == 0;
         bool right = sim.pmap[pz][py][px + 1] == 0;
 
-            // Front face
-            if (front) {
-                pushVertices(x - width/2, y - height/2, z + length/2);  // Bottom Left
-                pushVertices(x + width/2, y - height/2, z + length/2);  // Bottom Right
-                pushVertices(x - width/2, y + height/2, z + length/2);  // Top Left
+        // Front face
+        if (front) {
+            red = 0xAA;
+            pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
 
-                pushVertices(x + width/2, y + height/2, z + length/2);  // Top Right
-                pushVertices(x - width/2, y + height/2, z + length/2);  // Top Left
-                pushVertices(x + width/2, y - height/2, z + length/2);  // Bottom Right
-            }
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Right
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+        }
 
-            // Back face
-            if (back) {
-                pushVertices(x - width/2, y - height/2, z - length/2);  // Bottom Left
-                pushVertices(x - width/2, y + height/2, z - length/2);  // Top Left
-                pushVertices(x + width/2, y - height/2, z - length/2);  // Bottom Right
+        // Back face
+        if (back) {
+            red = 0xAA;
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
 
-                pushVertices(x + width/2, y + height/2, z - length/2);  // Top Right
-                pushVertices(x + width/2, y - height/2, z - length/2);  // Bottom Right
-                pushVertices(x - width/2, y + height/2, z - length/2);  // Top Left
-            }
+            pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+        }
 
-            // Top face
-            if (top) {
-                pushVertices(x - width/2, y + height/2, z - length/2);  // Top Left
-                pushVertices(x - width/2, y + height/2, z + length/2);  // Bottom Left
-                pushVertices(x + width/2, y + height/2, z + length/2);  // Bottom Right
+        // Top face
+        if (top) {
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Bottom Left
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Bottom Right
 
-                pushVertices(x + width/2, y + height/2, z - length/2);  // Top Right
-                pushVertices(x - width/2, y + height/2, z - length/2);  // Top Left
-                pushVertices(x + width/2, y + height/2, z + length/2);  // Bottom Right
-            }
+            pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Bottom Right
+        }
 
-            // Bottom face
-            if (bot) {
-                pushVertices(x - width/2, y - height/2, z - length/2);  // Top Left
-                pushVertices(x + width/2, y - height/2, z + length/2);  // Bottom Right
-                pushVertices(x - width/2, y - height/2, z + length/2);  // Bottom Left
+        // Bottom face
+        if (bot) {
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Top Left
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
 
-                pushVertices(x + width/2, y - height/2, z - length/2);  // Top Right
-                pushVertices(x + width/2, y - height/2, z + length/2);  // Bottom Right
-                pushVertices(x - width/2, y - height/2, z - length/2);  // Top Left
-            }
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Top Right
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Top Left
+        }
 
-            // Right face
-            if (right) {
-                pushVertices(x + width/2, y - height/2, z - length/2);  // Bottom Right
-                pushVertices(x + width/2, y + height/2, z - length/2);  // Top Right
-                pushVertices(x + width/2, y + height/2, z + length/2);  // Top Left
+        // Right face
+        if (right) {
+            red = 0xCC;
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+            pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Left
 
-                pushVertices(x + width/2, y - height/2, z + length/2);  // Bottom Left
-                pushVertices(x + width/2, y - height/2, z - length/2);  // Bottom Right
-                pushVertices(x + width/2, y + height/2, z + length/2);  // Top Left
-            }
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Left
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Left
+        }
 
-            // Left face
-            if (left) {
-                pushVertices(x - width/2, y - height/2, z - length/2);  // Bottom Right
-                pushVertices(x - width/2, y + height/2, z + length/2);  // Top Left
-                pushVertices(x - width/2, y + height/2, z - length/2);  // Top Right
+        // Left face
+        if (left) {
+            red = 0xCC;
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Right
 
-                pushVertices(x - width/2, y - height/2, z + length/2);  // Bottom Left
-                pushVertices(x - width/2, y + height/2, z + length/2);  // Top Left
-                pushVertices(x - width/2, y - height/2, z - length/2);  // Bottom Right
-            }
+            pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Right
+        }
     }
-    SetTraceLogLevel(LOG_ERROR);
 
-    Mesh mesh = { 0 };
-    mesh.triangleCount = vertices.size() / 3;
-    mesh.vertexCount = vertices.size();
-
-    mesh.vertices = (float *)MemAlloc(mesh.vertexCount*3*sizeof(float));    // 3 vertices, 3 coordinates each (x, y, z)
-    mesh.texcoords = (float *)MemAlloc(mesh.vertexCount*2*sizeof(float));   // 3 vertices, 2 coordinates each (x, y)
-    mesh.normals = (float *)MemAlloc(mesh.vertexCount*3*sizeof(float));     // 3 vertices, 3 coordinates each (x, y, z)
+    mesh.triangleCount = vertex_count / 3;
+    mesh.vertexCount = vertex_count;
 
 
-    std::copy(vertices.begin(), vertices.end(), &mesh.vertices[0]);
-    std::copy(texcoords.begin(), texcoords.end(), &mesh.texcoords[0]);
-    std::copy(normals.begin(), normals.end(), &mesh.normals[0]);
+    // if (found) {
+    //     MemFree(mesh.vertices);
+    //     MemFree(mesh.texcoords);
+    //     MemFree(mesh.normals);
+    // }
 
+    
+    if (!found) {
+        found = true;
+        UploadMesh(&mesh, true);
+    } else {
+        UpdateMeshBuffer(mesh, 0, &mesh.vertices[0], sizeof(float) * vertex_count, 0);
+        UpdateMeshBuffer(mesh, 3, &mesh.colors[0], sizeof(unsigned char) * color_count, 0);
+        // UpdateMeshBuffer(mesh, 1, &texcoords[0], sizeof(float) * texcoords.size(), 0);
+    }
 
-
-    // Upload mesh data from CPU (RAM) to GPU (VRAM) memory
-    UploadMesh(&mesh, false);
-
-    auto mesh2 = LoadModelFromMesh(mesh);
-    Image checked = GenImageChecked(2, 2, 1, 1, RED, GREEN);
-    Texture2D texture = LoadTextureFromImage(checked);
-    UnloadImage(checked);
-    mesh2.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    return mesh2;
 }
 
-void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, const Color lineColor) {
+void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, const Color lineColor, Texture2D &texture) {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
 
+    getMeshFromSim(sim, camera, texture);
+    DrawMesh(mesh, LoadMaterialDefault(), MatrixIdentity()); 
+    //auto mesh2 = getMeshFromSim(sim, camera, texture);
+    //DrawModelWires(mesh2, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
+    // UnloadModel(mesh2);
+    return;
+
+
     rlBegin(RL_TRIANGLES);
-
-    //auto mesh = getMeshFromSim(sim);
-    //DrawModel(mesh, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
-
     for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
         const auto &part = sim.parts[i];
         if (!part.id) continue;

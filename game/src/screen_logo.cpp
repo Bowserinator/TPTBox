@@ -23,7 +23,7 @@ static double simTime = 0.0f;
 static double drawTime = 0.0f;
 static double fps = 1.0f;
 
-
+static Texture2D texture;
 
 
 // Logo Screen Initialization logic
@@ -36,6 +36,10 @@ void InitLogoScreen(void)
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
+
+    Image checked = GenImageChecked(2, 2, 1, 1, RED, GREEN);
+    texture = LoadTextureFromImage(checked);
+    UnloadImage(checked);
 
     // Create a column of powder
     for (int x = 0; x < 50; x++)
@@ -65,15 +69,15 @@ void DrawLogoScreen(void)
     render_camera.updateControls();
     // camera.updateViewProjMatrix();
 
-    auto t = GetTime();
 
     ClearBackground(BLACK);
 
     BeginMode3D(render_camera.camera);
 
     unsigned char red = 255;
-    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
-
+    auto t = GetTime();
+    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK, texture);
+     drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
     EndMode3D();
@@ -90,7 +94,6 @@ void DrawLogoScreen(void)
     DrawText(TextFormat("CURRENT FPS: %f", fps), GetScreenWidth() - 270, 70, 20, GREEN);
     DrawText(TextFormat("Parts: %i", sim.maxId), GetScreenWidth() - 270, 100, 20, GREEN);
 
-    drawTime = GetTime() - t;
     fps = 1.0f / drawTime;
 }
 
