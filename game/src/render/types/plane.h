@@ -39,6 +39,7 @@ public:
     Plane& operator=(const Plane& other) {
         normal = Vector3{other.normal.x, other.normal.y, other.normal.z};
         distance = other.distance;
+        return *this;
     }
 
     /**

@@ -49,15 +49,15 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
         color_count += 4;
     };
 
+
     // 30 ms for 2 sides :sweat:
     // maybe chunk sim
     auto t = GetTime();
 
-    greedy_mesh_front_back(mesh, sim, camera, vertex_count, color_count, 1);
-    greedy_mesh_front_back(mesh, sim, camera, vertex_count, color_count, -1);
+    // fast_greedy_mesh(mesh, sim, camera, vertex_count, color_count);
 
   
-    for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
+    for (int i = 0; i <sim.maxId ; i++) { // sim.maxId
         const auto &part = sim.parts[i];
         if (!part.id) continue;
         int px = (int)(sim.parts[i].x + 0.5f);
@@ -81,28 +81,28 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
             continue;
 
         // Front face
-        // if (front) {
-        //     //red = 0xAA;
-        //     pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
-        //     pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
-        //     pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+        if (front) {
+            //red = 0xAA;
+            pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
 
-        //     pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Right
-        //     pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
-        //     pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
-        // }
+            pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Right
+            pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
+            pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
+        }
 
         // Back face
-        // if (back) {
-        //     //red = 0xAA;
-        //     pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
-        //     pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
-        //     pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+        if (back) {
+            //red = 0xAA;
+            pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
 
-        //     pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
-        //     pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
-        //     pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
-        // }
+            pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
+            pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
+            pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
+        }
 
         // Top face
         if (top) {

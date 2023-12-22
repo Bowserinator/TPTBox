@@ -82,7 +82,7 @@ workspace (workspaceName)
     end
 
     cdialect "C99"
-    cppdialect "C++17"
+    cppdialect "C++20"
 check_raylib();
 
 include ("raylib_premake5.lua")

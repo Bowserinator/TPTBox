@@ -60,7 +60,7 @@ void UpdateLogoScreen(void)
          if (sim.pmap[z][90][x] == 0)
              sim.create_part(x, 90, z, 1);
      */
-   // sim.update();
+    sim.update();
 
     simTime = GetTime() - t;
 }
