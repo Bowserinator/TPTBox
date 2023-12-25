@@ -55,7 +55,7 @@ void Simulation::update() {
                     if (!dx && !dz) continue;
                     if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
 
-                    if (pmap[z + dz][y - 1][x + dx] == 0) {
+                    if (pmap[z + dz][y - 1][x + dx] == 0) { // make just y to get fluid
                         auto n = std::make_tuple(x + dx, y - 1, z + dz);
                         next.push_back(n);
                     }

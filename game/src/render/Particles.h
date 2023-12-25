@@ -50,9 +50,6 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
     };
 
 
-    // 30 ms for 2 sides :sweat:
-    // maybe chunk sim
-    auto t = GetTime();
 
     // fast_greedy_mesh(mesh, sim, camera, vertex_count, color_count);
 
@@ -82,7 +79,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Front face
         if (front) {
-            //red = 0xAA;
+            red = 0xAA;
             pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
             pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
@@ -94,7 +91,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Back face
         if (back) {
-            //red = 0xAA;
+            red = 0xAA;
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
             pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
@@ -106,6 +103,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Top face
         if (top) {
+            red = 0xFF;
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Bottom Left
             pushVertices(red, x + width/2, y + height/2, z + length/2);  // Bottom Right
@@ -117,6 +115,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Bottom face
         if (bot) {
+            red = 0xFF;
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Top Left
             pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
             pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
@@ -128,7 +127,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Right face
         if (right) {
-            //red = 0xCC;
+            red = 0xCC;
             pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
             pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Left
@@ -140,7 +139,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Left face
         if (left) {
-           // red = 0xCC;
+            red = 0xCC;
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Right
