@@ -11,6 +11,7 @@ constexpr unsigned int YRES = 100;
 constexpr unsigned int ZRES = 100;
 constexpr unsigned int NPARTS = XRES * YRES * ZRES;
 
+
 class Simulation {
 public:
     bool paused;

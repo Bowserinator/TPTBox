@@ -38,20 +38,20 @@ void ScreenGameplay::init() {
     UnloadImage(checked);
 
     // Create a column of powder
-    for (int x = 0; x < 50; x++)
+    /*for (int x = 0; x < 50; x++)
         for (int z = 0;z < 50; z++)
             for (int y = 1; y < 90; y++)
-                sim.create_part(x + 10, y, z + 10, 1);
+                sim.create_part(x + 10, y, z + 10, 1);*/
 
 }
 
 void ScreenGameplay::update() {
     auto t = GetTime();
-    /* for (int x = 10; x < 100; x += 10)
+    for (int x = 10; x < 100; x += 10)
          for (int z = 10; z < 100; z += 10)
          if (sim.pmap[z][90][x] == 0)
              sim.create_part(x, 90, z, 1);
-     */
+     
     sim.update();
 
     simTime = GetTime() - t;
@@ -96,5 +96,5 @@ void ScreenGameplay::draw() {
 }
 
 void ScreenGameplay::unload() {
-
+    // unloadMesh(&mesh);
 };
