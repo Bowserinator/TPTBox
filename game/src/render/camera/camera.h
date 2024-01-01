@@ -18,8 +18,19 @@ public:
     Matrix viewProjMatrix;
     std::vector<Plane> frustum;
 
-    RenderCamera(): camera{0}, _viewProjMatrixUpdated(false) {
+    Vector3 minBound;
+    Vector3 maxBound;
+
+    RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
+            minBound{INT_MIN, INT_MIN, INT_MIN},
+            maxBound(INT_MAX, INT_MAX, INT_MAX)
+    {
         frustum = std::vector<Plane>(6);
+    }
+
+    void setBounds(const Vector3 &minBound, const Vector3 &maxBound) {
+        this->minBound = minBound;
+        this->maxBound = maxBound;
     }
 
     /**
@@ -39,6 +50,22 @@ public:
      */
     void updateControls();
 
+    /**
+     * @brief Get approximation of distance outside bounding box
+     * @param pos Position to evaluate
+     * @return Manhattan distance to nearest bounding planes if outside
+     */
+    float boundError(const Vector3& pos) const {
+        float err = 0;
+        if (pos.x < minBound.x) err += minBound.x - pos.x;
+        else if (pos.x > maxBound.x) err += pos.x - maxBound.x;
+        if (pos.y < minBound.y) err += minBound.y - pos.y;
+        else if (pos.y > maxBound.y) err += pos.y - maxBound.y;
+        if (pos.z < minBound.z) err += minBound.z - pos.z;
+        else if (pos.z > maxBound.z) err += pos.z - maxBound.z;
+        return err;
+    }
+
 
     // Use these methods to move / rotate camera as it properly
     // updates the frustum cache
@@ -54,22 +81,13 @@ public:
         _viewProjMatrixUpdated = false;
         CameraRoll(&camera, angle);
     }
-    void moveForward(float distance, bool moveInWorldPlane = true) {
-        _viewProjMatrixUpdated = false;
-        CameraMoveForward(&camera, distance, moveInWorldPlane);
-    }
-    void moveRight(float distance, bool moveInWorldPlane = true) {
-        _viewProjMatrixUpdated = false;
-        CameraMoveRight(&camera, distance, moveInWorldPlane);
-    }
-    void moveUp(float distance) {
-        _viewProjMatrixUpdated = false;
-        CameraMoveUp(&camera, distance);
-    }
-    void moveToTarget(float amt) {
-        _viewProjMatrixUpdated = _viewProjMatrixUpdated && amt == 0.0f;
-        CameraMoveToTarget(&camera, amt);
-    }
+
+    // These camera functions constrain movement and update
+    // the projection matrix cache
+    void moveForward(float distance, bool moveInWorldPlane);
+    void moveRight(float distance, bool moveInWorldPlane);
+    void moveUp(float distance);
+    void moveToTarget(float amt);
 private:
     bool _viewProjMatrixUpdated;
 

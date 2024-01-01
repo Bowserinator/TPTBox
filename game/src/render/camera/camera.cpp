@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "camera.h"
 #include "../constants.h"
 
@@ -26,6 +28,8 @@ void RenderCamera::updateControls() {
     bool rotateAroundTarget = true;
     bool lockView = true;
     bool rotateUp = false;
+
+    Vector3 oldTarget = camera.target;
 
     // Camera rotation
     if (IsKeyDown(KEY_DOWN))
@@ -117,4 +121,63 @@ void RenderCamera::updateViewProjMatrix() {
     const Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD, aspectRatio, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     const Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
     viewProjMatrix = MatrixMultiply(matView, matProj);
+}
+
+void RenderCamera::moveUp(float distance) {
+    _viewProjMatrixUpdated = false;
+    Vector3 up = GetCameraUp(&camera);
+    up = Vector3Scale(up, distance);
+
+    Vector3 targetPos = camera.position + up;
+    if (boundError(targetPos) > boundError(camera.position)) return;
+
+    camera.position = targetPos;
+    camera.target = camera.target + up;
+}
+
+void RenderCamera::moveForward(float distance, bool moveInWorldPlane = true) {
+    _viewProjMatrixUpdated = false;
+    Vector3 forward = GetCameraForward(&camera);
+    if (moveInWorldPlane) {
+        forward.y = 0;
+        forward = Vector3Normalize(forward);
+    }
+    forward = Vector3Scale(forward, distance);
+
+    Vector3 targetPos = camera.position + forward;
+    if (boundError(targetPos) > boundError(camera.position)) return;
+
+    camera.position = targetPos;
+    camera.target = camera.target + forward;
+}
+
+void RenderCamera::moveRight(float distance, bool moveInWorldPlane = true) {
+    _viewProjMatrixUpdated = false;
+    Vector3 right = GetCameraRight(&camera);
+
+    if (moveInWorldPlane) {
+        right.y = 0;
+        right = Vector3Normalize(right);
+    }
+    right = Vector3Scale(right, distance);
+
+    Vector3 targetPos = camera.position + right;
+    if (boundError(targetPos) > boundError(camera.position)) return;
+
+    camera.position = targetPos;
+    camera.target = camera.target + right;
+}
+
+void RenderCamera::moveToTarget(float amt) {
+    if (amt == 0.0f) return;
+    _viewProjMatrixUpdated = false;
+
+    float distance = Vector3Distance(camera.position, camera.target);
+    distance += amt;
+    if (distance <= 0) distance = 0.001f;
+
+    Vector3 forward = GetCameraForward(&camera);
+    Vector3 targetPos = camera.target + forward * -distance;
+    if (boundError(targetPos) > boundError(camera.position)) return;
+    camera.position = targetPos;
 }

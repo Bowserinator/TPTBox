@@ -31,6 +31,8 @@ void ScreenGameplay::init() {
     render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
     render_camera.camera.fovy = 45.0f;
 
+    render_camera.setBounds(Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES }, Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
+
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
 
