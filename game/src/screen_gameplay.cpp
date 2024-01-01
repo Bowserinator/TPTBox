@@ -61,6 +61,8 @@ void ScreenGameplay::update() {
         currentElementId = 1;
     else if (IsKeyDown(KEY_TWO))
         currentElementId = 2;
+    else if (IsKeyDown(KEY_THREE))
+        currentElementId = 3;
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             Vector3 forward = GetCameraForward(&render_camera.camera);

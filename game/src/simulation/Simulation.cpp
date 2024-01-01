@@ -54,7 +54,11 @@ void Simulation::update() {
  */
 void Simulation::move_behavior(int idx) {
     const auto el = GetElements()[parts[idx].type];
+    if (el.state == ElementState::TYPE_SOLID) return; // Solids can't move
+
     const auto part = parts[idx];
+    // if (part.vx == 0.0f && part.vy == 0.0 && part.vz == 0.0) return; // No velocity
+
     int x = (int)(part.x + 0.5f);
     int y = (int)(part.y + 0.5f);
     int z = (int)(part.z + 0.5f);
@@ -90,6 +94,28 @@ void Simulation::move_behavior(int idx) {
                 z = std::get<2>(next[j]);
                 try_move(idx, x, y, z);
             }
+        }
+    }
+    else if (el.state == ElementState::TYPE_GAS) {
+        std::vector<std::tuple<int, int, int>> next;
+        for (int dx = -1; dx <= 1; dx++)
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dz = -1; dz <= 1; dz++) {
+                if (!dx && !dz) continue;
+                if ((int)y + dy < 1 || (int)y + dy >= YRES - 1 || (int)z + dz < 1 || z + dz >= ZRES - 1 || (int)x + dx < 1 || x + dx >= XRES - 1) continue;
+
+                if (pmap[z + dz][y + dy][x + dx] == 0) {
+                    auto n = std::make_tuple(x + dx, y + dy, z + dz);
+                    next.push_back(n);
+                }
+            }
+        
+        if (next.size()) {
+            int j = rand() % next.size();
+            x = std::get<0>(next[j]);
+            y = std::get<1>(next[j]);
+            z = std::get<2>(next[j]);
+            try_move(idx, x, y, z);
         }
     }
 }

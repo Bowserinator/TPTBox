@@ -1,4 +1,4 @@
-// 143360498
+// 3293562998
 // Do not modify the hash above, it is used for determining
 // if the element list has changed
 
@@ -19,6 +19,7 @@
 
 ELEMENT_DEFINE(DUST,1);
 ELEMENT_DEFINE(WATR,2);
+ELEMENT_DEFINE(GAS,3);
 
 
 #undef ELEMENT_DEFINE
