@@ -13,12 +13,9 @@ public:
     // heat conduction
     // 
 
-    std::string name; // TODO
-
     unsigned int properties;
     ElementState state;
 
-    std::string color; // TODO 
 
     int (*Update)();
 

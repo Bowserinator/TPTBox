@@ -28,6 +28,10 @@ public:
     void kill_part(uint id);
 
     void update();
+
+    void move_behavior(int idx);
+    void try_move(int idx, uint x, uint y, uint z);
+
 };
 
 #endif

@@ -24,6 +24,9 @@ static double simTime = 0.0f;
 static double drawTime = 0.0f;
 static double fps = 1.0f;
 
+static int currentElementId = 1;
+
+
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
@@ -49,10 +52,31 @@ void ScreenGameplay::init() {
 
 void ScreenGameplay::update() {
     auto t = GetTime();
-    for (int x = 10; x < 100; x += 10)
-         for (int z = 10; z < 100; z += 10)
-         if (sim.pmap[z][90][x] == 0)
-             sim.create_part(x, 90, z, 1);
+    // for (int x = 10; x < 100; x += 10)
+    //      for (int z = 10; z < 100; z += 10)
+    //      if (sim.pmap[z][90][x] == 0)
+    //          sim.create_part(x, 90, z, 1);
+
+    if (IsKeyDown(KEY_ONE))
+        currentElementId = 1;
+    else if (IsKeyDown(KEY_TWO))
+        currentElementId = 2;
+
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            Vector3 forward = GetCameraForward(&render_camera.camera);
+            forward = render_camera.camera.position + forward * 20.0f;
+            forward.x = std::round(forward.x);
+            forward.y = std::round(forward.y);
+            forward.z = std::round(forward.z);
+
+            const int S = 5;
+            for (int x = forward.x; x < forward.x + S; x++)
+            for (int y = forward.y; y < forward.y + S; y++)
+            for (int z = forward.z; z < forward.z + S; z++)
+                if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
+                    sim.create_part(x, y, z, currentElementId);
+    }
+
      
     sim.update();
 
@@ -67,6 +91,17 @@ void ScreenGameplay::draw() {
     ClearBackground(BLACK);
 
     BeginMode3D(render_camera.camera);
+
+
+    // TODO
+    Vector3 forward = GetCameraForward(&render_camera.camera);
+    forward = render_camera.camera.position + forward * 20.0f;
+    forward.x = std::round(forward.x);
+    forward.y = std::round(forward.y);
+    forward.z = std::round(forward.z);
+    DrawCubeWires(forward, 1, 1, 1, WHITE);
+        
+
 
     //rlEnableWireMode();
 
