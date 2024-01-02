@@ -6,6 +6,8 @@
 
 #include "./camera/camera.h"
 #include "../simulation/Simulation.h"
+#include "../simulation/ElementClasses.h"
+#include "../util/color.h"
 #include "constants.h"
 #include "greedy_mesh.h"
 
@@ -36,16 +38,16 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
     unsigned int triangle_count = 0;
 
 
-    auto pushVertices = [&triangle_count, &color_count, &vertex_count](unsigned char red, float x, float y, float z) {
+    auto pushVertices = [&triangle_count, &color_count, &vertex_count](RGBA color, float x, float y, float z) {
         mesh.vertices[vertex_count] = x;
         mesh.vertices[vertex_count + 1] = y;
         mesh.vertices[vertex_count + 2] = z;
 
         vertex_count += 3;
-        mesh.colors[color_count] = red;
-        mesh.colors[color_count + 1] = 0;
-        mesh.colors[color_count + 2] = 0xAA;
-        mesh.colors[color_count + 3] = 0xFF;
+        mesh.colors[color_count] = color.r;
+        mesh.colors[color_count + 1] = color.g;
+        mesh.colors[color_count + 2] = color.b;
+        mesh.colors[color_count + 3] = color.a;
         color_count += 4;
     };
 
@@ -65,7 +67,8 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
         float y = py;
         float z = pz;
 
-        unsigned char red = 0xFF;
+        if (camera.sphereOutsideFrustum(x, y, z, DIS_UNIT_CUBE_CENTER_TO_CORNER))
+            continue;
 
         bool top = sim.pmap[pz][py + 1][px] == 0;
         bool bot = sim.pmap[pz][py - 1][px] == 0;
@@ -74,12 +77,13 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
         bool left = sim.pmap[pz][py][px - 1] == 0;
         bool right = sim.pmap[pz][py][px + 1] == 0;
 
-        if (camera.sphereOutsideFrustum(x, y, z, DIS_UNIT_CUBE_CENTER_TO_CORNER))
-            continue;
+        auto color = GetElements()[sim.parts[i].type].Color;
+        auto red = color;
 
         // Front face
         if (front) {
-            red = 0xAA;
+            red = color;
+            red.darken(0.8);
             pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
             pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
@@ -91,7 +95,8 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Back face
         if (back) {
-            red = 0xAA;
+            red = color;
+            red.darken(0.8);
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Left
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
             pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
@@ -103,7 +108,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Top face
         if (top) {
-            red = 0xFF;
+            red = color;
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Left
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Bottom Left
             pushVertices(red, x + width/2, y + height/2, z + length/2);  // Bottom Right
@@ -115,7 +120,8 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Bottom face
         if (bot) {
-            red = 0xFF;
+            red = color;
+            red.darken(0.6);
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Top Left
             pushVertices(red, x + width/2, y - height/2, z + length/2);  // Bottom Right
             pushVertices(red, x - width/2, y - height/2, z + length/2);  // Bottom Left
@@ -127,7 +133,8 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Right face
         if (right) {
-            red = 0xCC;
+            red = color;
+            red.darken(0.9);
             pushVertices(red, x + width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x + width/2, y + height/2, z - length/2);  // Top Right
             pushVertices(red, x + width/2, y + height/2, z + length/2);  // Top Left
@@ -139,7 +146,8 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
         // Left face
         if (left) {
-            red = 0xCC;
+            red = color;
+            red.darken(0.9);
             pushVertices(red, x - width/2, y - height/2, z - length/2);  // Bottom Right
             pushVertices(red, x - width/2, y + height/2, z + length/2);  // Top Left
             pushVertices(red, x - width/2, y + height/2, z - length/2);  // Top Right

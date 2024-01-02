@@ -1,5 +1,6 @@
 #include "../ElementClasses.h"
 
 void Element::Element_GAS() {
-    state = ElementState::TYPE_GAS;
+    State = ElementState::TYPE_GAS;
+    Color = 0x00FF00AA;
 };

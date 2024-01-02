@@ -54,7 +54,7 @@ void Simulation::update() {
  */
 void Simulation::move_behavior(int idx) {
     const auto el = GetElements()[parts[idx].type];
-    if (el.state == ElementState::TYPE_SOLID) return; // Solids can't move
+    if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
 
     const auto part = parts[idx];
     // if (part.vx == 0.0f && part.vy == 0.0 && part.vz == 0.0) return; // No velocity
@@ -63,7 +63,7 @@ void Simulation::move_behavior(int idx) {
     int y = (int)(part.y + 0.5f);
     int z = (int)(part.z + 0.5f);
 
-    if (el.state == ElementState::TYPE_LIQUID || el.state == ElementState::TYPE_POWDER) {
+    if (el.State == ElementState::TYPE_LIQUID || el.State == ElementState::TYPE_POWDER) {
         // TODO: gravity
         // If nothing below go straight down
         if (pmap[z][y - 1][x] == 0) {
@@ -73,7 +73,7 @@ void Simulation::move_behavior(int idx) {
 
         // Check surroundings or below surroundings
         std::vector<std::tuple<int, int, int>> next;
-        const int ylvl = el.state == ElementState::TYPE_LIQUID ? y : y - 1;
+        const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
 
         if (y > 1 && pmap[z][y - 1][x] > 0) {
             for (int dx = -1; dx <= 1; dx++)
@@ -96,7 +96,7 @@ void Simulation::move_behavior(int idx) {
             }
         }
     }
-    else if (el.state == ElementState::TYPE_GAS) {
+    else if (el.State == ElementState::TYPE_GAS) {
         std::vector<std::tuple<int, int, int>> next;
         for (int dx = -1; dx <= 1; dx++)
         for (int dy = -1; dy <= 1; dy++)

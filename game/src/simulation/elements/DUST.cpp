@@ -1,5 +1,6 @@
 #include "../ElementClasses.h"
 
 void Element::Element_DUST() {
-    state = ElementState::TYPE_POWDER;
+    State = ElementState::TYPE_POWDER;
+    Color = 0xFFFF00FF;
 };

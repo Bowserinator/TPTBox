@@ -1,5 +1,6 @@
 #include "../ElementClasses.h"
 
 void Element::Element_WATR() {
-    state = ElementState::TYPE_LIQUID;
+    State = ElementState::TYPE_LIQUID;
+    Color = 0x0000FFFF;
 };
