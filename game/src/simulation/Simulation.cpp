@@ -81,7 +81,7 @@ void Simulation::move_behavior(int idx) {
                     if (!dx && !dz) continue;
                     if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
 
-                    if (pmap[z + dz][ylvl][x + dx] == 0) { // make just y to get fluid
+                    if (pmap[z + dz][y][x + dx] == 0 && pmap[z + dz][ylvl][x + dx] == 0) {
                         auto n = std::make_tuple(x + dx, ylvl, z + dz);
                         next.push_back(n);
                     }

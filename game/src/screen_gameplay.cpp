@@ -42,6 +42,11 @@ void ScreenGameplay::init() {
     Image checked = GenImageChecked(2, 2, 1, 1, RED, GREEN);
     UnloadImage(checked);
 
+    // Create staircase
+    for (int x = 0; x < XRES; x++) 
+    for (int z = 0; z < ZRES; z++)
+        sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
+
     // Create a column of powder
     /*for (int x = 0; x < 50; x++)
         for (int z = 0;z < 50; z++)
@@ -63,6 +68,8 @@ void ScreenGameplay::update() {
         currentElementId = 2;
     else if (IsKeyDown(KEY_THREE))
         currentElementId = 3;
+    else if (IsKeyDown(KEY_FOUR))
+        currentElementId = 4;
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             Vector3 forward = GetCameraForward(&render_camera.camera);
