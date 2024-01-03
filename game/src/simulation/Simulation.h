@@ -30,9 +30,9 @@ public:
     void update();
 
     void move_behavior(int idx);
-    void try_move(int idx, uint x, uint y, uint z);
+    void try_move(int idx, float x, float y, float z);
 
-    void raycast(uint x, uint y, uint z, float vx, float vy, float vz, uint &ox, uint &oy, uint &oz);
+    bool raycast(uint x, uint y, uint z, float vx, float vy, float vz, uint &ox, uint &oy, uint &oz) const;
 
 };
 

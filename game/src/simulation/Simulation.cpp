@@ -48,15 +48,28 @@ void Simulation::update() {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
 
-        part.vy = part.y < YRES / 2 ? 3.5f : -3.5f; // TODO: temp
+        part.vy = -0.2f;
 
         if (part.vx || part.vy || part.vz) {
             uint tx, ty, tz;
             int x = util::roundf(part.x);
             int y = util::roundf(part.y);
             int z = util::roundf(part.z);
-            raycast(x, y, z, part.vx, part.vy, part.vz, tx, ty, tz);
-            try_move(i, tx, ty, tz);
+            bool hit = raycast(x, y, z, std::ceil(part.vx), std::ceil(part.vy), std::ceil(part.vz), tx, ty, tz);
+
+            float ox, oy, oz;
+            if (!hit || (tx == x && ty == y && tz == z)) {
+                ox = part.x + part.vx;
+                oy = part.y + part.vy;
+                oz = part.z + part.vz;
+            } else {
+                ox = tx;
+                oy = oy;
+                oz = oz;
+                part.vx = part.vy = part.vz = 0; // TODO bounce
+            }
+
+            try_move(i, ox, oy, oz);
         }
 
         move_behavior(i);
@@ -70,8 +83,9 @@ void Simulation::update() {
  *        before colliding is written to (ox, oy, oz)
  * @see https://github.com/francisengelmann/fast_voxel_traversal/tree/master
  *        Licensed under LICENSES/
+ * @return Whether it terminated because it hit a voxel (true if yes)
  */
-void Simulation::raycast(uint x, uint y, uint z, float vx, float vy, float vz, uint &ox, uint &oy, uint &oz) {
+bool Simulation::raycast(uint x, uint y, uint z, float vx, float vy, float vz, uint &ox, uint &oy, uint &oz) const {
     float dx = (vx >= 0) * 2 - 1;
     float dy = (vy >= 0) * 2 - 1;
     float dz = (vz >= 0) * 2 - 1;
@@ -113,7 +127,7 @@ void Simulation::raycast(uint x, uint y, uint z, float vx, float vy, float vz, u
             ox = current_voxel.x;
             oy = current_voxel.y;
             oz = current_voxel.z;
-            return;
+            return true;
         }
     }
 
@@ -144,9 +158,13 @@ void Simulation::raycast(uint x, uint y, uint z, float vx, float vy, float vz, u
             ox = previous_voxel.x;
             oy = previous_voxel.y;
             oz = previous_voxel.z;
-            return;
+            return true;
         }
     }
+    ox = current_voxel.x;
+    oy = current_voxel.y;
+    oz = current_voxel.z;
+    return false;
 }
 
 
@@ -179,6 +197,7 @@ void Simulation::move_behavior(int idx) {
         int c = 0;
 
         const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
+        const float ylvlf = el.State == ElementState::TYPE_LIQUID ? part.y : part.y - 1;
 
         if (y > 1 && pmap[z][y - 1][x] > 0) {
             for (int dz = -1; dz <= 1; dz++)
@@ -192,7 +211,7 @@ void Simulation::move_behavior(int idx) {
             
             if (c) {
                 int j = rand() % (c / 2);
-                try_move(idx, x + next[2 * j], ylvl, z + next[2 * j + 1]);
+                try_move(idx, part.x + next[2 * j], ylvlf, part.z + next[2 * j + 1]);
             }
         }
     }
@@ -210,10 +229,9 @@ void Simulation::move_behavior(int idx) {
                 next[c++] = dz;
             }
         }
-        
         if (c) {
             int j = rand() % (c / 3);
-            try_move(idx, x + next[j * 3], y + next[j * 3 + 1], z + next[j * 3 + 2]);
+            try_move(idx, part.x + next[j * 3], part.y + next[j * 3 + 1], part.z + next[j * 3 + 2]);
         }
     }
 }
@@ -221,29 +239,32 @@ void Simulation::move_behavior(int idx) {
 /**
  * @brief Try to move a particle to target location
  *        Updates the pmap and particle properties
- * 
  * @param idx Index in parts
  * @param x Target x
  * @param y Target y
  * @param z Target z
  */
-void Simulation::try_move(int idx, uint x, uint y, uint z) {
+void Simulation::try_move(int idx, float tx, float ty, float tz) {
+    uint x, y, z;
+    x = util::roundf(tx);
+    y = util::roundf(ty);
+    z = util::roundf(tz);
+
     // TODO: consider edge mode
     if (x < 1 || y < 1 || z < 1 || x >= XRES - 1 || y >= YRES - 1 || z >= ZRES - 1)
         return;
-    
-    // TODO: can swap
-    if (pmap[z][y][x]) return;
-    
+        
     int oldx = util::roundf(parts[idx].x);
     int oldy = util::roundf(parts[idx].y);
     int oldz = util::roundf(parts[idx].z);
-    pmap[oldz][oldy][oldx] = 0;
+    
+    // TODO: can swap
+    if (pmap[z][y][x] && (x != oldx || y != oldy || z != oldz)) return;
 
-    // TODO: suffers rounding issues
-    parts[idx].x = x;
-    parts[idx].y = y;
-    parts[idx].z = z;
+    pmap[oldz][oldy][oldx] = 0;
+    parts[idx].x = tx;
+    parts[idx].y = ty;
+    parts[idx].z = tz;
     pmap[z][y][x] = parts[idx].id;
 }
 
