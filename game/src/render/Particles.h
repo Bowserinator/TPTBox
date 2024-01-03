@@ -8,6 +8,7 @@
 #include "../simulation/Simulation.h"
 #include "../simulation/ElementClasses.h"
 #include "../util/color.h"
+#include "../util/util.h"
 #include "constants.h"
 #include "greedy_mesh.h"
 
@@ -59,9 +60,9 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
     for (int i = 0; i <sim.maxId ; i++) { // sim.maxId
         const auto &part = sim.parts[i];
         if (!part.id) continue;
-        int px = (int)(sim.parts[i].x + 0.5f);
-        int py = (int)(sim.parts[i].y + 0.5f);
-        int pz = (int)(sim.parts[i].z + 0.5f);
+        int px = util::roundf(sim.parts[i].x);
+        int py = util::roundf(sim.parts[i].y);
+        int pz = util::roundf(sim.parts[i].z);
 
         float x = px;
         float y = py;
@@ -209,9 +210,9 @@ void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, 
         const auto &part = sim.parts[i];
         if (!part.id) continue;
 
-        int px = (int)(sim.parts[i].x + 0.5f);
-        int py = (int)(sim.parts[i].y + 0.5f);
-        int pz = (int)(sim.parts[i].z + 0.5f);
+        int px = util::roundf(sim.parts[i].x);
+        int py = util::roundf(sim.parts[i].y);
+        int pz = util::roundf(sim.parts[i].z);
 
         // TODO: const is dis to cube center
         if (camera.sphereOutsideFrustum(px, py, pz, DIS_UNIT_CUBE_CENTER_TO_CORNER))

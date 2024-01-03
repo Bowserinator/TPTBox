@@ -8,6 +8,7 @@
 #include "../simulation/Simulation.h"
 #include "constants.h"
 #include "./types/bit_col.h"
+#include "../util/util.h"
 
 #include <cstdint>
 #include <vector>
@@ -59,9 +60,9 @@ void fast_greedy_mesh(Mesh &mesh, Simulation &sim, RenderCamera & camera,
         const auto &part = sim.parts[i];
         if (!part.id) continue;
 
-        int px = (int)(sim.parts[i].x + 0.5f);
-        int py = (int)(sim.parts[i].y + 0.5f);
-        int pz = (int)(sim.parts[i].z + 0.5f);
+        int px = util::roundf(sim.parts[i].x);
+        int py = util::roundf(sim.parts[i].y);
+        int pz = util::roundf(sim.parts[i].z);
 
         if (camera.sphereOutsideFrustum(px, py, pz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
             continue;

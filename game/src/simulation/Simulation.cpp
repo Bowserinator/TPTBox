@@ -48,6 +48,17 @@ void Simulation::update() {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
 
+        part.vy = part.y < YRES / 2 ? 3.5f : -3.5f; // TODO: temp
+
+        if (part.vx || part.vy || part.vz) {
+            uint tx, ty, tz;
+            int x = util::roundf(part.x);
+            int y = util::roundf(part.y);
+            int z = util::roundf(part.z);
+            raycast(x, y, z, part.vx, part.vy, part.vz, tx, ty, tz);
+            try_move(i, tx, ty, tz);
+        }
+
         move_behavior(i);
 
     }
@@ -150,7 +161,6 @@ void Simulation::move_behavior(int idx) {
     if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
 
     const auto part = parts[idx];
-    // if (part.vx == 0.0f && part.vy == 0.0 && part.vz == 0.0) return; // No velocity
 
     int x = util::roundf(part.x);
     int y = util::roundf(part.y);
@@ -165,7 +175,7 @@ void Simulation::move_behavior(int idx) {
         }
 
         // Check surroundings or below surroundings
-        std::array<int, 2 * 8> next; // 8 neighboring spots it could go
+        std::array<int8_t, 2 * 8> next; // 8 neighboring spots it could go
         int c = 0;
 
         const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
@@ -174,48 +184,36 @@ void Simulation::move_behavior(int idx) {
             for (int dz = -1; dz <= 1; dz++)
             for (int dx = -1; dx <= 1; dx++) {
                 if (!dx && !dz) continue;
-                if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
-
                 if (pmap[z + dz][y][x + dx] == 0 && pmap[z + dz][ylvl][x + dx] == 0) {
-                    next[c] = x + dx;
-                    next[c + 1] = z + dz;
-                    c += 2;
+                    next[c++] = dx;
+                    next[c++] = dz;
                 }
             }
             
             if (c) {
                 int j = rand() % (c / 2);
-                x = next[2 * j];
-                y = ylvl;
-                z = next[2 * j + 1];
-                try_move(idx, x, y, z);
+                try_move(idx, x + next[2 * j], ylvl, z + next[2 * j + 1]);
             }
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        std::array<int, 3 * 26> next; // 26 neighboring spots it could go
+        std::array<int8_t, 3 * 26> next; // 26 neighboring spots it could go
         int c = 0;
 
         for (int dz = -1; dz <= 1; dz++)
         for (int dy = -1; dy <= 1; dy++)
         for (int dx = -1; dx <= 1; dx++) {
             if (!dx && !dz) continue;
-            if ((int)y + dy < 1 || (int)y + dy >= YRES - 1 || (int)z + dz < 1 || z + dz >= ZRES - 1 || (int)x + dx < 1 || x + dx >= XRES - 1) continue;
-
             if (pmap[z + dz][y + dy][x + dx] == 0) {
-                next[c] = x + dx;
-                next[c + 1] = y + dy;
-                next[c + 2] = z + dz;
-                c += 3;
+                next[c++] = dx;
+                next[c++] = dy;
+                next[c++] = dz;
             }
         }
         
         if (c) {
             int j = rand() % (c / 3);
-            x = next[j * 3];
-            y = next[j * 3 + 1];
-            z = next[j * 3 + 2];
-            try_move(idx, x, y, z);
+            try_move(idx, x + next[j * 3], y + next[j * 3 + 1], z + next[j * 3 + 2]);
         }
     }
 }

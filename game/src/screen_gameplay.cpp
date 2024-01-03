@@ -45,9 +45,9 @@ void ScreenGameplay::init() {
     UnloadImage(checked);
 
     // Create staircase
-    for (int x = 0; x < XRES; x++) 
-    for (int z = 0; z < ZRES; z++)
-        sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
+    // for (int x = 0; x < XRES; x++) 
+    // for (int z = 0; z < ZRES; z++)
+    //     sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
 
     for (int x = 0; x < XRES / 2; x++) 
     for (int z = 0; z < ZRES / 2; z++)
@@ -64,6 +64,8 @@ void ScreenGameplay::init() {
 
 void ScreenGameplay::update() {
     auto t = GetTime();
+    
+
     // for (int x = 10; x < 100; x += 10)
     //      for (int z = 10; z < 100; z += 10)
     //      if (sim.pmap[z][90][x] == 0)
