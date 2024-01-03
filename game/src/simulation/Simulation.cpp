@@ -91,7 +91,7 @@ void Simulation::raycast(uint x, uint y, uint z, float vx, float vy, float vz, u
     if (vz < 0 && current_voxel.z != last_voxel.z) { diff.z--; neg_ray = true; }
 
     auto pmapOccupied = [this](const Vector3T<short> &loc) -> bool {
-        if (loc.y < 0 || loc.y >= YRES || loc.x < 0 || loc.x >= XRES || loc.z < 0 || loc.z >= ZRES)
+        if (loc.y < 1 || loc.y >= YRES - 1 || loc.x < 1 || loc.x >= XRES - 1 || loc.z < 1 || loc.z >= ZRES - 1)
             return true;
         return pmap[loc.z][loc.y][loc.x] > 0;
     };
@@ -165,49 +165,56 @@ void Simulation::move_behavior(int idx) {
         }
 
         // Check surroundings or below surroundings
-        std::vector<std::tuple<int, int, int>> next;
+        std::array<int, 2 * 8> next; // 8 neighboring spots it could go
+        int c = 0;
+
         const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
 
         if (y > 1 && pmap[z][y - 1][x] > 0) {
-            for (int dx = -1; dx <= 1; dx++)
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (!dx && !dz) continue;
-                    if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
+            for (int dz = -1; dz <= 1; dz++)
+            for (int dx = -1; dx <= 1; dx++) {
+                if (!dx && !dz) continue;
+                if ((int)z + dz < 1 || (int)z + dz >= ZRES - 1 || (int)x + dx < 1 || (int)x + dx >= XRES - 1) continue;
 
-                    if (pmap[z + dz][y][x + dx] == 0 && pmap[z + dz][ylvl][x + dx] == 0) {
-                        auto n = std::make_tuple(x + dx, ylvl, z + dz);
-                        next.push_back(n);
-                    }
+                if (pmap[z + dz][y][x + dx] == 0 && pmap[z + dz][ylvl][x + dx] == 0) {
+                    next[c] = x + dx;
+                    next[c + 1] = z + dz;
+                    c += 2;
                 }
+            }
             
-            if (next.size()) {
-                int j = rand() % next.size();
-                x = std::get<0>(next[j]);
-                y = std::get<1>(next[j]);
-                z = std::get<2>(next[j]);
+            if (c) {
+                int j = rand() % (c / 2);
+                x = next[2 * j];
+                y = ylvl;
+                z = next[2 * j + 1];
                 try_move(idx, x, y, z);
             }
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        std::vector<std::tuple<int, int, int>> next;
-        for (int dx = -1; dx <= 1; dx++)
-        for (int dy = -1; dy <= 1; dy++)
-            for (int dz = -1; dz <= 1; dz++) {
-                if (!dx && !dz) continue;
-                if ((int)y + dy < 1 || (int)y + dy >= YRES - 1 || (int)z + dz < 1 || z + dz >= ZRES - 1 || (int)x + dx < 1 || x + dx >= XRES - 1) continue;
+        std::array<int, 3 * 26> next; // 26 neighboring spots it could go
+        int c = 0;
 
-                if (pmap[z + dz][y + dy][x + dx] == 0) {
-                    auto n = std::make_tuple(x + dx, y + dy, z + dz);
-                    next.push_back(n);
-                }
+        for (int dz = -1; dz <= 1; dz++)
+        for (int dy = -1; dy <= 1; dy++)
+        for (int dx = -1; dx <= 1; dx++) {
+            if (!dx && !dz) continue;
+            if ((int)y + dy < 1 || (int)y + dy >= YRES - 1 || (int)z + dz < 1 || z + dz >= ZRES - 1 || (int)x + dx < 1 || x + dx >= XRES - 1) continue;
+
+            if (pmap[z + dz][y + dy][x + dx] == 0) {
+                next[c] = x + dx;
+                next[c + 1] = y + dy;
+                next[c + 2] = z + dz;
+                c += 3;
             }
+        }
         
-        if (next.size()) {
-            int j = rand() % next.size();
-            x = std::get<0>(next[j]);
-            y = std::get<1>(next[j]);
-            z = std::get<2>(next[j]);
+        if (c) {
+            int j = rand() % (c / 3);
+            x = next[j * 3];
+            y = next[j * 3 + 1];
+            z = next[j * 3 + 2];
             try_move(idx, x, y, z);
         }
     }
