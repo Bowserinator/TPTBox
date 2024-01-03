@@ -49,10 +49,14 @@ void ScreenGameplay::init() {
     // for (int z = 0; z < ZRES; z++)
     //     sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
 
-    for (int x = 1; x < XRES / 2; x++) 
-    for (int z = 1; z < ZRES / 2; z++)
-    for (int y = 51; y < 70; y++)
-        sim.create_part(x, y, z, 3);
+    // for (int x = 1; x < XRES / 2; x++) 
+    // for (int z = 1; z < ZRES / 2; z++)
+    // for (int y = 51; y < 70; y++)
+    //     sim.create_part(x, y, z, 3);
+
+    int i = sim.create_part(50, 50, 50, 5);
+    sim.parts[i].vx = 1.0f;
+    sim.parts[i].vy = 1.0f;
 
     // Create a column of powder
     /*for (int x = 0; x < 50; x++)
@@ -131,7 +135,7 @@ void ScreenGameplay::draw() {
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
 
-    uint tx, ty, tz;
+    coord_t tx, ty, tz;
     const float S = 30.0f;
     sim.raycast(XRES / 2, YRES - 1, ZRES / 2,
         S * std::sin(test), -2.0f, S * std::cos(test), tx, ty, tz);

@@ -19,7 +19,11 @@ public:
         a{ static_cast<uint8_t>(color & 0xFF) } {}
     RGBA(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0xFF):
         r(r), g(g), b(b), a(a) {}
-    RGBA(const RGBA &other): r(other.r), b(other.b), g(other.g), a(other.a) {}
+
+    RGBA(const RGBA &other) = default;
+    RGBA(RGBA && other) = default;
+    RGBA &operator=(const RGBA &other) = default;
+    RGBA &operator=(RGBA &&other) = default;
 
     void darken(float amt) {
         r *= amt;
