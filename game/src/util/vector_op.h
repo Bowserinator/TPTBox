@@ -180,4 +180,70 @@ inline Vector4 operator/(Vector4 lhs, const float &rhs) {
     return lhs;
 }
 
+
+// Templated Vector3
+template <class T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
+class Vector3T {
+public:
+    T x, y, z;
+    Vector3T(T x, T y, T z): x(x), y(y), z(z) {}
+    Vector3T(const Vector3T<T> &other): x(other.x), y(other.y), z(other.z) {}
+};
+
+template <class T> inline std::ostream& operator<<(std::ostream& os, const Vector3T<T>& vec) {
+    os << '<' << vec.x << ", " << vec.y << ", " << vec.z << '>';
+    return os;
+}
+
+template <class T> inline bool operator==(const Vector3T<T> &lhs, const Vector3T<T> &rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+template <class T> inline bool operator!=(const Vector3T<T> &lhs, const Vector3T<T> &rhs) {
+    return !(lhs == rhs);
+}
+
+template <class T> inline Vector3T<T> &operator+=(Vector3T<T> &lhs, const Vector3T<T> &rhs) {
+    lhs.x += rhs.x;
+    lhs.y += rhs.y;
+    lhs.z += rhs.z;
+    return lhs;
+}
+template <class T> inline Vector3T<T> operator+(Vector3T<T> lhs, const Vector3T<T> &rhs) {
+    lhs += rhs;
+    return lhs;
+}
+
+template <class T> inline Vector3T<T> &operator-=(Vector3T<T> &lhs, const Vector3T<T> &rhs) {
+    lhs.x -= rhs.x;
+    lhs.y -= rhs.y;
+    lhs.z -= rhs.z;
+    return lhs;
+}
+template <class T> inline Vector3T<T> operator-(Vector3T<T> lhs, const Vector3T<T> &rhs) {
+    lhs -= rhs;
+    return lhs;
+}
+
+template <class T> inline Vector3T<T> &operator*=(Vector3T<T> &lhs, const float &rhs) {
+    lhs.x *= rhs;
+    lhs.y *= rhs;
+    lhs.z *= rhs;
+    return lhs;
+}
+template <class T> inline Vector3T<T> operator*(Vector3T<T> lhs, const float &rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+
+template <class T> inline Vector3T<T> &operator/=(Vector3T<T> &lhs, const float &rhs) {
+    lhs.x /= rhs;
+    lhs.y /= rhs;
+    lhs.z /= rhs;
+    return lhs;
+}
+template <class T> inline Vector3T<T> operator/(Vector3T<T> lhs, const float &rhs) {
+    lhs /= rhs;
+    return lhs;
+}
+
 #endif

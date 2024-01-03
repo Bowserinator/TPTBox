@@ -32,6 +32,8 @@ public:
     void move_behavior(int idx);
     void try_move(int idx, uint x, uint y, uint z);
 
+    void raycast(uint x, uint y, uint z, float vx, float vy, float vz, uint &ox, uint &oy, uint &oz);
+
 };
 
 #endif

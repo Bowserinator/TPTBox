@@ -2,5 +2,5 @@
 
 void Element::Element_GOL() {
     State = ElementState::TYPE_SOLID;
-    Color = 0xFF0000FF;
+    Color = 0xFF0000AA;
 };

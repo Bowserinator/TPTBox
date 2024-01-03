@@ -26,6 +26,8 @@ static double fps = 1.0f;
 
 static int currentElementId = 1;
 
+static float test = 0.0f; // TODO
+
 
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
@@ -104,14 +106,13 @@ void ScreenGameplay::draw() {
 
     // TODO
     Vector3 forward = GetCameraForward(&render_camera.camera);
+
     forward = render_camera.camera.position + forward * 20.0f;
     forward.x = std::round(forward.x);
     forward.y = std::round(forward.y);
     forward.z = std::round(forward.z);
     DrawCubeWires(forward, 1, 1, 1, WHITE);
         
-
-
     //rlEnableWireMode();
 
     unsigned char red = 255;
@@ -122,6 +123,15 @@ void ScreenGameplay::draw() {
      drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
+
+    uint tx, ty, tz;
+    const float S = 30.0f;
+    sim.raycast(XRES / 2, YRES - 1, ZRES / 2,
+        S * std::sin(test), -70.0f, S * std::cos(test), tx, ty, tz);
+    test += 0.01f;
+    DrawCubeWires({ tx, ty, tz }, 1, 1, 1, WHITE);
+
+
 
    // rlDisableWireMode();
     EndMode3D();
