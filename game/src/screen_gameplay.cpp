@@ -104,7 +104,7 @@ void ScreenGameplay::update() {
         forward.y = std::round(forward.y);
         forward.z = std::round(forward.z);
 
-        const int S = 5;
+        const int S = 15;
         for (int x = forward.x; x < forward.x + S; x++)
         for (int y = forward.y; y < forward.y + S; y++)
         for (int z = forward.z; z < forward.z + S; z++)

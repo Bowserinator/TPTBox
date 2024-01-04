@@ -32,9 +32,7 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     #endif
 
     if (pmap[z][y][x]) return -1; // TODO
-
-    // TODO: check if pfree exceeds parts size!
-
+    if (pfree >= NPARTS) return -3; // TODO
 
     // Create new part
     // Note: should it allow creation off screen? 
@@ -52,8 +50,8 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     parts[pfree].vz = 0.0f;
 
     pmap[z][y][x] = pfree;
+    maxId = std::max(maxId, pfree + 1);
     pfree = next_pfree;
-    maxId = std::max(maxId, pfree);
     return old_pfree;
 }
 
@@ -76,11 +74,15 @@ void Simulation::kill_part(const int i) {
 
 void Simulation::update() {
     parts_count = 0;
+    int newMaxId = 0;
+
     for (int i = 0; i <= maxId; i++)
     {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
+
         parts_count++;
+        newMaxId = i;
 
         // TODO: tmp hack for spherical gravity
         float dx = XRES / 2 - part.x;
@@ -135,6 +137,7 @@ void Simulation::update() {
         move_behavior(i);
 
     }
+    maxId = newMaxId + 1;
 
     frame_count++;
 }

@@ -59,7 +59,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
   
     for (int i = 0; i < sim.maxId ; i++) { // sim.maxId
         const auto &part = sim.parts[i];
-        if (part.id <= 0) continue;
+        if (!part.type) continue;
         int px = util::roundf(sim.parts[i].x);
         int py = util::roundf(sim.parts[i].y);
         int pz = util::roundf(sim.parts[i].z);
@@ -208,7 +208,7 @@ void DrawCubeParticle(Simulation &sim, RenderCamera &camera, const Color color, 
     rlBegin(RL_TRIANGLES);
     for (int i = 0; i < sim.maxId; i++) { // TODO: size_t doesn't exist??
         const auto &part = sim.parts[i];
-        if (!part.id) continue;
+        if (!part.type) continue;
 
         int px = util::roundf(sim.parts[i].x);
         int py = util::roundf(sim.parts[i].y);
