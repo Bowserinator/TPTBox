@@ -85,18 +85,31 @@ void ScreenGameplay::update() {
         currentElementId = 4;
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-            Vector3 forward = GetCameraForward(&render_camera.camera);
-            forward = render_camera.camera.position + forward * 20.0f;
-            forward.x = std::round(forward.x);
-            forward.y = std::round(forward.y);
-            forward.z = std::round(forward.z);
+        Vector3 forward = GetCameraForward(&render_camera.camera);
+        forward = render_camera.camera.position + forward * 20.0f;
+        forward.x = std::round(forward.x);
+        forward.y = std::round(forward.y);
+        forward.z = std::round(forward.z);
 
-            const int S = 5;
-            for (int x = forward.x; x < forward.x + S; x++)
-            for (int y = forward.y; y < forward.y + S; y++)
-            for (int z = forward.z; z < forward.z + S; z++)
-                if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                    sim.create_part(x, y, z, currentElementId);
+        const int S = 5;
+        for (int x = forward.x; x < forward.x + S; x++)
+        for (int y = forward.y; y < forward.y + S; y++)
+        for (int z = forward.z; z < forward.z + S; z++)
+            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
+                sim.create_part(x, y, z, currentElementId);
+    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        Vector3 forward = GetCameraForward(&render_camera.camera);
+        forward = render_camera.camera.position + forward * 20.0f;
+        forward.x = std::round(forward.x);
+        forward.y = std::round(forward.y);
+        forward.z = std::round(forward.z);
+
+        const int S = 5;
+        for (int x = forward.x; x < forward.x + S; x++)
+        for (int y = forward.y; y < forward.y + S; y++)
+        for (int z = forward.z; z < forward.z + S; z++)
+            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
+                sim.kill_part(sim.pmap[z][y][x]);
     }
 
      
@@ -157,7 +170,7 @@ void ScreenGameplay::draw() {
 
     DrawText(TextFormat("CURRENT SIM: %f", (1.0f / simTime)), GetScreenWidth() - 270, 40, 20, GREEN);
     DrawText(TextFormat("CURRENT FPS: %f", fps), GetScreenWidth() - 270, 70, 20, GREEN);
-    DrawText(TextFormat("Parts: %i", sim.maxId), GetScreenWidth() - 270, 100, 20, GREEN);
+    DrawText(TextFormat("Parts: %i", sim.parts_count), GetScreenWidth() - 270, 100, 20, GREEN);
 
     fps = 1.0f / drawTime;
 }

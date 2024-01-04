@@ -14,7 +14,8 @@ public:
     // TODO: have some sort of linked list to determine free particle spots
     int pfree;
     int maxId;
-
+    
+    uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     Simulation();

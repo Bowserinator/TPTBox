@@ -20,6 +20,7 @@ Simulation::Simulation():
     pfree = 1;
     maxId = 0;
     frame_count = 0;
+    parts_count = 0;
 }
 
 
@@ -32,10 +33,15 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
 
     if (pmap[z][y][x]) return -1; // TODO
 
+    // TODO: check if pfree exceeds parts size!
+
 
     // Create new part
     // Note: should it allow creation off screen? 
     // TODO: return element id generated
+    int next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
+    int old_pfree = pfree;
+
     parts[pfree].id = pfree;
     parts[pfree].type = type;
     parts[pfree].x = x;
@@ -46,27 +52,35 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     parts[pfree].vz = 0.0f;
 
     pmap[z][y][x] = pfree;
-    pfree++;
+    pfree = next_pfree;
     maxId = std::max(maxId, pfree);
-    return pfree - 1;
+    return old_pfree;
 }
 
 void Simulation::kill_part(const int i) {
     auto &part = parts[i];
+    if (part.type <= 0) return;
 
     coord_t x = util::roundf(part.x);
     coord_t y = util::roundf(part.y);
     coord_t z = util::roundf(part.z);
     pmap[z][y][x] = 0;
     part.type = PT_NONE;
-    part.id = 0;
+
+    if (i == maxId && i > 0)
+        maxId--;
+
+    part.id = -pfree;
+    pfree = i;
 }
 
 void Simulation::update() {
+    parts_count = 0;
     for (int i = 0; i <= maxId; i++)
     {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
+        parts_count++;
 
         // TODO: tmp hack for spherical gravity
         float dx = XRES / 2 - part.x;

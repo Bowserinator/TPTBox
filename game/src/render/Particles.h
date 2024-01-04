@@ -57,9 +57,9 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
     // fast_greedy_mesh(mesh, sim, camera, vertex_count, color_count);
 
   
-    for (int i = 0; i <sim.maxId ; i++) { // sim.maxId
+    for (int i = 0; i < sim.maxId ; i++) { // sim.maxId
         const auto &part = sim.parts[i];
-        if (!part.id) continue;
+        if (part.id <= 0) continue;
         int px = util::roundf(sim.parts[i].x);
         int py = util::roundf(sim.parts[i].y);
         int pz = util::roundf(sim.parts[i].z);

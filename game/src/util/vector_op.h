@@ -188,6 +188,12 @@ public:
     T x, y, z;
     Vector3T(T x, T y, T z): x(x), y(y), z(z) {}
     Vector3T(const Vector3T<T> &other): x(other.x), y(other.y), z(other.z) {}
+    Vector3T &operator=(const Vector3T<T> &other) {
+        x = other.x;
+        y = other.y;
+        z = other.z;
+        return *this;
+    }
 };
 
 template <class T> inline std::ostream& operator<<(std::ostream& os, const Vector3T<T>& vec) {
