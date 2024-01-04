@@ -23,7 +23,7 @@ Simulation::Simulation():
 }
 
 
-int Simulation::create_part(coord_t x, coord_t y, coord_t z, ElementType type) {
+int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -51,7 +51,7 @@ int Simulation::create_part(coord_t x, coord_t y, coord_t z, ElementType type) {
     return pfree - 1;
 }
 
-void Simulation::kill_part(int i) {
+void Simulation::kill_part(const int i) {
     auto &part = parts[i];
 
     coord_t x = util::roundf(part.x);

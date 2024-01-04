@@ -18,7 +18,8 @@
  *        Licensed under LICENSES/
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
-bool Simulation::raycast(coord_t x, coord_t y, coord_t z, float vx, float vy, float vz, coord_t &ox, coord_t &oy, coord_t &oz) const {
+bool Simulation::raycast(const coord_t x, const coord_t y, const coord_t z, const float vx, const float vy, const float vz,
+        coord_t &ox, coord_t &oy, coord_t &oz) const {
     // Step to take per direction (+-1)
     float dx = (vx >= 0) * 2 - 1;
     float dy = (vy >= 0) * 2 - 1;
@@ -111,7 +112,7 @@ bool Simulation::raycast(coord_t x, coord_t y, coord_t z, float vx, float vy, fl
  * 
  * @param idx 
  */
-void Simulation::move_behavior(int idx) {
+void Simulation::move_behavior(const int idx) {
     const auto el = GetElements()[parts[idx].type];
     if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
 
@@ -183,7 +184,7 @@ void Simulation::move_behavior(int idx) {
  * @param y Target y
  * @param z Target z
  */
-void Simulation::try_move(int idx, float tx, float ty, float tz) {
+void Simulation::try_move(const int idx, const float tx, const float ty, const float tz) {
     coord_t x = util::roundf(tx);
     coord_t y = util::roundf(ty);
     coord_t z = util::roundf(tz);
@@ -223,7 +224,8 @@ void Simulation::try_move(int idx, float tx, float ty, float tz) {
 /**
  * @brief Spatially swap the particles at the two ids
  */
-void Simulation::swap_part(coord_t x1, coord_t y1, coord_t z1, coord_t x2, coord_t y2, coord_t z2, int id1, int id2) {
+void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
+        const coord_t x2, const coord_t y2, const coord_t z2, const int id1, const int id2) {
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);

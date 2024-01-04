@@ -18,16 +18,19 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     Simulation();
-    int create_part(coord_t x, coord_t y, coord_t z, ElementType type);
-    void kill_part(int id);
+    int create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
+    void kill_part(const int id);
 
     void update();
 
-    void move_behavior(int idx);
-    void try_move(int idx, float x, float y, float z);
-    void swap_part(coord_t x1, coord_t y1, coord_t z1, coord_t x2, coord_t y2, coord_t z2, int id1, int id2);
+    void move_behavior(const int idx);
+    void try_move(const int idx, const float x, const float y, const float z);
+    void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
+        const coord_t x2, const coord_t y2, const coord_t z2,
+        const int id1, const int id2);
 
-    bool raycast(coord_t x, coord_t y, coord_t z, float vx, float vy, float vz, coord_t &ox, coord_t &oy, coord_t &oz) const;
+    bool raycast(const coord_t x, const coord_t y, const coord_t z, const float vx, const float vy, const float vz,
+        coord_t &ox, coord_t &oy, coord_t &oz) const;
 
 };
 
