@@ -13,6 +13,19 @@ namespace util {
         #endif
         return (unsigned int)(r + 0.5f);
     }
+
+    /**
+     * @brief Clamp a float between two values
+     * 
+     * @param val Value
+     * @param min Min of range
+     * @param max Max of range
+     * @return constexpr float 
+     */
+    constexpr float clampf(const float val, const float min, const float max) {
+        const float tmp = val < min ? min : val;
+        return tmp > max ? max : tmp;
+    }
 }
 
 #endif

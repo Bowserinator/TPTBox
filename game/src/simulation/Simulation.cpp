@@ -57,6 +57,11 @@ void Simulation::update() {
         if (!part.type) continue; // TODO: can probably be more efficient
 
         if (part.vx || part.vy || part.vz) {
+            // Clamp velocity
+            part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
+            part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
+            part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
+
             coord_t tx, ty, tz;
             int x = util::roundf(part.x);
             int y = util::roundf(part.y);

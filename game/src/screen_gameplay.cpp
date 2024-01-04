@@ -49,10 +49,10 @@ void ScreenGameplay::init() {
     // for (int z = 0; z < ZRES; z++)
     //     sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
 
-    // for (int x = 1; x < XRES / 2; x++) 
-    // for (int z = 1; z < ZRES / 2; z++)
-    // for (int y = 51; y < 70; y++)
-    //     sim.create_part(x, y, z, 3);
+    for (int x = 1; x < XRES / 2; x++) 
+    for (int z = 1; z < ZRES / 2; z++)
+    for (int y = 51; y < 70; y++)
+        sim.create_part(x, y, z, 3);
 
     int i = sim.create_part(50, 50, 50, 5);
     sim.parts[i].vx = 1.0f;
