@@ -8,6 +8,7 @@
 #include "Element.h"
 
 #define ELEMENT_NUMBERS_ENUMERATE
+#define PT_NONE 0
 #include "ElementNumbers.h"
 #undef ELEMENT_NUMBERS_ENUMERATE
 

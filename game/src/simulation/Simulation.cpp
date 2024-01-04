@@ -19,6 +19,7 @@ Simulation::Simulation():
 
     pfree = 1;
     maxId = 0;
+    frame_count = 0;
 }
 
 
@@ -50,11 +51,45 @@ int Simulation::create_part(coord_t x, coord_t y, coord_t z, ElementType type) {
     return pfree - 1;
 }
 
+void Simulation::kill_part(int i) {
+    auto &part = parts[i];
+
+    coord_t x = util::roundf(part.x);
+    coord_t y = util::roundf(part.y);
+    coord_t z = util::roundf(part.z);
+    pmap[z][y][x] = 0;
+    part.type = PT_NONE;
+    part.id = 0;
+}
+
 void Simulation::update() {
     for (int i = 0; i <= maxId; i++)
     {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
+
+        // TODO: tmp hack for spherical gravity
+        float dx = XRES / 2 - part.x;
+        float dy = YRES / 2 - part.y;
+        float dz = ZRES / 2 - part.z;
+        float dis = std::sqrt(dx *dx+dy*dy+dz*dz);
+        dx /= dis;
+        dy /= dis;
+        dz /= dis;
+        float F = 5.0f;
+        //part.vx = F *dx;
+        //part.vy = F* dy;
+       // part.vz = F*dz;
+
+        coord_t x = util::roundf(part.x);
+        coord_t y = util::roundf(part.y);
+        coord_t z = util::roundf(part.z);
+
+        if (GetElements()[part.type].Update) {
+            auto result = GetElements()[part.type].Update(this, i, x, y, z, parts, pmap);
+            if (result == -1) continue; // TODO: flags or something
+        }
+
 
         if (part.vx || part.vy || part.vz) {
             // Clamp velocity
@@ -63,9 +98,6 @@ void Simulation::update() {
             part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
 
             coord_t tx, ty, tz;
-            int x = util::roundf(part.x);
-            int y = util::roundf(part.y);
-            int z = util::roundf(part.z);
             bool hit = raycast(x, y, z, std::ceil(part.vx), std::ceil(part.vy), std::ceil(part.vz), tx, ty, tz);
 
             float ox, oy, oz;
@@ -89,5 +121,7 @@ void Simulation::update() {
         move_behavior(i);
 
     }
+
+    frame_count++;
 }
 

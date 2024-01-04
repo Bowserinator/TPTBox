@@ -8,7 +8,7 @@ struct Particle {
     uint16_t type;
     unsigned int id;
     uint16_t ctype;
-    int16_t life;
+    int16_t life = 0;
     float x, y, z, vx, vy, vz;
     float temp;
     uint16_t tmp1, tmp2;

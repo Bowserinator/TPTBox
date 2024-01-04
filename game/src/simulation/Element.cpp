@@ -39,4 +39,6 @@ Element::Element() {
 	int LowTemperatureTransition;
 	float HighTemperature;
 	int HighTemperatureTransition;*/
+
+    Update = nullptr;
 }

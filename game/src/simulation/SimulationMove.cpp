@@ -161,7 +161,7 @@ void Simulation::move_behavior(int idx) {
         for (int dz = -1; dz <= 1; dz++)
         for (int dy = -1; dy <= 1; dy++)
         for (int dx = -1; dx <= 1; dx++) {
-            if (!dx && !dz) continue;
+            if (!dx && !dz && !dy) continue;
             if (pmap[z + dz][y + dy][x + dx] == 0) {
                 next[next_spot_count++] = dx;
                 next[next_spot_count++] = dy;

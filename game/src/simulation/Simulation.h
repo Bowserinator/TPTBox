@@ -15,9 +15,11 @@ public:
     int pfree;
     int maxId;
 
+    uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
+
     Simulation();
     int create_part(coord_t x, coord_t y, coord_t z, ElementType type);
-    void kill_part(coord_t id);
+    void kill_part(int id);
 
     void update();
 

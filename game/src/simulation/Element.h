@@ -46,7 +46,7 @@ public:
 	float HighTemperature;
 	int HighTemperatureTransition;
 
-    int (*Update)();
+    int (*Update)(UPDATE_FUNC_ARGS);
 
     // TODO: graphics, create function, create allowed, change type, ctype draw
     // todo: default properties
