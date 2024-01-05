@@ -18,58 +18,77 @@
  *        Licensed under LICENSES/
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
-bool Simulation::raycast(const coord_t x, const coord_t y, const coord_t z, const float vx, const float vy, const float vz,
-        coord_t &ox, coord_t &oy, coord_t &oz) const {
-    // Step to take per direction (+-1)
-    float dx = (vx >= 0) * 2 - 1;
-    float dy = (vy >= 0) * 2 - 1;
-    float dz = (vz >= 0) * 2 - 1;
+bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out) const {
+    const Vector3T<signed_coord_t> last_voxel{
+        (signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
+        (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
+        (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))
+    };
+    Vector3T<signed_coord_t> current_voxel{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z };
+    Vector3T<signed_coord_t> diff{ 0, 0, 0 };
+    Vector3T<signed_coord_t> previous_voxel = current_voxel;
 
-    const Vector3T<short> last_voxel{ (short)(x + std::floor(vx)), (short)(y + std::floor(vy)), (short)(z + std::floor(vz)) };
-    const Vector3 next_voxel_boundary{ x + dx, y + dy, z + dz };
+    const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
+
+    // Step to take per direction (+-1)
+    float dx = (ray.x >= 0) * 2 - 1;
+    float dy = (ray.y >= 0) * 2 - 1;
+    float dz = (ray.z >= 0) * 2 - 1;
+
+    const Vector3 next_voxel_boundary{ in.x + dx, in.y + dy, in.z + dz };
 
     // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
     // the value of t at which the ray crosses the first vertical voxel boundary
-    float tMaxX = (vx != 0) ? (next_voxel_boundary.x - x) / vx : std::numeric_limits<float>::max();
-    float tMaxY = (vy != 0) ? (next_voxel_boundary.y - y) / vy : std::numeric_limits<float>::max();
-    float tMaxZ = (vz != 0) ? (next_voxel_boundary.z - z) / vz : std::numeric_limits<float>::max();
+    float tMaxX = (ray.x != 0) ? (next_voxel_boundary.x - in.x) / ray.x : std::numeric_limits<float>::max();
+    float tMaxY = (ray.y != 0) ? (next_voxel_boundary.y - in.y) / ray.y : std::numeric_limits<float>::max();
+    float tMaxZ = (ray.z != 0) ? (next_voxel_boundary.z - in.z) / ray.z : std::numeric_limits<float>::max();
 
     // tDeltaX, tDeltaY, tDeltaZ --
     // how far along the ray we must move for the horizontal component to equal the width of a voxel
     // the direction in which we traverse the grid
     // can only be FLT_MAX if we never go in that direction
-    float tDeltaX = (vx != 0) ? 1.0f / vx * dx : std::numeric_limits<float>::max();
-    float tDeltaY = (vy != 0) ? 1.0f / vy * dy : std::numeric_limits<float>::max();
-    float tDeltaZ = (vz != 0) ? 1.0f / vz * dz : std::numeric_limits<float>::max();
-
-    Vector3T<short> current_voxel{ (short)x, (short)y, (short)z };
-    Vector3T<short> diff{ 0, 0, 0 };
+    float tDeltaX = (ray.x != 0) ? 1.0f / ray.x * dx : std::numeric_limits<float>::max();
+    float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
+    float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
 
     bool neg_ray = false;
-    if (vx < 0 && current_voxel.x != last_voxel.x) { diff.x--; neg_ray = true; }
-    if (vy < 0 && current_voxel.y != last_voxel.y) { diff.y--; neg_ray = true; }
-    if (vz < 0 && current_voxel.z != last_voxel.z) { diff.z--; neg_ray = true; }
+    if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; neg_ray = true; }
+    if (ray.y < 0 && current_voxel.y != last_voxel.y) { diff.y--; neg_ray = true; }
+    if (ray.z < 0 && current_voxel.z != last_voxel.z) { diff.z--; neg_ray = true; }
 
     // Condition for early termination:
     // return true if it "hit" something (current spot is occupied or the next spot)
     // is outside of the simulation bounds
-    auto pmapOccupied = [this](const Vector3T<short> &loc) -> bool {
+    auto pmapOccupied = [this](const Vector3T<signed_coord_t> &loc) -> bool {
         if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
             return true;
         return pmap[loc.z][loc.y][loc.x] > 0;
     };
 
-    if (neg_ray) {
-        current_voxel += diff;
-        if (pmapOccupied(current_voxel)) {
-            ox = current_voxel.x;
-            oy = current_voxel.y;
-            oz = current_voxel.z;
-            return true;
-        }
-    }
+    // Get which "faces" to bounce off of
+    // prev is now, final is the voxel we will collide with if we continue
+    // down our current trajectory
+    // Precondition: prev_loc != final_loc
+    auto getFaces = [this, &pmapOccupied](const Vector3T<signed_coord_t> &prev_loc, const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
+        RayCast::RayHitFace faces = 0;
 
-    Vector3T<short> previous_voxel = current_voxel;
+        if ((prev_loc.x != final_loc.x) + (prev_loc.y != final_loc.y) + (prev_loc.z != final_loc.z) == 1) {
+            if (prev_loc.x != final_loc.x)
+                faces |= RayCast::FACE_X;
+            if (prev_loc.y != final_loc.y)
+                faces |= RayCast::FACE_Y;
+            if (prev_loc.z != final_loc.z)
+                faces |= RayCast::FACE_Z;
+        } else {
+            if (pmapOccupied(Vector3T<signed_coord_t>{ final_loc.x, prev_loc.y, prev_loc.z }))
+                faces |= RayCast::FACE_X;
+            if (pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, final_loc.y, prev_loc.z }))
+                faces |= RayCast::FACE_Y;
+            if (pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, prev_loc.y, final_loc.z }))
+                faces |= RayCast::FACE_Z;
+        }
+        return faces;
+    };
 
     while (current_voxel != last_voxel) {
         previous_voxel = current_voxel;
@@ -93,15 +112,17 @@ bool Simulation::raycast(const coord_t x, const coord_t y, const coord_t z, cons
         }
     
         if (pmapOccupied(current_voxel)) {
-            ox = previous_voxel.x;
-            oy = previous_voxel.y;
-            oz = previous_voxel.z;
+            out.x = previous_voxel.x;
+            out.y = previous_voxel.y;
+            out.z = previous_voxel.z;
+            out.faces = getFaces(previous_voxel, current_voxel);
             return true;
         }
     }
-    ox = current_voxel.x;
-    oy = current_voxel.y;
-    oz = current_voxel.z;
+    out.x = current_voxel.x;
+    out.y = current_voxel.y;
+    out.z = current_voxel.z;
+    out.faces = 0; // No faces to bounce off
     return false;
 }
 

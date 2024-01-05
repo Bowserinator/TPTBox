@@ -3,6 +3,7 @@
 
 #include "Particle.h"
 #include "SimulationDef.h"
+#include "Raycast.h"
 
 class Simulation {
 public:
@@ -30,8 +31,7 @@ public:
         const coord_t x2, const coord_t y2, const coord_t z2,
         const int id1, const int id2);
 
-    bool raycast(const coord_t x, const coord_t y, const coord_t z, const float vx, const float vy, const float vz,
-        coord_t &ox, coord_t &oy, coord_t &oz) const;
+    bool raycast(const RaycastInput &in, RaycastOutput &out) const;
 
 };
 

@@ -1,6 +1,7 @@
 #ifndef UTIL_UTIL_H
 #define UTIL_UTIL_H
 
+#include <cmath>
 namespace util {
     /**
      * @brief Round a float fast. WARNING: pass in only positive values
@@ -25,6 +26,19 @@ namespace util {
     constexpr float clampf(const float val, const float min, const float max) {
         const float tmp = val < min ? min : val;
         return tmp > max ? max : tmp;
+    }
+
+    /**
+     * @brief Ceil a float, but round negative values away from 0
+     *        This is slightly different from std::ceil which always
+     *        rounds in the positive direction
+     * 
+     * @param v Float value
+     * @return constexpr float 
+     */
+    constexpr int ceil_proper(float v) {
+        if (v < 0) return -std::ceil(-v);
+        return std::ceil(v);
     }
 }
 

@@ -4,6 +4,7 @@
 #include "stdint.h"
 
 using coord_t = uint8_t;
+using signed_coord_t = int16_t;
 using ElementType = unsigned int;
 
 constexpr unsigned int XRES = 100;

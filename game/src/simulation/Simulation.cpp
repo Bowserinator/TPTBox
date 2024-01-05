@@ -113,23 +113,30 @@ void Simulation::update() {
             part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
             part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
 
-            coord_t tx, ty, tz;
-            bool hit = raycast(x, y, z, std::ceil(part.vx), std::ceil(part.vy), std::ceil(part.vz), tx, ty, tz);
+            RaycastOutput out;
+            bool hit = raycast(RaycastInput {
+                .x = x, 
+                .y = y, 
+                .z = z, 
+                .vx = part.vx,
+                .vy = part.vy,
+                .vz = part.vz
+            }, out);
+
+            auto bounce = GetElements()[part.type].Collision;
+            if ((out.faces & RayCast::FACE_X).any()) part.vx *= bounce;
+            if ((out.faces & RayCast::FACE_Y).any()) part.vy *= bounce;
+            if ((out.faces & RayCast::FACE_Z).any()) part.vz *= bounce;
 
             float ox, oy, oz;
-            if (!hit || (tx == x && ty == y && tz == z)) {
+            if (!hit || (out.x == x && out.y == y && out.z == z)) {
                 ox = part.x + part.vx;
                 oy = part.y + part.vy;
                 oz = part.z + part.vz;
             } else {
-                ox = tx;
-                oy = ty;
-                oz = tz;
-
-                auto bounce = GetElements()[part.type].Collision;
-                part.vx *= bounce;
-                part.vy *= bounce;
-                part.vz *= bounce;
+                ox = out.x;
+                oy = out.y;
+                oz = out.z;
             }
             try_move(i, ox, oy, oz);
         }

@@ -57,6 +57,7 @@ void ScreenGameplay::init() {
     int i = sim.create_part(50, 50, 50, 5);
     sim.parts[i].vx = 1.0f;
     sim.parts[i].vy = 1.0f;
+    sim.parts[i].vz = 1.0f;
 
     // Create a column of powder
     /*for (int x = 0; x < 50; x++)
@@ -148,12 +149,12 @@ void ScreenGameplay::draw() {
     // DrawGrid(100, 1.0f);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
 
-    coord_t tx, ty, tz;
-    const float S = 30.0f;
-    sim.raycast(XRES / 2, YRES - 1, ZRES / 2,
-        S * std::sin(test), -2.0f, S * std::cos(test), tx, ty, tz);
-    test += 0.01f;
-    DrawCubeWires({ tx, ty, tz }, 1, 1, 1, WHITE);
+    // RaycastOutput out;
+    // const float S = 90.0f * std::sin(test) + 30.0f;
+    // sim.raycast(XRES / 2, YRES - 1, ZRES / 2,
+    //     S * std::sin(test), -100.0f, S * std::cos(test), out);
+    // test += 0.01f;
+    // DrawCubeWires({ out.x, out.y, out.z }, 1, 1, 1, WHITE);
 
 
 
@@ -171,6 +172,8 @@ void ScreenGameplay::draw() {
     DrawText(TextFormat("CURRENT SIM: %f", (1.0f / simTime)), GetScreenWidth() - 270, 40, 20, GREEN);
     DrawText(TextFormat("CURRENT FPS: %f", fps), GetScreenWidth() - 270, 70, 20, GREEN);
     DrawText(TextFormat("Parts: %i", sim.parts_count), GetScreenWidth() - 270, 100, 20, GREEN);
+    DrawText(TextFormat("Parts: %f %f %f", sim.parts[1].x, sim.parts[1].y, sim.parts[1].z), GetScreenWidth() - 470, 120, 20, GREEN);
+    DrawText(TextFormat("Parts: %f %f %f", sim.parts[1].vx, sim.parts[1].vy, sim.parts[1].vz), GetScreenWidth() - 470, 140, 20, GREEN);
 
     fps = 1.0f / drawTime;
 }
