@@ -40,6 +40,20 @@ namespace util {
         if (v < 0) return -std::ceil(-v);
         return std::ceil(v);
     }
+
+    /**
+     * @brief Return sqrt(x^2 + y^2), faster than std::hypot but
+     *        no underflow/overflow protection guarantee
+     * @param x 
+     * @param y 
+     * @return constexpr float 
+     */
+    constexpr float hypot(float x, float y) {
+        return std::sqrt(x * x + y * y);
+    }
+    constexpr float hypot(float x, float y, float z) {
+        return std::sqrt(x * x + y * y + z * z);
+    }
 }
 
 #endif

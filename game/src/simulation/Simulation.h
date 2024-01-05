@@ -33,6 +33,8 @@ public:
 
     bool raycast(const RaycastInput &in, RaycastOutput &out) const;
 
+private:
+    void _raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z);
 };
 
 #endif

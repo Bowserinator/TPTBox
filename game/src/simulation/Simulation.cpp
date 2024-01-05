@@ -106,42 +106,9 @@ void Simulation::update() {
             if (result == -1) continue; // TODO: flags or something
         }
 
-
-        if (part.vx || part.vy || part.vz) {
-            // Clamp velocity
-            part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
-            part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
-            part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
-
-            RaycastOutput out;
-            bool hit = raycast(RaycastInput {
-                .x = x, 
-                .y = y, 
-                .z = z, 
-                .vx = part.vx,
-                .vy = part.vy,
-                .vz = part.vz
-            }, out);
-
-            auto bounce = GetElements()[part.type].Collision;
-            if ((out.faces & RayCast::FACE_X).any()) part.vx *= bounce;
-            if ((out.faces & RayCast::FACE_Y).any()) part.vy *= bounce;
-            if ((out.faces & RayCast::FACE_Z).any()) part.vz *= bounce;
-
-            float ox, oy, oz;
-            if (!hit || (out.x == x && out.y == y && out.z == z)) {
-                ox = part.x + part.vx;
-                oy = part.y + part.vy;
-                oz = part.z + part.vz;
-            } else {
-                ox = out.x;
-                oy = out.y;
-                oz = out.z;
-            }
-            try_move(i, ox, oy, oz);
-        }
-
-        move_behavior(i);
+        if (part.vx || part.vy || part.vz)
+            _raycast_movement(i, x, y, z); // Apply velocity to displacement
+        move_behavior(i); // Apply element specific movement, like powder / liquid spread
 
     }
     maxId = newMaxId + 1;
@@ -149,3 +116,63 @@ void Simulation::update() {
     frame_count++;
 }
 
+// Try to move a particle with velocity to new location
+void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z) {
+    auto &part = parts[idx];
+    part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
+    part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
+    part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
+
+    RaycastOutput out;
+    coord_t sx = x; // Starting point of raycast, can change with repeated casts
+    coord_t sy = y;
+    coord_t sz = z;
+    bool hit, no_move; // Whether we hit an edge or voxel, whether we moved on the current raycast
+
+    // Repeatedly ray cast until we "run out" of distance
+    // Initial distance being the magnitude of the velocity vector
+    float portion_velocity = 1.0f;
+    float org_dis = util::hypot(part.vx, part.vy, part.vz);
+
+    do {
+        hit = raycast(RaycastInput {
+            .x = sx, .y = sy, .z = sz,
+            .vx = part.vx * portion_velocity,
+            .vy = part.vy * portion_velocity,
+            .vz = part.vz * portion_velocity,
+            .compute_faces = true
+        }, out);
+
+        // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
+        // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
+        portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
+
+        no_move = out.x == sx && out.y == sy && out.z == sz;
+        sx = out.x; sy = out.y; sz = out.z;
+
+        auto bounce = GetElements()[part.type].Collision;
+        if ((out.faces & RayCast::FACE_X).any()) part.vx *= bounce;
+        if ((out.faces & RayCast::FACE_Y).any()) part.vy *= bounce;
+        if ((out.faces & RayCast::FACE_Z).any()) part.vz *= bounce;
+
+        // The little velocity we have left is not enough to move to
+        // another voxel, so the next raycast is always no_move, terminate early
+        if (fabsf(part.vx) < 0.5f && fabsf(part.vy) < 0.5f && fabsf(part.vx) < 0.5f) {
+            no_move = true;
+            break;
+        }
+    } while(!(hit || no_move || portion_velocity <= 0.5f));
+
+    float ox, oy, oz;
+    if (!hit || no_move) {
+        ox = util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f);
+        oy = util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f);
+        oz = util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f);
+    } else {
+        ox = out.x;
+        oy = out.y;
+        oz = out.z;
+    }
+
+    try_move(idx, ox, oy, oz);
+}

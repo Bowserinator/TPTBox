@@ -54,10 +54,20 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    int i = sim.create_part(50, 50, 50, 5);
-    sim.parts[i].vx = 1.0f;
-    sim.parts[i].vy = 1.0f;
-    sim.parts[i].vz = 1.0f;
+    for (int x = 1; x < 10; x++) 
+    for (int z = 1; z < 10; z++)
+    for (int y = 51; y < 52; y++) {
+        int i = sim.create_part(x, y, z, 5);
+        const float F = 0.4f;
+        sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
+        sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
+        sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
+    }
+
+    // int i = sim.create_part(50, 50, 50, 5);
+    // sim.parts[i].vx = 35.0f;
+    // sim.parts[i].vy = 35.0f;
+    // sim.parts[i].vz = 35.0f;
 
     // Create a column of powder
     /*for (int x = 0; x < 50; x++)

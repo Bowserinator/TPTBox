@@ -115,10 +115,12 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out) const {
             out.x = previous_voxel.x;
             out.y = previous_voxel.y;
             out.z = previous_voxel.z;
-            out.faces = getFaces(previous_voxel, current_voxel);
+            if (in.compute_faces)
+                out.faces = getFaces(previous_voxel, current_voxel);
             return true;
         }
     }
+
     out.x = current_voxel.x;
     out.y = current_voxel.y;
     out.z = current_voxel.z;

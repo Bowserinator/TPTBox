@@ -14,6 +14,7 @@ namespace RayCast {
 struct RaycastInput {
     coord_t x, y, z;
     float vx, vy, vz;
+    bool compute_faces;
 };
 
 struct RaycastOutput {
