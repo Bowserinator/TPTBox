@@ -12,7 +12,8 @@
 #include <limits>
 
 Simulation::Simulation():
-    paused(false)
+    paused(false),
+    air(*this)
 {
     std::fill(&pmap[0][0][0], &pmap[ZRES][YRES][XRES], 0);
     std::fill(&photons[0][0][0], &photons[ZRES][YRES][XRES], 0);
@@ -97,6 +98,9 @@ void Simulation::kill_part(const int i) {
 }
 
 void Simulation::update() {
+    air.update();
+
+
     parts_count = 0;
     int newMaxId = 0;
 

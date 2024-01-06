@@ -64,6 +64,12 @@ void ScreenGameplay::init() {
         sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
     }
 
+    // for (auto z = 6; z < AIR_ZRES / 2; z++)
+    // for (auto y = 6; y < AIR_YRES / 2; y++)
+    // for (auto x = 6; x < AIR_XRES / 2; x++) {
+    //     sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
+    // }
+
     // int i = sim.create_part(50, 50, 50, 5);
     // sim.parts[i].vx = 35.0f;
     // sim.parts[i].vy = 35.0f;
@@ -80,7 +86,7 @@ void ScreenGameplay::init() {
 void ScreenGameplay::update() {
     auto t = GetTime();
 
-
+    sim.air.cells[AIR_XRES / 2][4][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
     // for (int x = 10; x < 100; x += 10)
     //      for (int z = 10; z < 100; z += 10)
     //      if (sim.pmap[z][90][x] == 0)
@@ -101,6 +107,13 @@ void ScreenGameplay::update() {
         forward.x = std::round(forward.x);
         forward.y = std::round(forward.y);
         forward.z = std::round(forward.z);
+
+        // const int S = 5;
+        // for (int x = forward.x / AIR_CELL_SIZE; x < forward.x / AIR_CELL_SIZE + S; x++)
+        // for (int y = forward.y / AIR_CELL_SIZE; y < forward.y / AIR_CELL_SIZE + S; y++)
+        // for (int z = forward.z / AIR_CELL_SIZE; z < forward.z / AIR_CELL_SIZE + S; z++)
+        //     if (x > 0 && x < AIR_XRES -1 && y > 0 && y < AIR_YRES -1 && z > 0 && z < AIR_ZRES - 1)
+        //         sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
 
         const int S = 5;
         for (int x = forward.x; x < forward.x + S; x++)
@@ -157,6 +170,23 @@ void ScreenGameplay::draw() {
     DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
      drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
+
+    // Visualize air
+    for (auto z = 1; z < AIR_ZRES - 1; z++)
+    for (auto y = 1; y < AIR_YRES - 1; y++)
+    for (auto x = 1; x < AIR_XRES - 1; x++) {
+        float m = 20.0f;
+        auto alpha = (std::max(-m, std::min(m, sim.air.cells[z][y][x].data[PRESSURE_IDX])) * 255.0f / m);
+
+        if (alpha > 1) {
+            DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 255, .g = 0, .b = 0, .a = (unsigned char)alpha}); 
+        }
+        else if (alpha < 1) {
+            DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha}); 
+        }
+    }
+
+
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
 
     // RaycastOutput out;
