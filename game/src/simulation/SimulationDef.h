@@ -7,6 +7,12 @@ using coord_t = uint8_t;
 using signed_coord_t = int16_t;
 using ElementType = unsigned int;
 
+// Pmap and photons store positive ids in this format:
+// [TYP 10 bits][ID 22 bits]
+#define ID(r) (r & 0b1111111111111111111111)
+#define TYP(r) (r >> 22)
+#define PMAP(t, i) (((uint32_t)t << 22) | (uint32_t)i)
+
 constexpr uint16_t ELEMENT_COUNT = __GLOBAL_ELEMENT_COUNT;
 
 constexpr unsigned int XRES = 150;

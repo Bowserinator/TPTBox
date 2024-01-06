@@ -120,7 +120,7 @@ void ScreenGameplay::update() {
         for (int y = forward.y; y < forward.y + S; y++)
         for (int z = forward.z; z < forward.z + S; z++)
             if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                sim.kill_part(sim.pmap[z][y][x]);
+                sim.kill_part(ID(sim.pmap[z][y][x]));
     }
 
      

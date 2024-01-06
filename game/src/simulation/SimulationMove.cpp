@@ -222,17 +222,20 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
         return;
     }
 
-    // TODO: replace parts with TYP()
+    auto old_pmap_val = pmap[oldz][oldy][oldx];
+    auto part_map = GetElements()[parts[idx].type].State == ElementState::TYPE_ENERGY ?
+        photons : pmap;
+
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
         behavior = eval_move(idx, x, y, z);
     switch (behavior) {
         case PartSwapBehavior::NOOP:
             return;
         case PartSwapBehavior::SWAP:
-            swap_part(x, y, z, oldx, oldy, oldz, pmap[z][y][x], idx);
+            swap_part(x, y, z, oldx, oldy, oldz, ID(pmap[z][y][x]), idx);
             break;
         case PartSwapBehavior::OCCUPY_SAME:
-            pmap[oldz][oldy][oldx] = 0;
+            part_map[oldz][oldy][oldx] = 0;
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -241,7 +244,7 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
     parts[idx].x = tx;
     parts[idx].y = ty;
     parts[idx].z = tz;
-    pmap[z][y][x] = parts[idx].id;
+    part_map[z][y][x] = old_pmap_val;
 }
 
 /**
@@ -336,7 +339,7 @@ void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t
  * @return part swap behavior, special cases are resolved
  */
 PartSwapBehavior Simulation::eval_move(const int idx, const coord_t nx, const coord_t ny, const coord_t nz) const {
-    auto other_type = parts[pmap[nz][ny][nx]].type; // TODO use TYP
+    auto other_type = TYP(pmap[nz][ny][nx]);
     if (!other_type) return PartSwapBehavior::SWAP;
 
     auto this_type = parts[idx].type;

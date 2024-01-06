@@ -15,6 +15,7 @@ Simulation::Simulation():
     paused(false)
 {
     std::fill(&pmap[0][0][0], &pmap[ZRES][YRES][XRES], 0);
+    std::fill(&photons[0][0][0], &photons[ZRES][YRES][XRES], 0);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
     pfree = 1;
@@ -46,7 +47,10 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
             std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z));
     #endif
 
-    if (pmap[z][y][x]) return -1; // TODO
+    auto part_map = GetElements()[type].State == ElementState::TYPE_ENERGY ?
+        photons : pmap;
+
+    if (part_map[z][y][x]) return -1; // TODO
     if (pfree >= NPARTS) return -3; // TODO
 
     // Create new part
@@ -64,7 +68,7 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     parts[pfree].vy = 0.0f;
     parts[pfree].vz = 0.0f;
 
-    pmap[z][y][x] = pfree;
+    part_map[z][y][x] = PMAP(type, pfree);
     maxId = std::max(maxId, pfree + 1);
     pfree = next_pfree;
     return old_pfree;
@@ -77,7 +81,12 @@ void Simulation::kill_part(const int i) {
     coord_t x = util::roundf(part.x);
     coord_t y = util::roundf(part.y);
     coord_t z = util::roundf(part.z);
-    pmap[z][y][x] = 0;
+
+    if (pmap[z][y][x] && ID(pmap[z][y][x]) == i)
+        pmap[z][y][x] = 0;
+    else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
+        photons[z][y][x] = 0;
+
     part.type = PT_NONE;
 
     if (i == maxId && i > 0)

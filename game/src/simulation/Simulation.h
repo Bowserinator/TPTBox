@@ -10,7 +10,8 @@ public:
     bool paused;
 
     Particle parts[NPARTS];
-    unsigned int pmap[ZRES][YRES][XRES];
+    uint32_t pmap[ZRES][YRES][XRES];
+    uint32_t photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT][ELEMENT_COUNT];
 
     // TODO: have some sort of linked list to determine free particle spots
