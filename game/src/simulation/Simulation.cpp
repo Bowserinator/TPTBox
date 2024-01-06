@@ -21,8 +21,23 @@ Simulation::Simulation():
     maxId = 0;
     frame_count = 0;
     parts_count = 0;
+    
+    // TODO: singleton?
+    _init_can_move();
 }
 
+void Simulation::_init_can_move() {
+    ElementType movingType, destinationType;
+    const auto &elements = GetElements();
+
+    for (movingType = 1; movingType < ELEMENT_COUNT; movingType++) {
+		for (destinationType = 1; destinationType < ELEMENT_COUNT; destinationType++) {
+            // Heavier elements can swap with lighter ones
+			if (elements[movingType].Weight > elements[destinationType].Weight)
+				can_move[movingType][destinationType] = PartSwapBehavior::SWAP;
+        }
+    }
+}
 
 int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
     #ifdef DEBUG
@@ -85,17 +100,17 @@ void Simulation::update() {
         newMaxId = i;
 
         // TODO: tmp hack for spherical gravity
-        float dx = XRES / 2 - part.x;
-        float dy = YRES / 2 - part.y;
-        float dz = ZRES / 2 - part.z;
-        float dis = std::sqrt(dx *dx+dy*dy+dz*dz);
-        dx /= dis;
-        dy /= dis;
-        dz /= dis;
-        float F = 5.0f;
-        //part.vx = F *dx;
-        //part.vy = F* dy;
-       // part.vz = F*dz;
+        // float dx = XRES / 2 - part.x;
+        // float dy = YRES / 2 - part.y;
+        // float dz = ZRES / 2 - part.z;
+        // float dis = std::sqrt(dx *dx+dy*dy+dz*dz);
+        // dx /= dis;
+        // dy /= dis;
+        // dz /= dis;
+        // float F = 100.0f / std::min(10000.0f, dis * dis);
+        // part.vx += F *dx;
+        // part.vy += F* dy;
+        // part.vz += F*dz;
 
         coord_t x = util::roundf(part.x);
         coord_t y = util::roundf(part.y);
@@ -114,65 +129,4 @@ void Simulation::update() {
     maxId = newMaxId + 1;
 
     frame_count++;
-}
-
-// Try to move a particle with velocity to new location
-void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z) {
-    auto &part = parts[idx];
-    part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
-    part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
-    part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
-
-    RaycastOutput out;
-    coord_t sx = x; // Starting point of raycast, can change with repeated casts
-    coord_t sy = y;
-    coord_t sz = z;
-    bool hit, no_move; // Whether we hit an edge or voxel, whether we moved on the current raycast
-
-    // Repeatedly ray cast until we "run out" of distance
-    // Initial distance being the magnitude of the velocity vector
-    float portion_velocity = 1.0f;
-    float org_dis = util::hypot(part.vx, part.vy, part.vz);
-
-    do {
-        hit = raycast(RaycastInput {
-            .x = sx, .y = sy, .z = sz,
-            .vx = part.vx * portion_velocity,
-            .vy = part.vy * portion_velocity,
-            .vz = part.vz * portion_velocity,
-            .compute_faces = true
-        }, out);
-
-        // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
-        // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
-        portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
-
-        no_move = out.x == sx && out.y == sy && out.z == sz;
-        sx = out.x; sy = out.y; sz = out.z;
-
-        auto bounce = GetElements()[part.type].Collision;
-        if ((out.faces & RayCast::FACE_X).any()) part.vx *= bounce;
-        if ((out.faces & RayCast::FACE_Y).any()) part.vy *= bounce;
-        if ((out.faces & RayCast::FACE_Z).any()) part.vz *= bounce;
-
-        // The little velocity we have left is not enough to move to
-        // another voxel, so the next raycast is always no_move, terminate early
-        if (fabsf(part.vx) < 0.5f && fabsf(part.vy) < 0.5f && fabsf(part.vx) < 0.5f) {
-            no_move = true;
-            break;
-        }
-    } while(!(hit || no_move || portion_velocity <= 0.5f));
-
-    float ox, oy, oz;
-    if (!hit || no_move) {
-        ox = util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f);
-        oy = util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f);
-        oz = util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f);
-    } else {
-        ox = out.x;
-        oy = out.y;
-        oz = out.z;
-    }
-
-    try_move(idx, ox, oy, oz);
 }

@@ -11,6 +11,7 @@ public:
 
     Particle parts[NPARTS];
     unsigned int pmap[ZRES][YRES][XRES];
+    PartSwapBehavior can_move[ELEMENT_COUNT][ELEMENT_COUNT];
 
     // TODO: have some sort of linked list to determine free particle spots
     int pfree;
@@ -26,14 +27,17 @@ public:
     void update();
 
     void move_behavior(const int idx);
-    void try_move(const int idx, const float x, const float y, const float z);
+    void try_move(const int idx, const float x, const float y, const float z,
+        PartSwapBehavior behavior = PartSwapBehavior::NOT_EVALED_YET);
     void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2,
         const int id1, const int id2);
 
-    bool raycast(const RaycastInput &in, RaycastOutput &out) const;
+    bool raycast(const RaycastInput &in, RaycastOutput &out, auto pmapOccupied) const;
+    PartSwapBehavior eval_move(const int idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
 private:
+    void _init_can_move();
     void _raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z);
 };
 

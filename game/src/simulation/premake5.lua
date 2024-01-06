@@ -7,6 +7,8 @@ for id, name in pairs(elements) do
 end
 element_defines = table.concat(element_defines)
 
+defines { "__GLOBAL_ELEMENT_COUNT=" .. (#elements) }
+
 -- Get previous hash of element list
 local f = io.open("ElementNumbers.h")
 local oldhash = f:read()

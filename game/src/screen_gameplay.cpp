@@ -58,7 +58,7 @@ void ScreenGameplay::init() {
     for (int z = 1; z < 10; z++)
     for (int y = 51; y < 52; y++) {
         int i = sim.create_part(x, y, z, 5);
-        const float F = 0.4f;
+        const float F = 3.4f;
         sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
         sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
         sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
