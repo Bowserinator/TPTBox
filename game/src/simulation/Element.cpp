@@ -15,8 +15,8 @@ Element::Element() {
     MenuSection = 0; // TODO;
     Enabled = false;
 
-	/*float Advection;         // How much particle is accelerated by moving air, generally -1 to 1
-	float AirDrag;           // How much air particle produces in direction of travel
+	float Advection = 0.0f;         // How much particle is accelerated by moving air, generally -1 to 1
+	/*float AirDrag;           // How much air particle produces in direction of travel
 	float AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops
 	float Loss;              // Velocity multiplier per frame
 	float Collision;         // Velocity multiplier upon collision

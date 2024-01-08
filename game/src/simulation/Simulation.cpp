@@ -4,6 +4,7 @@
 #include "../util/vector_op.h"
 #include "../util/util.h"
 
+#include <omp.h>
 #include <algorithm>
 #include <iostream>
 #include <tuple>
@@ -98,7 +99,7 @@ void Simulation::kill_part(const int i) {
 }
 
 void Simulation::update() {
-    air.update();
+    // air.update(); // TODO
 
 
     parts_count = 0;
@@ -129,8 +130,17 @@ void Simulation::update() {
         coord_t y = util::roundf(part.y);
         coord_t z = util::roundf(part.z);
 
-        if (GetElements()[part.type].Update) {
-            auto result = GetElements()[part.type].Update(this, i, x, y, z, parts, pmap);
+        // Air acceleration
+        const auto &el = GetElements()[part.type];
+        if (el.Advection) {
+            const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            part.vx += el.Advection * airCell.data[VX_IDX];
+            part.vy += el.Advection * airCell.data[VY_IDX];
+            part.vz += el.Advection * airCell.data[VZ_IDX];
+        }
+
+        if (el.Update) {
+            auto result = el.Update(this, i, x, y, z, parts, pmap);
             if (result == -1) continue; // TODO: flags or something
         }
 

@@ -172,19 +172,19 @@ void ScreenGameplay::draw() {
     // DrawGrid(100, 1.0f);
 
     // Visualize air
-    for (auto z = 1; z < AIR_ZRES - 1; z++)
-    for (auto y = 1; y < AIR_YRES - 1; y++)
-    for (auto x = 1; x < AIR_XRES - 1; x++) {
-        float m = 20.0f;
-        auto alpha = (std::max(-m, std::min(m, sim.air.cells[z][y][x].data[PRESSURE_IDX])) * 255.0f / m);
+    // for (auto z = 1; z < AIR_ZRES - 1; z++)
+    // for (auto y = 1; y < AIR_YRES - 1; y++)
+    // for (auto x = 1; x < AIR_XRES - 1; x++) {
+    //     float m = 20.0f;
+    //     auto alpha = (std::max(-m, std::min(m, sim.air.cells[z][y][x].data[PRESSURE_IDX])) * 255.0f / m);
 
-        if (alpha > 1) {
-            DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 255, .g = 0, .b = 0, .a = (unsigned char)alpha}); 
-        }
-        else if (alpha < 1) {
-            DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha}); 
-        }
-    }
+    //     if (alpha > 1) {
+    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 255, .g = 0, .b = 0, .a = (unsigned char)alpha}); 
+    //     }
+    //     else if (alpha < 1) {
+    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha}); 
+    //     }
+    // }
 
 
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
