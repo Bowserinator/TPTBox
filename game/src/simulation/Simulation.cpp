@@ -25,6 +25,14 @@ Simulation::Simulation():
     frame_count = 0;
     parts_count = 0;
     
+
+    // ---- Threads ------
+    constexpr int MIN_CASUALITY_RADIUS = 4; // Width of each slice = 2 * this
+    constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
+
+    sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
+    zslice_dirty_rects = std::vector<DirtyRect<coord_t>>(ZRES);
+    
     // TODO: singleton?
     _init_can_move();
 }
@@ -101,8 +109,9 @@ void Simulation::kill_part(const part_id i) {
 }
 
 void Simulation::update_zslice(const coord_t pz) {
-    for (coord_t py = 1; py < YRES - 1; py++)
-    for (coord_t px = 1; px < XRES - 1; px++) {
+    const auto &rect = zslice_dirty_rects[pz];
+    for (coord_t py = rect.minY; py <= rect.maxY; py++)
+    for (coord_t px = rect.minX; px <= rect.maxX; px++) {
         for (int j = 0; j < 2; j++) {
             auto map = j == 0 ? pmap : photons;
             if (!map[pz][py][px]) continue;
@@ -154,15 +163,12 @@ void Simulation::update() {
 
     // omp_set_dynamic(0);
     // omp_set_num_threads(omp_get_max_threads());
-    
-    #pragma omp parallel
-    { 
-        const int thread_count = omp_get_num_threads();
-        const int z_chunk_size = ZRES / (2 * thread_count) + 1;
 
+    #pragma omp parallel num_threads(sim_thread_count)
+    { 
+        const int z_chunk_size = ZRES / (2 * sim_thread_count) + 1;
         const int tid = omp_get_thread_num();
         coord_t z_start = z_chunk_size * (2 * tid);
-        // std::cout << tid << " " << (int)z_start << " " << thread_count << " max: " << omp_get_max_threads() << "\n";
 
         for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
             update_zslice(z);
@@ -182,6 +188,9 @@ void Simulation::recalc_free_particles() {
     parts_count = 0;
     part_id newMaxId = 0;
 
+    for (auto &rect : zslice_dirty_rects)
+        rect.reset();
+
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
@@ -198,6 +207,11 @@ void Simulation::recalc_free_particles() {
             map[z][y][x] = PMAP(part.type, i);
 
         update_part(i);
+
+        // After particle has moved, updated dirty rect
+        // if the particle was not deleted
+        if (part.type)
+            zslice_dirty_rects[util::roundf(part.z)].update(util::roundf(part.x), util::roundf(part.y));
     }
     maxId = newMaxId + 1;
 }

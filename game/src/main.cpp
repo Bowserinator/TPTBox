@@ -3,6 +3,8 @@
 
 #include "simulation/Simulation.h"
 
+#include <omp.h>
+
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -20,6 +22,7 @@ int main(void)
     SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitAudioDevice();
 
+    omp_set_dynamic(false); // Don't allow dynamic scaling of num of threads
     currentScreen->init();
 
 #if defined(PLATFORM_WEB)
