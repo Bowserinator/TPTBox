@@ -12,7 +12,7 @@ namespace PartFlags {
 
 struct Particle {
     uint16_t type;
-    int id; // Must be signed
+    part_id id;
     uint16_t ctype;
     int16_t life = 0;
     float x, y, z, vx, vy, vz;
@@ -20,6 +20,10 @@ struct Particle {
     uint16_t tmp1, tmp2;
     RGBA dcolor;
     std::bitset<8> flag;
+
+    Particle() {}
+    Particle(const Particle&) = delete;
+	Particle& operator=(const Particle&) = delete;
 };
 
 #endif

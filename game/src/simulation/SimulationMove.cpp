@@ -126,11 +126,11 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, auto pmapO
  * 
  * @param idx 
  */
-void Simulation::move_behavior(const int idx) {
-    const auto el = GetElements()[parts[idx].type];
+void Simulation::move_behavior(const part_id idx) {
+    const auto &el = GetElements()[parts[idx].type];
     if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
 
-    const auto part = parts[idx];
+    const auto &part = parts[idx];
 
     coord_t x = util::roundf(part.x);
     coord_t y = util::roundf(part.y);
@@ -199,7 +199,7 @@ void Simulation::move_behavior(const int idx) {
  * @param y Target y
  * @param z Target z
  */
-void Simulation::try_move(const int idx, const float tx, const float ty, const float tz, PartSwapBehavior behavior) {
+void Simulation::try_move(const part_id idx, const float tx, const float ty, const float tz, PartSwapBehavior behavior) {
     coord_t x = util::roundf(tx);
     coord_t y = util::roundf(ty);
     coord_t z = util::roundf(tz);
@@ -252,7 +252,7 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
  * @brief Spatially swap the particles at the two ids
  */
 void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
-        const coord_t x2, const coord_t y2, const coord_t z2, const int id1, const int id2) {
+        const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);
@@ -270,7 +270,7 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
 
 
 // Try to move a particle with velocity to new location
-void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z) {
+void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z) {
     auto &part = parts[idx];
     part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
     part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
@@ -348,7 +348,7 @@ void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t
  * @param nz New loc
  * @return part swap behavior, special cases are resolved
  */
-PartSwapBehavior Simulation::eval_move(const int idx, const coord_t nx, const coord_t ny, const coord_t nz) const {
+PartSwapBehavior Simulation::eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const {
     auto other_type = TYP(pmap[nz][ny][nx]);
     if (!other_type) other_type = TYP(photons[nz][ny][nx]);
     if (!other_type) return PartSwapBehavior::SWAP;

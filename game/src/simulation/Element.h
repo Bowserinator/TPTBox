@@ -52,6 +52,8 @@ public:
     // todo: default properties
 
     Element();
+	Element(const Element&) = delete;
+	Element& operator=(const Element&) = delete;
 
     // Define void Element_NAME(); for each element
     #define ELEMENT_NUMBERS_DECLARE

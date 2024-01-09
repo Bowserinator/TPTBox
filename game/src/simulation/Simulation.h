@@ -11,8 +11,8 @@ public:
     bool paused;
 
     Particle parts[NPARTS];
-    uint32_t pmap[ZRES][YRES][XRES];
-    uint32_t photons[ZRES][YRES][XRES];
+    pmap_id pmap[ZRES][YRES][XRES];
+    pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT][ELEMENT_COUNT];
 
     Air air;
@@ -24,8 +24,8 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     Simulation();
-    uint32_t create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
-    void kill_part(const uint32_t id);
+    part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
+    void kill_part(const part_id id);
 
     void update();
 
@@ -33,21 +33,21 @@ public:
 
     void recalc_free_particles();
 
-    void update_part(const uint32_t i);
+    void update_part(const part_id i);
 
-    void move_behavior(const int idx);
-    void try_move(const int idx, const float x, const float y, const float z,
+    void move_behavior(const part_id idx);
+    void try_move(const part_id idx, const float x, const float y, const float z,
         PartSwapBehavior behavior = PartSwapBehavior::NOT_EVALED_YET);
     void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2,
-        const int id1, const int id2);
+        const part_id id1, const part_id id2);
 
     bool raycast(const RaycastInput &in, RaycastOutput &out, auto pmapOccupied) const;
-    PartSwapBehavior eval_move(const int idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
+    PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
 private:
     void _init_can_move();
-    void _raycast_movement(const int idx, const coord_t x, const coord_t y, const coord_t z);
+    void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
 };
 
 #endif

@@ -7,6 +7,11 @@ using coord_t = uint8_t;
 using signed_coord_t = int16_t;
 using ElementType = unsigned int;
 
+// Must be signed, negative values are used for pfree
+// and error codes in some functions
+using part_id = int32_t;
+using pmap_id = int32_t; // This is ID and type merged into 1 32 bit value
+
 // Pmap and photons store positive ids in this format:
 // [TYP 10 bits][ID 22 bits]
 #define ID(r) (r & 0b1111111111111111111111)
@@ -38,8 +43,8 @@ enum class PartSwapBehavior: uint8_t {
 };
 
 namespace PartErr {
-    constexpr int32_t ALREADY_OCCUPIED = -1;
-    constexpr int32_t PARTS_FULL = -3;
+    constexpr part_id ALREADY_OCCUPIED = -1;
+    constexpr part_id PARTS_FULL = -3;
 };
 
 #endif

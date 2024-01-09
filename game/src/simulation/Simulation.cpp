@@ -45,7 +45,7 @@ void Simulation::_init_can_move() {
     }
 }
 
-uint32_t Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
+part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -78,7 +78,7 @@ uint32_t Simulation::create_part(const coord_t x, const coord_t y, const coord_t
     return old_pfree;
 }
 
-void Simulation::kill_part(const uint32_t i) {
+void Simulation::kill_part(const part_id i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
 
@@ -113,7 +113,7 @@ void Simulation::update_zslice(const coord_t pz) {
     }
 }
 
-void Simulation::update_part(const uint32_t i) {
+void Simulation::update_part(const part_id i) {
     auto &part = parts[i];
 
     // Since a particle might move we might update it again
