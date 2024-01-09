@@ -18,7 +18,7 @@
  *        Licensed under LICENSES/
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
-bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, auto pmapOccupied) const {
+bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto &pmapOccupied) const {
     const Vector3T<signed_coord_t> last_voxel{
         (signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
         (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
@@ -31,9 +31,9 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, auto pmapO
     const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
 
     // Step to take per direction (+-1)
-    float dx = (ray.x >= 0) * 2 - 1;
-    float dy = (ray.y >= 0) * 2 - 1;
-    float dz = (ray.z >= 0) * 2 - 1;
+    const float dx = (ray.x >= 0) * 2 - 1;
+    const float dy = (ray.y >= 0) * 2 - 1;
+    const float dz = (ray.z >= 0) * 2 - 1;
 
     const Vector3 next_voxel_boundary{ in.x + dx, in.y + dy, in.z + dz };
 
@@ -47,9 +47,9 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, auto pmapO
     // how far along the ray we must move for the horizontal component to equal the width of a voxel
     // the direction in which we traverse the grid
     // can only be FLT_MAX if we never go in that direction
-    float tDeltaX = (ray.x != 0) ? 1.0f / ray.x * dx : std::numeric_limits<float>::max();
-    float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
-    float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
+    const float tDeltaX = (ray.x != 0) ? 1.0f / ray.x * dx : std::numeric_limits<float>::max();
+    const float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
+    const float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
 
     bool neg_ray = false;
     if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; neg_ray = true; }
@@ -132,15 +132,15 @@ void Simulation::move_behavior(const part_id idx) {
 
     const auto &part = parts[idx];
 
-    coord_t x = util::roundf(part.x);
-    coord_t y = util::roundf(part.y);
-    coord_t z = util::roundf(part.z);
+    const coord_t x = util::roundf(part.x);
+    const coord_t y = util::roundf(part.y);
+    const coord_t z = util::roundf(part.z);
 
     if (el.State == ElementState::TYPE_LIQUID || el.State == ElementState::TYPE_POWDER) {
         // TODO: gravity
         // If nothing below go straight down
         // TODO: temp hack
-        auto behavior = eval_move(idx, x, y - 1, z);
+        const auto behavior = eval_move(idx, x, y - 1, z);
 
         if ((y > 1 && !pmap[z][y - 1][x]) || (y > 1 && behavior != PartSwapBehavior::NOOP)) {
             try_move(idx, x, y - 1, z, behavior);
@@ -200,17 +200,17 @@ void Simulation::move_behavior(const part_id idx) {
  * @param z Target z
  */
 void Simulation::try_move(const part_id idx, const float tx, const float ty, const float tz, PartSwapBehavior behavior) {
-    coord_t x = util::roundf(tx);
-    coord_t y = util::roundf(ty);
-    coord_t z = util::roundf(tz);
+    const coord_t x = util::roundf(tx);
+    const coord_t y = util::roundf(ty);
+    const coord_t z = util::roundf(tz);
 
     // TODO: consider edge mode
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         return;
         
-    coord_t oldx = util::roundf(parts[idx].x);
-    coord_t oldy = util::roundf(parts[idx].y);
-    coord_t oldz = util::roundf(parts[idx].z);
+    const coord_t oldx = util::roundf(parts[idx].x);
+    const coord_t oldy = util::roundf(parts[idx].y);
+    const coord_t oldz = util::roundf(parts[idx].z);
     
     // Particle did not move, but target pos could
     // potentially have changed (ie +0.1) but not
@@ -259,10 +259,7 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
 
     // TODO: temp hack
     // also need to consider solid -> energy and vice versa
-    auto s1 = GetElements()[parts[id1].type].State;
-    auto s2 = GetElements()[parts[id2].type].State;
-
-    if (s1 == ElementState::TYPE_ENERGY || s2 == ElementState::TYPE_ENERGY)
+    if (GetElements()[parts[id1].type].State == ElementState::TYPE_ENERGY || GetElements()[parts[id2].type].State == ElementState::TYPE_ENERGY)
         std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
     else
         std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);

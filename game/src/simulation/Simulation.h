@@ -17,8 +17,8 @@ public:
 
     Air air;
 
-    int pfree;
-    int maxId;
+    part_id pfree;
+    part_id maxId;
     
     uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
@@ -42,7 +42,7 @@ public:
         const coord_t x2, const coord_t y2, const coord_t z2,
         const part_id id1, const part_id id2);
 
-    bool raycast(const RaycastInput &in, RaycastOutput &out, auto pmapOccupied) const;
+    bool raycast(const RaycastInput &in, RaycastOutput &out, const auto &pmapOccupied) const;
     PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
 private:

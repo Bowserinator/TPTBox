@@ -52,7 +52,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
             std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z));
     #endif
 
-    auto part_map = GetElements()[type].State == ElementState::TYPE_ENERGY ?
+    const auto part_map = GetElements()[type].State == ElementState::TYPE_ENERGY ?
         photons : pmap;
 
     if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
@@ -60,8 +60,8 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
 
     // Create new part
     // Note: should it allow creation off screen? TODO
-    int next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
-    int old_pfree = pfree;
+    const part_id next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
+    const part_id old_pfree = pfree;
 
     parts[pfree].id = pfree;
     parts[pfree].type = type;
@@ -104,10 +104,10 @@ void Simulation::update_zslice(const coord_t pz) {
     for (coord_t py = 1; py < YRES - 1; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
         for (int j = 0; j < 2; j++) {
-            auto &map = j == 0 ? pmap : photons;
+            auto map = j == 0 ? pmap : photons;
             if (!map[pz][py][px]) continue;
 
-            auto i = ID(map[pz][py][px]);
+            part_id i = ID(map[pz][py][px]);
             update_part(i);
         }
     }
@@ -121,14 +121,14 @@ void Simulation::update_part(const part_id i) {
     // To avoid this, it stores the parity of the frame count
     // and only updates the particle if the last frame it was updated
     // has the same parity
-    auto frame_count_parity = frame_count & 1;
+    const auto frame_count_parity = frame_count & 1;
     if (part.flag[PartFlags::UPDATE_FRAME] == frame_count_parity)
         return;
     part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity;
 
-    coord_t x = util::roundf(part.x);
-    coord_t y = util::roundf(part.y);
-    coord_t z = util::roundf(part.z);
+    const coord_t x = util::roundf(part.x);
+    const coord_t y = util::roundf(part.y);
+    const coord_t z = util::roundf(part.z);
 
     // Air acceleration
     const auto &el = GetElements()[part.type];
@@ -140,7 +140,7 @@ void Simulation::update_part(const part_id i) {
     }
 
     if (el.Update) {
-        auto result = el.Update(this, i, x, y, z, parts, pmap);
+        const auto result = el.Update(this, i, x, y, z, parts, pmap);
         if (result == -1) return; // TODO: flags or something
     }
 
@@ -157,10 +157,10 @@ void Simulation::update() {
     
     #pragma omp parallel
     { 
-        int thread_count = omp_get_num_threads();
-        int z_chunk_size = ZRES / (2 * thread_count) + 1;
+        const int thread_count = omp_get_num_threads();
+        const int z_chunk_size = ZRES / (2 * thread_count) + 1;
 
-        int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
         coord_t z_start = z_chunk_size * (2 * tid);
         // std::cout << tid << " " << (int)z_start << " " << thread_count << " max: " << omp_get_max_threads() << "\n";
 
@@ -175,24 +175,23 @@ void Simulation::update() {
     }
 
     recalc_free_particles();
-
     frame_count++;
 }
 
 void Simulation::recalc_free_particles() {
     parts_count = 0;
-    int newMaxId = 0;
+    part_id newMaxId = 0;
 
-    for (int i = 0; i <= maxId; i++) {
+    for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
 
         parts_count++;
         newMaxId = i;
 
-        coord_t x = util::roundf(part.x);
-        coord_t y = util::roundf(part.y);
-        coord_t z = util::roundf(part.z);
+        const coord_t x = util::roundf(part.x);
+        const coord_t y = util::roundf(part.y);
+        const coord_t z = util::roundf(part.z);
 
         auto &map = GetElements()[part.type].State == ElementState::TYPE_ENERGY ? photons : pmap;
         if (!map[z][y][x])

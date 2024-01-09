@@ -21,7 +21,7 @@ struct Particle {
     RGBA dcolor;
     std::bitset<8> flag;
 
-    Particle() {}
+    Particle(): type(0), id(0) {}
     Particle(const Particle&) = delete;
 	Particle& operator=(const Particle&) = delete;
 };
