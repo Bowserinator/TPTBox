@@ -4,6 +4,12 @@
 #include "SimulationDef.h"
 #include "../util/color.h"
 
+#include <bitset>
+
+namespace PartFlags {
+    constexpr uint8_t UPDATE_FRAME = 0;
+}
+
 struct Particle {
     uint16_t type;
     int id; // Must be signed
@@ -13,7 +19,7 @@ struct Particle {
     float temp;
     uint16_t tmp1, tmp2;
     RGBA dcolor;
-    uint8_t flag;
+    std::bitset<8> flag;
 };
 
 #endif

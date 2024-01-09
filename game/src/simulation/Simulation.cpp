@@ -33,8 +33,6 @@ void Simulation::_init_can_move() {
     ElementType movingType, destinationType;
     const auto &elements = GetElements();
 
-    std::cout << ELEMENT_COUNT << " elements\n";
-
     for (movingType = 1; movingType <= ELEMENT_COUNT; movingType++) {
 		for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
             // Heavier elements can swap with lighter ones
@@ -47,7 +45,7 @@ void Simulation::_init_can_move() {
     }
 }
 
-int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
+uint32_t Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -57,12 +55,11 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     auto part_map = GetElements()[type].State == ElementState::TYPE_ENERGY ?
         photons : pmap;
 
-    if (part_map[z][y][x]) return -1; // TODO
-    if (pfree >= NPARTS) return -3; // TODO
+    if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
+    if (pfree >= NPARTS) return PartErr::PARTS_FULL;
 
     // Create new part
-    // Note: should it allow creation off screen? 
-    // TODO: return element id generated
+    // Note: should it allow creation off screen? TODO
     int next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
     int old_pfree = pfree;
 
@@ -81,7 +78,7 @@ int Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, c
     return old_pfree;
 }
 
-void Simulation::kill_part(const int i) {
+void Simulation::kill_part(const uint32_t i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
 
@@ -103,7 +100,7 @@ void Simulation::kill_part(const int i) {
     pfree = i;
 }
 
-void Simulation::updatePmapZSlice(coord_t pz, uint8_t frame_count_parity) {
+void Simulation::update_zslice(const coord_t pz) {
     for (coord_t py = 1; py < YRES - 1; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
         for (int j = 0; j < 2; j++) {
@@ -111,53 +108,54 @@ void Simulation::updatePmapZSlice(coord_t pz, uint8_t frame_count_parity) {
             if (!map[pz][py][px]) continue;
 
             auto i = ID(map[pz][py][px]);
-            auto &part = parts[i];
-
-            if (part.flag == frame_count_parity) // For some reason part.flag & 1 here doesn't work TODO
-                continue;
-
-            part.flag = frame_count_parity; // TODO set bit
-
-            //parts_count++;
-            //newMaxId = i;
-
-            coord_t x = util::roundf(part.x);
-            coord_t y = util::roundf(part.y);
-            coord_t z = util::roundf(part.z);
-
-            // Air acceleration
-            const auto &el = GetElements()[part.type];
-            if (el.Advection) {
-                const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-                part.vx += el.Advection * airCell.data[VX_IDX];
-                part.vy += el.Advection * airCell.data[VY_IDX];
-                part.vz += el.Advection * airCell.data[VZ_IDX];
-            }
-
-            if (el.Update) {
-                auto result = el.Update(this, i, x, y, z, parts, pmap);
-                if (result == -1) continue; // TODO: flags or something
-            }
-
-            if (part.vx || part.vy || part.vz)
-                _raycast_movement(i, x, y, z); // Apply velocity to displacement
-            move_behavior(i); // Apply element specific movement, like powder / liquid spread
+            update_part(i);
         }
     }
+}
+
+void Simulation::update_part(const uint32_t i) {
+    auto &part = parts[i];
+
+    // Since a particle might move we might update it again
+    // if it moves in the direction of scanning the pmap array
+    // To avoid this, it stores the parity of the frame count
+    // and only updates the particle if the last frame it was updated
+    // has the same parity
+    auto frame_count_parity = frame_count & 1;
+    if (part.flag[PartFlags::UPDATE_FRAME] == frame_count_parity)
+        return;
+    part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity;
+
+    coord_t x = util::roundf(part.x);
+    coord_t y = util::roundf(part.y);
+    coord_t z = util::roundf(part.z);
+
+    // Air acceleration
+    const auto &el = GetElements()[part.type];
+    if (el.Advection) {
+        const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+        part.vx += el.Advection * airCell.data[VX_IDX];
+        part.vy += el.Advection * airCell.data[VY_IDX];
+        part.vz += el.Advection * airCell.data[VZ_IDX];
+    }
+
+    if (el.Update) {
+        auto result = el.Update(this, i, x, y, z, parts, pmap);
+        if (result == -1) return; // TODO: flags or something
+    }
+
+    if (part.vx || part.vy || part.vz)
+        _raycast_movement(i, x, y, z); // Apply velocity to displacement
+    move_behavior(i); // Apply element specific movement, like powder / liquid spread
 }
 
 void Simulation::update() {
     // air.update(); // TODO
 
-
-    parts_count = 0;
-    int newMaxId = 0;
-
-   // omp_set_dynamic(0);
+    // omp_set_dynamic(0);
     // omp_set_num_threads(omp_get_max_threads());
     
-    uint8_t frame_parity = frame_count & 1;
-    #pragma omp parallel // private(frame_parity) doesn't work TODO
+    #pragma omp parallel
     { 
         int thread_count = omp_get_num_threads();
         int z_chunk_size = ZRES / (2 * thread_count) + 1;
@@ -167,56 +165,27 @@ void Simulation::update() {
         // std::cout << tid << " " << (int)z_start << " " << thread_count << " max: " << omp_get_max_threads() << "\n";
 
         for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
-            updatePmapZSlice(z, frame_parity);
+            update_zslice(z);
+
+        #pragma omp barrier // Synchronize threads before processing 2nd chunk
 
         z_start = z_chunk_size * (2 * tid + 1);
         for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
-            updatePmapZSlice(z, frame_parity);
+            update_zslice(z);
     }
 
-    RecalcFreeParticles();
+    recalc_free_particles();
 
-
-    // for (int i = 0; i <= maxId; i++) {
-    //     auto &part = parts[i];
-    //     if (!part.type) continue; // TODO: can probably be more efficient
-
-    //     parts_count++;
-    //     newMaxId = i;
-
-    //     coord_t x = util::roundf(part.x);
-    //     coord_t y = util::roundf(part.y);
-    //     coord_t z = util::roundf(part.z);
-
-    //     // Air acceleration
-    //     const auto &el = GetElements()[part.type];
-    //     if (el.Advection) {
-    //         const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-    //         part.vx += el.Advection * airCell.data[VX_IDX];
-    //         part.vy += el.Advection * airCell.data[VY_IDX];
-    //         part.vz += el.Advection * airCell.data[VZ_IDX];
-    //     }
-
-    //     if (el.Update) {
-    //         auto result = el.Update(this, i, x, y, z, parts, pmap);
-    //         if (result == -1) continue; // TODO: flags or something
-    //     }
-
-    //     if (part.vx || part.vy || part.vz)
-    //         _raycast_movement(i, x, y, z); // Apply velocity to displacement
-    //     move_behavior(i); // Apply element specific movement, like powder / liquid spread
-    // }
-    // maxId = newMaxId + 1;
     frame_count++;
 }
 
-void Simulation::RecalcFreeParticles() {
+void Simulation::recalc_free_particles() {
     parts_count = 0;
     int newMaxId = 0;
 
     for (int i = 0; i <= maxId; i++) {
         auto &part = parts[i];
-        if (!part.type) continue; // TODO: can probably be more efficient
+        if (!part.type) continue;
 
         parts_count++;
         newMaxId = i;
@@ -229,6 +198,7 @@ void Simulation::RecalcFreeParticles() {
         if (!map[z][y][x])
             map[z][y][x] = PMAP(part.type, i);
 
+        update_part(i);
     }
     maxId = newMaxId + 1;
 }

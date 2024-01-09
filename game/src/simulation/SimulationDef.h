@@ -37,4 +37,9 @@ enum class PartSwapBehavior: uint8_t {
     NOT_EVALED_YET = 4 // Sentinel value, do not use in normal cases
 };
 
+namespace PartErr {
+    constexpr int32_t ALREADY_OCCUPIED = -1;
+    constexpr int32_t PARTS_FULL = -3;
+};
+
 #endif

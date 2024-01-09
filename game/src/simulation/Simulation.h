@@ -17,7 +17,6 @@ public:
 
     Air air;
 
-    // TODO: have some sort of linked list to determine free particle spots
     int pfree;
     int maxId;
     
@@ -25,14 +24,16 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     Simulation();
-    int create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
-    void kill_part(const int id);
+    uint32_t create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
+    void kill_part(const uint32_t id);
 
     void update();
 
-    void updatePmapZSlice(coord_t zslice, uint8_t frame_count_parity);
+    void update_zslice(const coord_t zslice);
 
-    void RecalcFreeParticles();
+    void recalc_free_particles();
+
+    void update_part(const uint32_t i);
 
     void move_behavior(const int idx);
     void try_move(const int idx, const float x, const float y, const float z,

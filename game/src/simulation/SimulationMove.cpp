@@ -237,6 +237,7 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
             break;
         case PartSwapBehavior::OCCUPY_SAME:
             part_map[oldz][oldy][oldx] = 0;
+            part_map[z][y][x] = old_pmap_val;
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -245,7 +246,6 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
     parts[idx].x = tx;
     parts[idx].y = ty;
     parts[idx].z = tz;
-    part_map[z][y][x] = old_pmap_val;
 }
 
 /**
