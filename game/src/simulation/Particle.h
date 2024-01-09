@@ -13,6 +13,7 @@ struct Particle {
     float temp;
     uint16_t tmp1, tmp2;
     RGBA dcolor;
+    uint8_t flag;
 };
 
 #endif

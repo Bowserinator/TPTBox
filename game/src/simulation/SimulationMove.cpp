@@ -222,17 +222,18 @@ void Simulation::try_move(const int idx, const float tx, const float ty, const f
         return;
     }
 
-    auto old_pmap_val = pmap[oldz][oldy][oldx];
-    auto part_map = GetElements()[parts[idx].type].State == ElementState::TYPE_ENERGY ?
+    auto &part_map = GetElements()[parts[idx].type].State == ElementState::TYPE_ENERGY ?
         photons : pmap;
+    auto old_pmap_val = part_map[oldz][oldy][oldx];
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
         behavior = eval_move(idx, x, y, z);
+
     switch (behavior) {
         case PartSwapBehavior::NOOP:
             return;
         case PartSwapBehavior::SWAP:
-            swap_part(x, y, z, oldx, oldy, oldz, ID(pmap[z][y][x]), idx);
+            swap_part(x, y, z, oldx, oldy, oldz, ID(part_map[z][y][x]), idx);
             break;
         case PartSwapBehavior::OCCUPY_SAME:
             part_map[oldz][oldy][oldx] = 0;
@@ -255,7 +256,16 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);
-    std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
+
+    // TODO: temp hack
+    // also need to consider solid -> energy and vice versa
+    auto s1 = GetElements()[parts[id1].type].State;
+    auto s2 = GetElements()[parts[id2].type].State;
+
+    if (s1 == ElementState::TYPE_ENERGY || s2 == ElementState::TYPE_ENERGY)
+        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
+    else
+        std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
 }
 
 
@@ -340,6 +350,7 @@ void Simulation::_raycast_movement(const int idx, const coord_t x, const coord_t
  */
 PartSwapBehavior Simulation::eval_move(const int idx, const coord_t nx, const coord_t ny, const coord_t nz) const {
     auto other_type = TYP(pmap[nz][ny][nx]);
+    if (!other_type) other_type = TYP(photons[nz][ny][nx]);
     if (!other_type) return PartSwapBehavior::SWAP;
 
     auto this_type = parts[idx].type;

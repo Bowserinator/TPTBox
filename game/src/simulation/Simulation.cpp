@@ -33,11 +33,16 @@ void Simulation::_init_can_move() {
     ElementType movingType, destinationType;
     const auto &elements = GetElements();
 
-    for (movingType = 1; movingType < ELEMENT_COUNT; movingType++) {
-		for (destinationType = 1; destinationType < ELEMENT_COUNT; destinationType++) {
+    std::cout << ELEMENT_COUNT << " elements\n";
+
+    for (movingType = 1; movingType <= ELEMENT_COUNT; movingType++) {
+		for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
             // Heavier elements can swap with lighter ones
 			if (elements[movingType].Weight > elements[destinationType].Weight)
 				can_move[movingType][destinationType] = PartSwapBehavior::SWAP;
+
+            if (elements[movingType].State == ElementState::TYPE_ENERGY && elements[destinationType].State == ElementState::TYPE_ENERGY)
+                can_move[movingType][destinationType] = PartSwapBehavior::OCCUPY_SAME;
         }
     }
 }
@@ -98,6 +103,49 @@ void Simulation::kill_part(const int i) {
     pfree = i;
 }
 
+void Simulation::updatePmapZSlice(coord_t pz, uint8_t frame_count_parity) {
+    for (coord_t py = 1; py < YRES - 1; py++)
+    for (coord_t px = 1; px < XRES - 1; px++) {
+        for (int j = 0; j < 2; j++) {
+            auto &map = j == 0 ? pmap : photons;
+            if (!map[pz][py][px]) continue;
+
+            auto i = ID(map[pz][py][px]);
+            auto &part = parts[i];
+
+            if (part.flag == frame_count_parity) // For some reason part.flag & 1 here doesn't work TODO
+                continue;
+
+            part.flag = frame_count_parity; // TODO set bit
+
+            //parts_count++;
+            //newMaxId = i;
+
+            coord_t x = util::roundf(part.x);
+            coord_t y = util::roundf(part.y);
+            coord_t z = util::roundf(part.z);
+
+            // Air acceleration
+            const auto &el = GetElements()[part.type];
+            if (el.Advection) {
+                const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+                part.vx += el.Advection * airCell.data[VX_IDX];
+                part.vy += el.Advection * airCell.data[VY_IDX];
+                part.vz += el.Advection * airCell.data[VZ_IDX];
+            }
+
+            if (el.Update) {
+                auto result = el.Update(this, i, x, y, z, parts, pmap);
+                if (result == -1) continue; // TODO: flags or something
+            }
+
+            if (part.vx || part.vy || part.vz)
+                _raycast_movement(i, x, y, z); // Apply velocity to displacement
+            move_behavior(i); // Apply element specific movement, like powder / liquid spread
+        }
+    }
+}
+
 void Simulation::update() {
     // air.update(); // TODO
 
@@ -105,51 +153,82 @@ void Simulation::update() {
     parts_count = 0;
     int newMaxId = 0;
 
-    for (int i = 0; i <= maxId; i++)
-    {
+   // omp_set_dynamic(0);
+    // omp_set_num_threads(omp_get_max_threads());
+    
+    uint8_t frame_parity = frame_count & 1;
+    #pragma omp parallel // private(frame_parity) doesn't work TODO
+    { 
+        int thread_count = omp_get_num_threads();
+        int z_chunk_size = ZRES / (2 * thread_count) + 1;
+
+        int tid = omp_get_thread_num();
+        coord_t z_start = z_chunk_size * (2 * tid);
+        // std::cout << tid << " " << (int)z_start << " " << thread_count << " max: " << omp_get_max_threads() << "\n";
+
+        for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
+            updatePmapZSlice(z, frame_parity);
+
+        z_start = z_chunk_size * (2 * tid + 1);
+        for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
+            updatePmapZSlice(z, frame_parity);
+    }
+
+    RecalcFreeParticles();
+
+
+    // for (int i = 0; i <= maxId; i++) {
+    //     auto &part = parts[i];
+    //     if (!part.type) continue; // TODO: can probably be more efficient
+
+    //     parts_count++;
+    //     newMaxId = i;
+
+    //     coord_t x = util::roundf(part.x);
+    //     coord_t y = util::roundf(part.y);
+    //     coord_t z = util::roundf(part.z);
+
+    //     // Air acceleration
+    //     const auto &el = GetElements()[part.type];
+    //     if (el.Advection) {
+    //         const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+    //         part.vx += el.Advection * airCell.data[VX_IDX];
+    //         part.vy += el.Advection * airCell.data[VY_IDX];
+    //         part.vz += el.Advection * airCell.data[VZ_IDX];
+    //     }
+
+    //     if (el.Update) {
+    //         auto result = el.Update(this, i, x, y, z, parts, pmap);
+    //         if (result == -1) continue; // TODO: flags or something
+    //     }
+
+    //     if (part.vx || part.vy || part.vz)
+    //         _raycast_movement(i, x, y, z); // Apply velocity to displacement
+    //     move_behavior(i); // Apply element specific movement, like powder / liquid spread
+    // }
+    // maxId = newMaxId + 1;
+    frame_count++;
+}
+
+void Simulation::RecalcFreeParticles() {
+    parts_count = 0;
+    int newMaxId = 0;
+
+    for (int i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue; // TODO: can probably be more efficient
 
         parts_count++;
         newMaxId = i;
 
-        // TODO: tmp hack for spherical gravity
-        // float dx = XRES / 2 - part.x;
-        // float dy = YRES / 2 - part.y;
-        // float dz = ZRES / 2 - part.z;
-        // float dis = std::sqrt(dx *dx+dy*dy+dz*dz);
-        // dx /= dis;
-        // dy /= dis;
-        // dz /= dis;
-        // float F = 100.0f / std::min(10000.0f, dis * dis);
-        // part.vx += F *dx;
-        // part.vy += F* dy;
-        // part.vz += F*dz;
-
         coord_t x = util::roundf(part.x);
         coord_t y = util::roundf(part.y);
         coord_t z = util::roundf(part.z);
 
-        // Air acceleration
-        const auto &el = GetElements()[part.type];
-        if (el.Advection) {
-            const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-            part.vx += el.Advection * airCell.data[VX_IDX];
-            part.vy += el.Advection * airCell.data[VY_IDX];
-            part.vz += el.Advection * airCell.data[VZ_IDX];
-        }
-
-        if (el.Update) {
-            auto result = el.Update(this, i, x, y, z, parts, pmap);
-            if (result == -1) continue; // TODO: flags or something
-        }
-
-        if (part.vx || part.vy || part.vz)
-            _raycast_movement(i, x, y, z); // Apply velocity to displacement
-        move_behavior(i); // Apply element specific movement, like powder / liquid spread
+        auto &map = GetElements()[part.type].State == ElementState::TYPE_ENERGY ? photons : pmap;
+        if (!map[z][y][x])
+            map[z][y][x] = PMAP(part.type, i);
 
     }
     maxId = newMaxId + 1;
-
-    frame_count++;
 }

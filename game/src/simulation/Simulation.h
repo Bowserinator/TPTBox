@@ -30,6 +30,10 @@ public:
 
     void update();
 
+    void updatePmapZSlice(coord_t zslice, uint8_t frame_count_parity);
+
+    void RecalcFreeParticles();
+
     void move_behavior(const int idx);
     void try_move(const int idx, const float x, const float y, const float z,
         PartSwapBehavior behavior = PartSwapBehavior::NOT_EVALED_YET);

@@ -18,7 +18,7 @@ static int update(UPDATE_FUNC_ARGS) {
         for (int dy = -1; dy <= 1; dy++)
         for (int dx = -1; dx <= 1; dx++) {
             if (!dx && !dz && !dy) continue;
-            if (parts[pmap[z + dz][y + dy][x + dx]].type == PT_GOL) {
+            if (TYP(pmap[z + dz][y + dy][x + dx]) == PT_GOL) {
                 neighbors++;
             }
         }

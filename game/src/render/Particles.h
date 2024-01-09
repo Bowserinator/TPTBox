@@ -57,7 +57,7 @@ void getMeshFromSim(Simulation &sim, RenderCamera & camera) {
 
     // fast_greedy_mesh(mesh, sim, camera, vertex_count, color_count);
 
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < sim.maxId ; i++) { // sim.maxId
         const auto &part = sim.parts[i];
         if (!part.type) continue;

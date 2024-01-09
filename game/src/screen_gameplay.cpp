@@ -58,11 +58,19 @@ void ScreenGameplay::init() {
     for (int z = 1; z < 10; z++)
     for (int y = 51; y < 52; y++) {
         int i = sim.create_part(x, y, z, 5);
-        const float F = 3.4f;
-        sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
-        sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
-        sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
+        const float F = 5.4f;
+        sim.parts[i].vx = 1.0f;
+        //sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
+        //sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
+        //sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
     }
+
+    for (int x = 1; x < XRES - 1; x++) 
+    for (int z = 1; z < ZRES - 1; z++)
+    for (int y = 1; y < 2; y++) {
+        sim.create_part(x, y, z, PT_WATR);
+    }
+
 
     // for (auto z = 6; z < AIR_ZRES / 2; z++)
     // for (auto y = 6; y < AIR_YRES / 2; y++)
