@@ -166,29 +166,15 @@ void Simulation::move_behavior(const part_id idx) {
             }
             
             if (next_spot_count) {
-                int spot_idx = rand() % (next_spot_count / 2) * 2;
+                int spot_idx = rng.rand() % (next_spot_count / 2) * 2;
                 try_move(idx, part.x + next[spot_idx], ylvlf, part.z + next[spot_idx + 1]);
             }
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        std::array<int8_t, 3 * 26> next; // 26 neighboring spots it could go
-        std::size_t next_spot_count = 0;
-
-        for (int dz = -1; dz <= 1; dz++)
-        for (int dy = -1; dy <= 1; dy++)
-        for (int dx = -1; dx <= 1; dx++) {
-            if (!dx && !dz && !dy) continue;
-            if (pmap[z + dz][y + dy][x + dx] == 0) {
-                next[next_spot_count++] = dx;
-                next[next_spot_count++] = dy;
-                next[next_spot_count++] = dz;
-            }
-        }
-        if (next_spot_count) {
-            int spot_idx = (rand() % (next_spot_count / 3)) * 3;
-            try_move(idx, part.x + next[spot_idx], part.y + next[spot_idx + 1], part.z + next[spot_idx + 2]);
-        }
+        part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
+        part.vy = rng.uniform(-el.Diffusion, el.Diffusion);
+        part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
     }
 }
 

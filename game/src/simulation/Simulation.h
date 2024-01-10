@@ -7,6 +7,7 @@
 #include "Air.h"
 
 #include "../util/dirty_rect.h"
+#include "../util/rand.h"
 #include <vector>
 
 class Simulation {
@@ -28,6 +29,7 @@ public:
     
     std::vector<util::DirtyRect<coord_t>> zslice_dirty_rects;
     unsigned int sim_thread_count;
+    RNG rng;
 
 
     Simulation();
