@@ -54,6 +54,26 @@ namespace util {
     constexpr float hypot(float x, float y, float z) {
         return std::sqrt(x * x + y * y + z * z);
     }
+
+    /**
+     * @brief Return the index of the largest in [a, b, c]
+     * @param a 
+     * @param b 
+     * @param c 
+     * @return constexpr int 
+     */
+    constexpr int argmax3(float a, float b, float c) {
+        a = std::abs(a);
+        b = std::abs(b);
+        c = std::abs(c);
+        int idx = 0;
+
+        if (b > a)
+            idx = 1;
+        if (c > b && c > a)
+            idx = 2;
+        return idx;
+    }
 }
 
 #endif

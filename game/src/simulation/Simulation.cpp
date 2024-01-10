@@ -161,9 +161,9 @@ void Simulation::update_part(const part_id i) {
         if (result == -1) return; // TODO: flags or something
     }
 
+    move_behavior(i); // Apply element specific movement, like powder / liquid spread
     if (part.vx || part.vy || part.vz)
         _raycast_movement(i, x, y, z); // Apply velocity to displacement
-    move_behavior(i); // Apply element specific movement, like powder / liquid spread
 }
 
 void Simulation::update() {

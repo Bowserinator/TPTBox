@@ -19,12 +19,38 @@
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
 bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto &pmapOccupied) const {
+    // For raycasts that stop early, ie right on the next frame, we can simply check
+    // if there's a particle in the direction of the greatest velocity. This saves
+    // ~5ms per frame on a grid of 350k water particles
+    int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
+    bool early_stop = false;
+
+    if (largest_axis == 0 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
+        early_stop = true;
+        out.faces = RayCast::FACE_X;
+    }
+    else if (largest_axis == 1 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
+        early_stop = true;
+        out.faces = RayCast::FACE_Y;
+    }
+    else if (largest_axis == 2 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
+        early_stop = true;
+        out.faces = RayCast::FACE_Z;
+    }
+    if (early_stop) {
+        out.x = in.x;
+        out.y = in.y;
+        out.z = in.z;
+        return true;
+    }
+
+    // Actual raycast --------------
+    Vector3T<signed_coord_t> current_voxel{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z };
     const Vector3T<signed_coord_t> last_voxel{
         (signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
         (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
         (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))
     };
-    Vector3T<signed_coord_t> current_voxel{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z };
     Vector3T<signed_coord_t> diff{ 0, 0, 0 };
     Vector3T<signed_coord_t> previous_voxel = current_voxel;
 
@@ -143,7 +169,9 @@ void Simulation::move_behavior(const part_id idx) {
         // TODO: temp hack
         const auto behavior = eval_move(idx, x, y - 1, z);
 
-        if ((y > 1 && behavior != PartSwapBehavior::NOOP)) {
+        part.vy = -1.0f; // 60 fps wihout, 30 fps with TODO
+
+        if (y > 1 && behavior != PartSwapBehavior::NOOP) {
             try_move(idx, x, y - 1, z, behavior);
             return;
         }
@@ -254,6 +282,11 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
+        #ifdef DEBUG
+        case PartSwapBehavior::SPECIAL:
+            throw std::invalid_argument("Particle of type " + to_string(parts[idx].type) + " in try_move() has unresolved move behavior of SPECIAL");
+            break;
+        #endif
     }
 
     parts[idx].x = tx;
@@ -323,9 +356,7 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
             .compute_faces = true
         }, out, pmapOccupied);
 
-        // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
-        // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
-        portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
+        if (!hit) break;
 
         no_move = out.x == sx && out.y == sy && out.z == sz;
         sx = out.x; sy = out.y; sz = out.z;
@@ -341,20 +372,27 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
             no_move = true;
             break;
         }
+
+        // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
+        // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
+        portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
     } while(!(hit || no_move || portion_velocity <= 0.5f));
 
-    float ox, oy, oz;
     if (!hit || no_move) {
-        ox = util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f);
-        oy = util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f);
-        oz = util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f);
-    } else {
-        ox = out.x;
-        oy = out.y;
-        oz = out.z;
-    }
+        float ox = util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f);
+        float oy = util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f);
+        float oz = util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f);
 
-    try_move(idx, ox, oy, oz);
+        if (no_move) {
+            part.x = ox;
+            part.y = oy;
+            part.z = oz;
+        } else {
+            try_move(idx, ox, oy, oz);
+        }
+    } else {
+        try_move(idx, out.x, out.y, out.z);
+    }
 }
 
 /**
