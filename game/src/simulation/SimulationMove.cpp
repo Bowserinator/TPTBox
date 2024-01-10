@@ -22,6 +22,8 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
     // For raycasts that stop early, ie right on the next frame, we can simply check
     // if there's a particle in the direction of the greatest velocity. This saves
     // ~5ms per frame on a grid of 350k water particles
+    // When the grid is that full, statistically most particles will not be able to move
+    // hence the "optimization"
     int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
     bool early_stop = false;
 

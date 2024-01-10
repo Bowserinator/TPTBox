@@ -31,8 +31,7 @@ Simulation::Simulation():
     constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
 
     sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
-    zslice_dirty_rects = std::vector<util::DirtyRect<coord_t>>(ZRES);
-    
+
     // TODO: singleton?
     _init_can_move();
 }
@@ -117,9 +116,10 @@ void Simulation::kill_part(const part_id i) {
 }
 
 void Simulation::update_zslice(const coord_t pz) {
-    const auto &rect = zslice_dirty_rects[pz];
-    for (coord_t py = rect.minY; py <= rect.maxY; py++)
-    for (coord_t px = rect.minX; px <= rect.maxX; px++) {
+    // Dirty rect does not have any impact on performance
+    // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
+    for (coord_t py = 1; py < YRES - 1; py++)
+    for (coord_t px = 1; px < XRES - 1; px++) {
         for (int j = 0; j < 2; j++) {
             auto map = j == 0 ? pmap : photons;
             if (!map[pz][py][px]) continue;
@@ -196,9 +196,6 @@ void Simulation::recalc_free_particles() {
     parts_count = 0;
     part_id newMaxId = 0;
 
-    for (auto &rect : zslice_dirty_rects)
-        rect.reset();
-
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
@@ -215,11 +212,6 @@ void Simulation::recalc_free_particles() {
             map[z][y][x] = PMAP(part.type, i);
 
         update_part(i);
-
-        // After particle has moved, updated dirty rect
-        // if the particle was not deleted
-        if (part.type)
-            zslice_dirty_rects[util::roundf(part.z)].update(util::roundf(part.x), util::roundf(part.y));
     }
     maxId = newMaxId + 1;
 }

@@ -6,7 +6,6 @@
 #include "Raycast.h"
 #include "Air.h"
 
-#include "../util/dirty_rect.h"
 #include "../util/rand.h"
 #include <vector>
 
@@ -26,8 +25,7 @@ public:
     
     uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
-    
-    std::vector<util::DirtyRect<coord_t>> zslice_dirty_rects;
+
     unsigned int sim_thread_count;
     RNG rng;
 

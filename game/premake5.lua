@@ -5,8 +5,9 @@ project (workspaceName)
   	kind "ConsoleApp"
     location "../_build"
     targetdir "../_bin/%{cfg.buildcfg}"
+
 	linkoptions { "-fopenmp" }
-	
+
     filter "configurations:Release"
 		kind "WindowedApp"
 		entrypoint "mainCRTStartup"
