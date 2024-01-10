@@ -185,7 +185,7 @@ void Simulation::move_behavior(const part_id idx) {
         }
 
         // Check surroundings or below surroundings
-        std::array<int8_t, 2 * 8> next; // 8 neighboring spots it could go
+        std::array<int32_t, 2 * 8> next; // 8 neighboring spots it could go
         std::size_t next_spot_count = 0;
 
         const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
@@ -215,7 +215,7 @@ void Simulation::move_behavior(const part_id idx) {
             return;
         }
 
-        std::array<int8_t, 3 * 26> next; // 26 neighboring spots it could go
+        std::array<int32_t, 3 * 26> next; // 26 neighboring spots it could go
         std::size_t next_spot_count = 0;
 
         for (int dz = -1; dz <= 1; dz++)

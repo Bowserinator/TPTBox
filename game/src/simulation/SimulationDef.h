@@ -3,8 +3,8 @@
 
 #include "stdint.h"
 
-using coord_t = uint8_t;
-using signed_coord_t = int16_t;
+using coord_t = uint32_t;
+using signed_coord_t = int32_t;
 using ElementType = unsigned int;
 
 // Must be signed, negative values are used for pfree
