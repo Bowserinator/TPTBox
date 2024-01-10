@@ -14,9 +14,12 @@ using pmap_id = int32_t; // This is ID and type merged into 1 32 bit value
 
 // Pmap and photons store positive ids in this format:
 // [TYP 10 bits][ID 22 bits]
-#define ID(r) (r & 0b1111111111111111111111)
-#define TYP(r) (r >> 22)
-#define PMAP(t, i) (((uint32_t)t << 22) | (uint32_t)i)
+constexpr uint32_t PMAP_ID_BITS = 22;
+constexpr uint16_t PT_NUM = 1 << (32 - PMAP_ID_BITS); // Max number of elements possible
+
+#define ID(r) (r & ((1 << PMAP_ID_BITS) - 1))
+#define TYP(r) (r >> PMAP_ID_BITS)
+#define PMAP(t, i) (((uint32_t)t << PMAP_ID_BITS) | (uint32_t)i)
 
 constexpr uint16_t ELEMENT_COUNT = __GLOBAL_ELEMENT_COUNT;
 
