@@ -42,6 +42,10 @@ void Simulation::_init_can_move() {
     const auto &elements = GetElements();
 
     for (movingType = 1; movingType <= ELEMENT_COUNT; movingType++) {
+        // All elements swap with NONE
+        can_move[movingType][PT_NONE] = PartSwapBehavior::SWAP;
+        can_move[PT_NONE][movingType] = PartSwapBehavior::SWAP;
+
 		for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
             // Heavier elements can swap with lighter ones
 			if (elements[movingType].Weight > elements[destinationType].Weight)

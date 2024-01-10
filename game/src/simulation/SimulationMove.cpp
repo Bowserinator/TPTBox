@@ -106,6 +106,7 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
             out.x = previous_voxel.x;
             out.y = previous_voxel.y;
             out.z = previous_voxel.z;
+
             if (in.compute_faces)
                 out.faces = getFaces(previous_voxel, current_voxel);
             return true;
@@ -285,7 +286,7 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
     auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> bool {
         if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
             return true;
-        return eval_move(idx, loc.z, loc.y, loc.z) == PartSwapBehavior::NOOP;
+        return eval_move(idx, loc.x, loc.y, loc.z) == PartSwapBehavior::NOOP;
     };
 
     // Repeatedly ray cast until we "run out" of distance
