@@ -8,8 +8,6 @@ project (workspaceName)
 
 	linkoptions { "-fopenmp" }
 	buildoptions {
-		"-ftree-vectorize",
-		"-ftree-loop-vectorize",
 		-- "-fopt-info-vec-optimized" -- Uncomment to display what operations were vectorized
 	}
 

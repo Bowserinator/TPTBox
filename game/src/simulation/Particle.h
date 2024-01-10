@@ -14,13 +14,14 @@ namespace PartFlags {
 struct alignas(64) Particle {
     uint16_t type;
     part_id id;
+    std::bitset<8> flag;
+
     uint16_t ctype;
     int16_t life = 0;
     float x, y, z, vx, vy, vz;
     float temp;
     uint16_t tmp1, tmp2;
     RGBA dcolor;
-    std::bitset<8> flag;
 
     Particle(): type(0), id(0) {}
     Particle(const Particle&) = delete;

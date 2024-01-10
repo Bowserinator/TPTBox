@@ -15,30 +15,30 @@ Element::Element() {
     MenuSection = 0; // TODO;
     Enabled = false;
 
-	float Advection = 0.0f;
-	/*float AirDrag;           // How much air particle produces in direction of travel
-	float AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops
-	float Loss;              // Velocity multiplier per frame*/
-	float Collision = 0.0f;
-	/*float Gravity;           // How much particle is affected by gravity
-	float NewtonianGravity;  // How much particle is affected by newtonian gravity*/
-	float Diffusion = UNSET_PROPERTY;
-	/* float HotAir;            // How much particle increases pressure by
+	Advection = 0.0f;
+	/*AirDrag;           // How much air particle produces in direction of travel
+	AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops
+	Loss;              // Velocity multiplier per frame*/
+	Collision = 0.0f;
+	/*Gravity;           // How much particle is affected by gravity
+	NewtonianGravity;  // How much particle is affected by newtonian gravity*/
+	Diffusion = UNSET_PROPERTY;
+	/* HotAir;            // How much particle increases pressure by
 
-	int Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect
+	Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect
 
-	int Weight;
-	unsigned char HeatConduct;
-	unsigned int LatentHeat;
+	Weight;
+	HeatConduct;
+	LatentHeat;
 
-	float LowPressure;
-	int LowPressureTransition;
-	float HighPressure;
-	int HighPressureTransition;
-	float LowTemperature;
-	int LowTemperatureTransition;
-	float HighTemperature;
-	int HighTemperatureTransition;*/
+	LowPressure;
+	LowPressureTransition;
+	HighPressure;
+	HighPressureTransition;
+	LowTemperature;
+	LowTemperatureTransition;
+	HighTemperature;
+	HighTemperatureTransition;*/
 
     Update = nullptr;
 }

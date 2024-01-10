@@ -9,18 +9,10 @@
 
 class Element {
 public:
+	ElementState State;
     uint32_t Properties;
-    ElementState State;
 
-    RGBA Color;
-    std::string Identifier;  // ID string, like METL
-	std::string Name;        // Display name, like METL
-    std::string Description; // Menu description
-
-	bool MenuVisible;        // Visible in menu if true
-	int MenuSection;  
 	bool Enabled;            // If enabled = false element cannot be created
-
 	float Advection;         // How much particle is accelerated by moving air, generally -1 to 1
 	float AirDrag;           // How much air particle produces in direction of travel
 	float AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops
@@ -46,10 +38,19 @@ public:
 	float HighTemperature;
 	int HighTemperatureTransition;
 
-    int (*Update)(UPDATE_FUNC_ARGS);
+	int (*Update)(UPDATE_FUNC_ARGS);
 
     // TODO: graphics, create function, create allowed, change type, ctype draw
     // todo: default properties
+
+	RGBA Color;
+    std::string Identifier;  // ID string, like METL
+	std::string Name;        // Display name, like METL
+    std::string Description; // Menu description
+
+	bool MenuVisible;        // Visible in menu if true
+	int MenuSection;  
+
 
     Element();
 	Element(const Element&) = delete;

@@ -9,6 +9,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <string>
 
 /**
  * @brief Perform a raycast starting at (x,y,z) with max displacement
@@ -171,7 +172,7 @@ void Simulation::move_behavior(const part_id idx) {
         // TODO: temp hack
         const auto behavior = eval_move(idx, x, y - 1, z);
 
-        part.vy = -1.0f; // 60 fps wihout, 30 fps with TODO
+        // part.vy = -1.0f; // 60 fps wihout, 35 fps with TODO
 
         if (y > 1 && behavior != PartSwapBehavior::NOOP) {
             try_move(idx, x, y - 1, z, behavior);
@@ -200,9 +201,9 @@ void Simulation::move_behavior(const part_id idx) {
                     next[next_spot_count++] = dz;
                 }
             }
-            
+
             if (next_spot_count) {
-                int spot_idx = rng.rand() % (next_spot_count / 2) * 2;
+                int spot_idx = (rng.rand() % (next_spot_count / 2)) * 2;
                 try_move(idx, part.x + next[spot_idx], ylvlf, part.z + next[spot_idx + 1]);
             }
         }
@@ -286,7 +287,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         // cases above by eval_move
         #ifdef DEBUG
         case PartSwapBehavior::SPECIAL:
-            throw std::invalid_argument("Particle of type " + to_string(parts[idx].type) + " in try_move() has unresolved move behavior of SPECIAL");
+            throw std::invalid_argument("Particle of type " + std::to_string(parts[idx].type) + " in try_move() has unresolved move behavior of SPECIAL");
             break;
         #endif
     }

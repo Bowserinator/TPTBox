@@ -65,7 +65,7 @@ workspace (workspaceName)
 
     filter "configurations:Release"
         defines { "NDEBUG" }
-        optimize "On"
+        optimize "Speed"
 
     filter { "platforms:x64" }
         architecture "x86_64"
