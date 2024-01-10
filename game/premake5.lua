@@ -7,6 +7,11 @@ project (workspaceName)
     targetdir "../_bin/%{cfg.buildcfg}"
 
 	linkoptions { "-fopenmp" }
+	buildoptions {
+		"-ftree-vectorize",
+		"-ftree-loop-vectorize",
+		-- "-fopt-info-vec-optimized" -- Uncomment to display what operations were vectorized
+	}
 
     filter "configurations:Release"
 		kind "WindowedApp"
