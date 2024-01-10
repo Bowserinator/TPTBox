@@ -131,7 +131,7 @@ void Simulation::move_behavior(const part_id idx) {
     const auto &el = GetElements()[parts[idx].type];
     if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
 
-    const auto &part = parts[idx];
+    auto &part = parts[idx];
 
     const coord_t x = util::roundf(part.x);
     const coord_t y = util::roundf(part.y);
@@ -143,7 +143,7 @@ void Simulation::move_behavior(const part_id idx) {
         // TODO: temp hack
         const auto behavior = eval_move(idx, x, y - 1, z);
 
-        if ((y > 1 && !pmap[z][y - 1][x]) || (y > 1 && behavior != PartSwapBehavior::NOOP)) {
+        if ((y > 1 && behavior != PartSwapBehavior::NOOP)) {
             try_move(idx, x, y - 1, z, behavior);
             return;
         }
@@ -260,10 +260,10 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY]; 
     auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
 
-    if (part1_is_e && part2_is_e)
-        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
-    else if (!part1_is_e && !part2_is_e)
+    if (!part1_is_e && !part2_is_e)
         std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
+    else if (part1_is_e && part2_is_e)
+        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
     else {
         // Swapping energy with regular. May cause problems
         // if we displace a pmap onto something that can't normally

@@ -16,7 +16,7 @@ public:
     Particle parts[NPARTS];
     pmap_id pmap[ZRES][YRES][XRES];
     pmap_id photons[ZRES][YRES][XRES];
-    PartSwapBehavior can_move[ELEMENT_COUNT][ELEMENT_COUNT];
+    PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
 
     Air air;
 
