@@ -223,8 +223,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         return;
     }
 
-    auto &part_map = GetElements()[parts[idx].type].State == ElementState::TYPE_ENERGY ?
-        photons : pmap;
+    auto &part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
     auto old_pmap_val = part_map[oldz][oldy][oldx];
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
@@ -258,12 +257,20 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);
 
-    // TODO: temp hack
-    // also need to consider solid -> energy and vice versa
-    if (GetElements()[parts[id1].type].State == ElementState::TYPE_ENERGY || GetElements()[parts[id2].type].State == ElementState::TYPE_ENERGY)
+    auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY]; 
+    auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
+
+    if (part1_is_e && part2_is_e)
         std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
-    else
+    else if (!part1_is_e && !part2_is_e)
         std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
+    else {
+        // Swapping energy with regular. May cause problems
+        // if we displace a pmap onto something that can't normally
+        // be displayed, but this option shouldn't be used anyways
+        std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
+        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
+    }
 }
 
 

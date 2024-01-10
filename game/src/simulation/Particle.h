@@ -8,6 +8,7 @@
 
 namespace PartFlags {
     constexpr uint8_t UPDATE_FRAME = 0;
+    constexpr uint8_t IS_ENERGY = 1;
 }
 
 struct Particle {

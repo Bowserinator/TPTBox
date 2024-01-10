@@ -31,7 +31,7 @@ Simulation::Simulation():
     constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
 
     sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
-    zslice_dirty_rects = std::vector<DirtyRect<coord_t>>(ZRES);
+    zslice_dirty_rects = std::vector<util::DirtyRect<coord_t>>(ZRES);
     
     // TODO: singleton?
     _init_can_move();
@@ -64,8 +64,8 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
             std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z));
     #endif
 
-    const auto part_map = GetElements()[type].State == ElementState::TYPE_ENERGY ?
-        photons : pmap;
+    auto is_energy = GetElements()[type].State == ElementState::TYPE_ENERGY;
+    const auto part_map = is_energy ? photons : pmap;
 
     if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
     if (pfree >= NPARTS) return PartErr::PARTS_FULL;
@@ -74,6 +74,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     // Note: should it allow creation off screen? TODO
     const part_id next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
     const part_id old_pfree = pfree;
+
+    parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+    parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
 
     parts[pfree].id = pfree;
     parts[pfree].type = type;
@@ -104,6 +107,7 @@ void Simulation::kill_part(const part_id i) {
         photons[z][y][x] = 0;
 
     part.type = PT_NONE;
+    part.flag[PartFlags::IS_ENERGY] = 0;
 
     if (i == maxId && i > 0)
         maxId--;
@@ -206,7 +210,7 @@ void Simulation::recalc_free_particles() {
         const coord_t y = util::roundf(part.y);
         const coord_t z = util::roundf(part.z);
 
-        auto &map = GetElements()[part.type].State == ElementState::TYPE_ENERGY ? photons : pmap;
+        auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
         if (!map[z][y][x])
             map[z][y][x] = PMAP(part.type, i);
 
