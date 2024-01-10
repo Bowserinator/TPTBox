@@ -124,12 +124,12 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
 /**
  * @brief Perform default movement behaviors for different
  *        states of matter (ie powder, fluid, etc...)
- * 
  * @param idx 
  */
 void Simulation::move_behavior(const part_id idx) {
     const auto &el = GetElements()[parts[idx].type];
-    if (el.State == ElementState::TYPE_SOLID) return; // Solids can't move
+    if (el.State == ElementState::TYPE_SOLID || el.State == ElementState::TYPE_ENERGY)
+        return; // Solids can't move, energy doesn't have custom behavior
 
     auto &part = parts[idx];
 
@@ -145,6 +145,12 @@ void Simulation::move_behavior(const part_id idx) {
 
         if ((y > 1 && behavior != PartSwapBehavior::NOOP)) {
             try_move(idx, x, y - 1, z, behavior);
+            return;
+        }
+
+        if (el.Diffusion != UNSET_PROPERTY) {
+            part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
+            part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
             return;
         }
 
@@ -172,9 +178,30 @@ void Simulation::move_behavior(const part_id idx) {
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
-        part.vy = rng.uniform(-el.Diffusion, el.Diffusion);
-        part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
+        if (el.Diffusion != UNSET_PROPERTY) {
+            part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
+            part.vy = rng.uniform(-el.Diffusion, el.Diffusion);
+            part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
+            return;
+        }
+
+        std::array<int8_t, 3 * 26> next; // 26 neighboring spots it could go
+        std::size_t next_spot_count = 0;
+
+        for (int dz = -1; dz <= 1; dz++)
+        for (int dy = -1; dy <= 1; dy++)
+        for (int dx = -1; dx <= 1; dx++) {
+            if (!dx && !dz && !dy) continue;
+            if (pmap[z + dz][y + dy][x + dx] == 0) {
+                next[next_spot_count++] = dx;
+                next[next_spot_count++] = dy;
+                next[next_spot_count++] = dz;
+            }
+        }
+        if (next_spot_count) {
+            int spot_idx = (rand() % (next_spot_count / 3)) * 3;
+            try_move(idx, part.x + next[spot_idx], part.y + next[spot_idx + 1], part.z + next[spot_idx + 2]);
+        }
     }
 }
 

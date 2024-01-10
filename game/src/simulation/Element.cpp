@@ -22,7 +22,7 @@ Element::Element() {
 	float Collision;         // Velocity multiplier upon collision
 	float Gravity;           // How much particle is affected by gravity
 	float NewtonianGravity;  // How much particle is affected by newtonian gravity*/
-	float Diffusion = 0.0f;
+	float Diffusion = UNSET_PROPERTY;
 	/* float HotAir;            // How much particle increases pressure by
 
 	int Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect

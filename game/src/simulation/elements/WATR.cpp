@@ -5,5 +5,5 @@ void Element::Element_WATR() {
     Color = 0x0000FFFF;
     Weight = 10;
 
-    Diffusion = 1.5f;
+    Diffusion = UNSET_PROPERTY;
 };
