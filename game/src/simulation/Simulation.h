@@ -9,9 +9,16 @@
 #include "../util/rand.h"
 #include <vector>
 
+enum class GravityMode {
+    VERTICAL = 0,
+    ZERO_G = 1,
+    RADIAL = 2
+};
+
 class Simulation {
 public:
     bool paused;
+    GravityMode gravity_mode;
 
     Particle parts[NPARTS];
     pmap_id pmap[ZRES][YRES][XRES];
@@ -35,9 +42,7 @@ public:
     void kill_part(const part_id id);
 
     void update();
-
     void update_zslice(const coord_t zslice);
-
     void recalc_free_particles();
 
     void update_part(const part_id i);

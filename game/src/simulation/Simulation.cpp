@@ -24,6 +24,9 @@ Simulation::Simulation():
     maxId = 0;
     frame_count = 0;
     parts_count = 0;
+    gravity_mode = GravityMode::VERTICAL;
+
+    gravity_mode = GravityMode::RADIAL; // TODO
     
 
     // ---- Threads ------

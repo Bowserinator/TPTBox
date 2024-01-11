@@ -4,6 +4,9 @@
 #include "../util/vector_op.h"
 #include "../util/util.h"
 
+#include "raylib.h"
+#include "raymath.h"
+
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -149,7 +152,6 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
     return false;
 }
 
-
 /**
  * @brief Perform default movement behaviors for different
  *        states of matter (ie powder, fluid, etc...)
@@ -167,15 +169,36 @@ void Simulation::move_behavior(const part_id idx) {
     const coord_t z = util::roundf(part.z);
 
     if (el.State == ElementState::TYPE_LIQUID || el.State == ElementState::TYPE_POWDER) {
+        if (gravity_mode == GravityMode::ZERO_G) return;
+
         // TODO: gravity
         // If nothing below go straight down
         // TODO: temp hack
-        const auto behavior = eval_move(idx, x, y - 1, z);
+        if (gravity_mode == GravityMode::VERTICAL) {
+            const auto behavior = eval_move(idx, x, y - 1, z);
+            if (y > 1 && behavior != PartSwapBehavior::NOOP) {
+                try_move(idx, x, y - 1, z, behavior);
+                return;
+            }
+        } else if (gravity_mode == GravityMode::RADIAL) {
+            Vector3 ray{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
+            auto dist = util::hypot(ray.x, ray.y, ray.z);
+            ray /= dist;
+            constexpr float F = 0.3f;
+            constexpr float d = 1.3f; // TODO: use fluid diffusion value normalized to surface of sphere
 
-        // part.vy = -1.0f; // 60 fps wihout, 35 fps with TODO
+            // Generate random unit vector orthogonal to gravity
+            Vector3 randv{ rng.uniform(-1.0f, 1.0f), rng.uniform(-1.0f, 1.0f), rng.uniform(-1.0f, 1.0f) };
+            // Project random vector to first and subtract component
+            randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
 
-        if (y > 1 && behavior != PartSwapBehavior::NOOP) {
-            try_move(idx, x, y - 1, z, behavior);
+            if (!pmap[z + util::sign(part.vz)][y + util::sign(part.vy)][x + util::sign(part.vx)])
+                randv = Vector3{0.0f, 0.0f, 0.0f};
+            // TODO: ensure magnitude is good and not close enough in angle to first one, need fancy math :(
+
+            part.vx += ray.x * F + d * randv.x;
+            part.vy += ray.y * F + d * randv.y;
+            part.vz += ray.z * F + d * randv.z;
             return;
         }
 
@@ -381,18 +404,14 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
         portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
     } while(!(hit || no_move || portion_velocity <= 0.5f));
 
-    if (!hit || no_move) {
-        float ox = util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f);
-        float oy = util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f);
-        float oz = util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f);
-
-        if (no_move) {
-            part.x = ox;
-            part.y = oy;
-            part.z = oz;
-        } else {
-            try_move(idx, ox, oy, oz);
-        }
+    if (no_move) {
+        // Try move provides bounds safety here, don't set pos directly
+        try_move(idx, part.x, part.y, part.z);
+    } else if (!hit) {
+        try_move(idx,
+            util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f),
+            util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f),
+            util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f));
     } else {
         try_move(idx, out.x, out.y, out.z);
     }

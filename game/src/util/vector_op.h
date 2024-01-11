@@ -39,22 +39,27 @@ inline Vector2 operator-(Vector2 lhs, const Vector2 &rhs) {
     return lhs;
 }
 
-inline Vector2 &operator*=(Vector2 &lhs, const float &rhs) {
+inline Vector2 &operator*=(Vector2 &lhs, const float rhs) {
     lhs.x *= rhs;
     lhs.y *= rhs;
     return lhs;
 }
-inline Vector2 operator*(Vector2 lhs, const float &rhs) {
+inline Vector2 operator*(Vector2 lhs, const float rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+inline Vector2 operator*(const float rhs, Vector2 lhs) {
     lhs *= rhs;
     return lhs;
 }
 
-inline Vector2 &operator/=(Vector2 &lhs, const float &rhs) {
+
+inline Vector2 &operator/=(Vector2 &lhs, const float rhs) {
     lhs.x /= rhs;
     lhs.y /= rhs;
     return lhs;
 }
-inline Vector2 operator/(Vector2 lhs, const float &rhs) {
+inline Vector2 operator/(Vector2 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
 }
@@ -96,24 +101,28 @@ inline Vector3 operator-(Vector3 lhs, const Vector3 &rhs) {
     return lhs;
 }
 
-inline Vector3 &operator*=(Vector3 &lhs, const float &rhs) {
+inline Vector3 &operator*=(Vector3 &lhs, const float rhs) {
     lhs.x *= rhs;
     lhs.y *= rhs;
     lhs.z *= rhs;
     return lhs;
 }
-inline Vector3 operator*(Vector3 lhs, const float &rhs) {
+inline Vector3 operator*(Vector3 lhs, const float rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+inline Vector3 operator*(const float rhs, Vector3 lhs) {
     lhs *= rhs;
     return lhs;
 }
 
-inline Vector3 &operator/=(Vector3 &lhs, const float &rhs) {
+inline Vector3 &operator/=(Vector3 &lhs, const float rhs) {
     lhs.x /= rhs;
     lhs.y /= rhs;
     lhs.z /= rhs;
     return lhs;
 }
-inline Vector3 operator/(Vector3 lhs, const float &rhs) {
+inline Vector3 operator/(Vector3 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
 }
@@ -156,26 +165,30 @@ inline Vector4 operator-(Vector4 lhs, const Vector4 &rhs) {
     return lhs;
 }
 
-inline Vector4 &operator*=(Vector4 &lhs, const float &rhs) {
+inline Vector4 &operator*=(Vector4 &lhs, const float rhs) {
     lhs.x *= rhs;
     lhs.y *= rhs;
     lhs.z *= rhs;
     lhs.w *= rhs;
     return lhs;
 }
-inline Vector4 operator*(Vector4 lhs, const float &rhs) {
+inline Vector4 operator*(Vector4 lhs, const float rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+inline Vector4 operator*(const float rhs, Vector4 lhs) {
     lhs *= rhs;
     return lhs;
 }
 
-inline Vector4 &operator/=(Vector4 &lhs, const float &rhs) {
+inline Vector4 &operator/=(Vector4 &lhs, const float rhs) {
     lhs.x /= rhs;
     lhs.y /= rhs;
     lhs.z /= rhs;
     lhs.w /= rhs;
     return lhs;
 }
-inline Vector4 operator/(Vector4 lhs, const float &rhs) {
+inline Vector4 operator/(Vector4 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
 }
@@ -230,24 +243,24 @@ template <class T> inline Vector3T<T> operator-(Vector3T<T> lhs, const Vector3T<
     return lhs;
 }
 
-template <class T> inline Vector3T<T> &operator*=(Vector3T<T> &lhs, const float &rhs) {
+template <class T> inline Vector3T<T> &operator*=(Vector3T<T> &lhs, const float rhs) {
     lhs.x *= rhs;
     lhs.y *= rhs;
     lhs.z *= rhs;
     return lhs;
 }
-template <class T> inline Vector3T<T> operator*(Vector3T<T> lhs, const float &rhs) {
+template <class T> inline Vector3T<T> operator*(Vector3T<T> lhs, const float rhs) {
     lhs *= rhs;
     return lhs;
 }
 
-template <class T> inline Vector3T<T> &operator/=(Vector3T<T> &lhs, const float &rhs) {
+template <class T> inline Vector3T<T> &operator/=(Vector3T<T> &lhs, const float rhs) {
     lhs.x /= rhs;
     lhs.y /= rhs;
     lhs.z /= rhs;
     return lhs;
 }
-template <class T> inline Vector3T<T> operator/(Vector3T<T> lhs, const float &rhs) {
+template <class T> inline Vector3T<T> operator/(Vector3T<T> lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
 }

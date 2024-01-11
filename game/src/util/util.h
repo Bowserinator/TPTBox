@@ -74,6 +74,17 @@ namespace util {
             idx = 2;
         return idx;
     }
+
+    /**
+     * @brief Return sign of value
+     * @param a 
+     * @return constexpr int -1 if negative, 0 if 0, 1 if pos
+     */
+    template <class T> requires std::integral<T> or std::floating_point<T>
+    constexpr int sign(T a) {
+        if (a == 0) return 0;
+        return a < 0 ? -1 : 1;
+    }
 }
 
 #endif
