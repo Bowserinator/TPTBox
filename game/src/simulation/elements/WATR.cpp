@@ -6,4 +6,5 @@ void Element::Element_WATR() {
     Weight = 10;
 
     Diffusion = UNSET_PROPERTY;
+    Loss = 0.96f;
 };

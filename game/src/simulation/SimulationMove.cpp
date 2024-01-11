@@ -169,65 +169,76 @@ void Simulation::move_behavior(const part_id idx) {
     const coord_t z = util::roundf(part.z);
 
     if (el.State == ElementState::TYPE_LIQUID || el.State == ElementState::TYPE_POWDER) {
-        if (gravity_mode == GravityMode::ZERO_G) return;
-
-        // TODO: gravity
-        // If nothing below go straight down
-        // TODO: temp hack
-        if (gravity_mode == GravityMode::VERTICAL) {
-            const auto behavior = eval_move(idx, x, y - 1, z);
-            if (y > 1 && behavior != PartSwapBehavior::NOOP) {
-                try_move(idx, x, y - 1, z, behavior);
+        switch (gravity_mode) {
+            case GravityMode::ZERO_G:
                 return;
-            }
-        } else if (gravity_mode == GravityMode::RADIAL) {
-            Vector3 ray{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
-            auto dist = util::hypot(ray.x, ray.y, ray.z);
-            ray /= dist;
-            constexpr float F = 0.3f;
-            constexpr float d = 1.3f; // TODO: use fluid diffusion value normalized to surface of sphere
-
-            // Generate random unit vector orthogonal to gravity
-            Vector3 randv{ rng.uniform(-1.0f, 1.0f), rng.uniform(-1.0f, 1.0f), rng.uniform(-1.0f, 1.0f) };
-            // Project random vector to first and subtract component
-            randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
-
-            if (!pmap[z + util::sign(part.vz)][y + util::sign(part.vy)][x + util::sign(part.vx)])
-                randv = Vector3{0.0f, 0.0f, 0.0f};
-            // TODO: ensure magnitude is good and not close enough in angle to first one, need fancy math :(
-
-            part.vx += ray.x * F + d * randv.x;
-            part.vy += ray.y * F + d * randv.y;
-            part.vz += ray.z * F + d * randv.z;
-            return;
-        }
-
-        if (el.Diffusion != UNSET_PROPERTY) {
-            part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
-            part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
-            return;
-        }
-
-        // Check surroundings or below surroundings
-        std::array<int32_t, 2 * 8> next; // 8 neighboring spots it could go
-        std::size_t next_spot_count = 0;
-
-        const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
-        const float ylvlf = el.State == ElementState::TYPE_LIQUID ? part.y : part.y - 1;
-
-        if (ylvl >= 1 && (pmap[z][y - 1][x] > 0 || y == 1)) {
-            for (int dz = -1; dz <= 1; dz++)
-            for (int dx = -1; dx <= 1; dx++) {
-                if (!dx && !dz) continue;
-                if (pmap[z + dz][y][x + dx] == 0 && pmap[z + dz][ylvl][x + dx] == 0) {
-                    next[next_spot_count++] = dx;
-                    next[next_spot_count++] = dz;
+            case GravityMode::VERTICAL: {
+                const auto behavior = eval_move(idx, x, y - 1, z);
+                if (y > 1 && behavior != PartSwapBehavior::NOOP) {
+                    try_move(idx, x, y - 1, z, behavior);
+                    return;
                 }
-            }
 
-            if (next_spot_count) {
-                int spot_idx = (rng.rand() % (next_spot_count / 2)) * 2;
-                try_move(idx, part.x + next[spot_idx], ylvlf, part.z + next[spot_idx + 1]);
+                // Diffusive wiggling for fluids
+                // This is slower than the basic rule-based one below
+                // so we avoid it if possible
+                if (el.State == ElementState::TYPE_LIQUID && el.Diffusion != UNSET_PROPERTY) {
+                    part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
+                    part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
+                    return;
+                }
+
+                // Check surroundings or below surroundings
+                std::array<int32_t, 2 * 8> next; // 8 neighboring spots it could go
+                std::size_t next_spot_count = 0;
+
+                const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
+                const float ylvlf = el.State == ElementState::TYPE_LIQUID ? part.y : part.y - 1;
+
+                if (ylvl >= 1 && (pmap[z][y - 1][x] > 0 || y == 1)) {
+                    for (int dz = -1; dz <= 1; dz++)
+                    for (int dx = -1; dx <= 1; dx++) {
+                        if (!dx && !dz) continue;
+                        auto self_y_check = ylvl == y ? true : (eval_move(idx, x + dx, y, z + dz) != PartSwapBehavior::NOOP);
+                        if (self_y_check && eval_move(idx, x + dx, ylvl, z + dz) != PartSwapBehavior::NOOP) {
+                            next[next_spot_count++] = dx;
+                            next[next_spot_count++] = dz;
+                        }
+                    }
+
+                    if (next_spot_count) {
+                        int spot_idx = (rng.rand() % (next_spot_count / 2)) * 2;
+                        try_move(idx, part.x + next[spot_idx], ylvlf, part.z + next[spot_idx + 1]);
+                    }
+                }
+                break;
+            }
+            case GravityMode::RADIAL: {
+                Vector3 gravity_force{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
+                auto dist = util::hypot(gravity_force.x, gravity_force.y, gravity_force.z);
+                gravity_force /= dist;
+
+                constexpr float F = 0.3f; // Gravity force multiplier
+
+                // Generate random unit vector orthogonal to gravity for wiggling around
+                // We only wiggle if there is something in the direction we are currently traveling
+                // - Fluids only apply gravity if there's nothing below, otherwise wiggle
+                // - Powders always apply gravity, but only wiggle if there's something below
+                if (el.State == ElementState::TYPE_POWDER ||
+                        eval_move(idx, x + util::sign(part.vx), y + util::sign(part.vy), z + util::sign(part.vz)) != PartSwapBehavior::NOOP) {
+                    part.vx += gravity_force.x * F;
+                    part.vy += gravity_force.y * F;
+                    part.vz += gravity_force.z * F;
+                } else {
+                    const float diffusion = el.Diffusion == UNSET_PROPERTY ? 1.0f : el.Diffusion;
+                    const float diff_force = el.State == ElementState::TYPE_POWDER ? diffusion * 3.5f : diffusion * 1.4f;
+
+                    Vector3 randv = util::rand_perpendicular_vector(gravity_force, rng);
+                    part.vx += diff_force * randv.x;
+                    part.vy += diff_force * randv.y;
+                    part.vz += diff_force * randv.z;
+                }
+                return;
             }
         }
     }
@@ -253,7 +264,7 @@ void Simulation::move_behavior(const part_id idx) {
             }
         }
         if (next_spot_count) {
-            int spot_idx = (rand() % (next_spot_count / 3)) * 3;
+            int spot_idx = (rng.rand() % (next_spot_count / 3)) * 3;
             try_move(idx, part.x + next[spot_idx], part.y + next[spot_idx + 1], part.z + next[spot_idx + 2]);
         }
     }

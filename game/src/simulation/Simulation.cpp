@@ -26,7 +26,7 @@ Simulation::Simulation():
     parts_count = 0;
     gravity_mode = GravityMode::VERTICAL;
 
-    gravity_mode = GravityMode::RADIAL; // TODO
+    // gravity_mode = GravityMode::RADIAL; // TODO
     
 
     // ---- Threads ------
@@ -152,6 +152,11 @@ void Simulation::update_part(const part_id i) {
 
     // Air acceleration
     const auto &el = GetElements()[part.type];
+
+    part.vx *= el.Loss;
+    part.vy *= el.Loss;
+    part.vz *= el.Loss;
+
     if (el.Advection) {
         const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
         part.vx += el.Advection * airCell.data[VX_IDX];

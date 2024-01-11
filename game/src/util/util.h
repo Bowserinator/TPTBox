@@ -2,6 +2,9 @@
 #define UTIL_UTIL_H
 
 #include <cmath>
+#include "raymath.h"
+#include "rand.h"
+
 namespace util {
     /**
      * @brief Round a float fast. WARNING: pass in only positive values
@@ -84,6 +87,23 @@ namespace util {
     constexpr int sign(T a) {
         if (a == 0) return 0;
         return a < 0 ? -1 : 1;
+    }
+
+    /**
+     * @brief Returns a random vector3 orthogonal to the given one
+     *        with a magnitude between 0 and 1.0. Does not guarantee the result
+     *        is non-zero
+     * @param ray Given vector, must have non-zero magnitude
+     * @param rng RNG instance
+     * @return Vector3 
+     */
+    inline Vector3 rand_perpendicular_vector(const Vector3 ray, RNG &rng) {
+        constexpr float RANGE = 0.57735026919f; // sqrt(1/3), should cap max magnitude at 1.0f
+
+        // Project random vector to first and subtract component
+        Vector3 randv{ rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE) };
+        randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
+        return randv;
     }
 }
 
