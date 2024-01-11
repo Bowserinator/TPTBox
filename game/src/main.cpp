@@ -18,7 +18,7 @@ constexpr int screenHeight = 720;
 
 int main(void)
 {
-    InitWindow(screenWidth, screenHeight, "raylib game template");
+    InitWindow(screenWidth, screenHeight, "The Powder Box");
     SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitAudioDevice();
 

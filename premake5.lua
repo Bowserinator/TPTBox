@@ -10,7 +10,7 @@ newoption
         { "opengl33", "OpenGL 3.3"},
         { "opengl43", "OpenGL 4.3"}
     },
-    default = "opengl33"
+    default = "opengl43"
 }
 
 function string.starts(String,Start)

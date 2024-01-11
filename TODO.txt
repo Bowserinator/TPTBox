@@ -1,7 +1,0 @@
-Write README
-Add LICENSE
-
-
-windows: make CC=gcc
-
-make CC=gcc config=release_x64 && _bin\Release\TPTBox.exe > out.txt
