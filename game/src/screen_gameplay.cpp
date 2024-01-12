@@ -7,6 +7,8 @@
 #include "src/render/Particles.h"
 #include "src/simulation/Simulation.h"
 
+#include "src/interface/gui/HUD.h"
+
 #include <algorithm>
 
 
@@ -19,6 +21,7 @@
 
 static RenderCamera render_camera;
 static Simulation sim;
+static HUD hud(&sim);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -30,6 +33,9 @@ static float test = 0.0f; // TODO
 
 
 void ScreenGameplay::init() {
+    hud.init();
+    hud.setState(HUDState::DEBUG_MODE);
+
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
     render_camera.camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
@@ -68,7 +74,7 @@ void ScreenGameplay::init() {
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
     for (int y = 1; y < 2; y++) {
-        sim.create_part(x, y, z, PT_DUST);
+        sim.create_part(x, y, z, PT_WATR);
     }
 
 
@@ -209,19 +215,16 @@ void ScreenGameplay::draw() {
    // rlDisableWireMode();
     EndMode3D();
 
-    /*DrawRectangle(10, 10, 320, 93, Fade(SKYBLUE, 0.5f));
-    DrawRectangleLines(10, 10, 320, 93, BLUE);
 
-    DrawText("Free camera default controls:", 20, 20, 10, BLACK);
-    DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
-    DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
-    DrawText("- Z to zoom to (0, 0, 0)", 40, 80, 10, DARKGRAY);*/
+    hud.draw(HUDData {
+        .fps = fps,
+        .sim_fps = (1.0f / simTime),
 
-    DrawText(TextFormat("CURRENT SIM: %f", (1.0f / simTime)), GetScreenWidth() - 270, 40, 20, GREEN);
-    DrawText(TextFormat("CURRENT FPS: %f", fps), GetScreenWidth() - 270, 70, 20, GREEN);
-    DrawText(TextFormat("Parts: %i", sim.parts_count), GetScreenWidth() - 270, 100, 20, GREEN);
-    DrawText(TextFormat("Parts: %f %f %f", sim.parts[1].x, sim.parts[1].y, sim.parts[1].z), GetScreenWidth() - 470, 120, 20, GREEN);
-    DrawText(TextFormat("Parts: %f %f %f", sim.parts[1].vx, sim.parts[1].vy, sim.parts[1].vz), GetScreenWidth() - 470, 140, 20, GREEN);
+        .idx = 1,
+        .x = std::round(render_camera.camera.position.x),
+        .y = std::round(render_camera.camera.position.y),
+        .z = std::round(render_camera.camera.position.z),
+    });
 
     fps = 1.0f / drawTime;
 }

@@ -13,6 +13,7 @@ public:
     uint32_t Properties;
 
 	bool Enabled;            // If enabled = false element cannot be created
+	uint32_t Causality;      // Radius of causality, 0 = only this part, 1 = moore neighborhood, etc...
 	float Advection;         // How much particle is accelerated by moving air, generally -1 to 1
 	float AirDrag;           // How much air particle produces in direction of travel
 	float AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops

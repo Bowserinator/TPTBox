@@ -23,9 +23,9 @@ constexpr uint16_t PT_NUM = 1 << (32 - PMAP_ID_BITS); // Max number of elements 
 
 constexpr uint16_t ELEMENT_COUNT = __GLOBAL_ELEMENT_COUNT;
 
-constexpr unsigned int XRES = 160;
-constexpr unsigned int YRES = 100;
-constexpr unsigned int ZRES = 160;
+constexpr unsigned int XRES = 200;
+constexpr unsigned int YRES = 200;
+constexpr unsigned int ZRES = 200;
 constexpr unsigned int NPARTS = XRES * YRES * ZRES;
 
 constexpr float MAX_VELOCITY = 50.0f;

@@ -4,6 +4,7 @@
 #include <cmath>
 #include "raymath.h"
 #include "rand.h"
+#include "vector_op.h"
 
 namespace util {
     /**
@@ -28,6 +29,11 @@ namespace util {
      */
     constexpr float clampf(const float val, const float min, const float max) {
         const float tmp = val < min ? min : val;
+        return tmp > max ? max : tmp;
+    }
+
+    constexpr int clamp(const int val, const int min, const int max) {
+        const int tmp = val < min ? min : val;
         return tmp > max ? max : tmp;
     }
 

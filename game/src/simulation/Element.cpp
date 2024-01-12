@@ -14,6 +14,7 @@ Element::Element() {
     MenuVisible = false;
     MenuSection = 0; // TODO;
     Enabled = false;
+	Causality = 0;
 
 	Advection = 0.0f;
 	/*AirDrag;           // How much air particle produces in direction of travel

@@ -21,7 +21,7 @@ struct alignas(64) Particle {
     float x, y, z, vx, vy, vz;
     float temp;
     uint16_t tmp1, tmp2;
-    RGBA dcolor;
+    RGBA dcolor{0, 0, 0, 0};
 
     Particle(): type(0), id(0) {}
     Particle(const Particle&) = delete;

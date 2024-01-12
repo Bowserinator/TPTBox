@@ -30,6 +30,10 @@ public:
         g *= amt;
         b *= amt;
     }
+
+    int32_t as_int() const {
+        return (r << 24) | (g << 16) | (b << 8) | a;
+    }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const RGBA& color) {
