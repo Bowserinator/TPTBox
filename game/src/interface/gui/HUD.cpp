@@ -18,6 +18,8 @@ HUD::HUD(Simulation * sim): sim(sim), state(HUDState::NORMAL) {}
 
 void HUD::init() {
     font = LoadFontEx("resources/dogicapixel.ttf", FONT_SIZE, 0, 250);
+    std::fill(&fps_avg[0], &fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
+    std::fill(&sim_fps_avg[0], &sim_fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
 }
 
 /**
@@ -45,17 +47,24 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
     drawText(text, x, y, color, true);
 }
 
-void HUD::draw(const HUDData &data) const {
+void HUD::draw(const HUDData &data) {
+    // Update the average fps
+    fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.fps;
+    sim_fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.sim_fps;
+    fps_counter++;
+
+    // Actually draw
     constexpr int OFFSET = 2 * PAD_Y + FONT_SIZE;
+    const bool debug = state == HUDState::DEBUG_MODE;
 
     // Top left corner: FPS, [Parts, sim FPS]
-    const char * text  = state == HUDState::NORMAL ?
-        TextFormat("FPS: %.3f", data.fps) :
-        TextFormat("FPS: %.3f  Parts: %s", data.fps, util::format_commas(sim->parts_count).c_str());
+    const char * text  = !debug ?
+        TextFormat("FPS: %.3f", avg_fps()) :
+        TextFormat("FPS: %.3f  Parts: %s", avg_fps(), util::format_commas(sim->parts_count).c_str());
     drawText(text, 20, 20, BLUE_TEXT);
 
     if (state == HUDState::DEBUG_MODE)
-        drawText(TextFormat("Sim: %.3f", data.sim_fps), 20, 20 + OFFSET, BLUE_TEXT);
+        drawText(TextFormat("Sim: %.3f", avg_sim_fps()), 20, 20 + OFFSET, BLUE_TEXT);
 
     // Top right corner
     const int x = util::clamp(data.x, 0, XRES);
@@ -69,9 +78,7 @@ void HUD::draw(const HUDData &data) const {
         TextFormat("Empty,  %s", air_data);
 
     const char * pos_data = TextFormat("X: %i Y: %i Z: %i", data.x, data.y, data.z);
-    const char * line12 = data.idx ?
-        TextFormat("#%i, %s", data.idx, pos_data) :
-        pos_data;
+    const char * line12 = (data.idx && debug) ? TextFormat("#%i, %s", data.idx, pos_data) : pos_data;
     drawTextRAlign(TextFormat("%s,  %s", line11, line12), GetScreenWidth() - RHUD_X_OFFSET, 20, WHITE);
 
     // Additional lines if currently hovering an element
@@ -86,12 +93,14 @@ void HUD::draw(const HUDData &data) const {
                 dcolor),
             GetScreenWidth() - RHUD_X_OFFSET, 20 + OFFSET, WHITE);
 
-        drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
-                sim->parts[data.idx].vx,
-                sim->parts[data.idx].vy,
-                sim->parts[data.idx].vz,
-                util::bitset_to_str<8>(sim->parts[data.idx].flag).c_str()
-            ),
-            GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
+        if (debug) {
+            drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
+                    sim->parts[data.idx].vx,
+                    sim->parts[data.idx].vy,
+                    sim->parts[data.idx].vz,
+                    util::bitset_to_str<8>(sim->parts[data.idx].flag).c_str()
+                ),
+                GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
+        }
     }
 }

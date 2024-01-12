@@ -2,11 +2,14 @@
 #define HUD_H
 
 #include "raylib.h"
+#include <numeric>
 
 class Simulation;
 
 // DEBUG is a macro so we can't use it as enum name
 enum class HUDState { NORMAL, DEBUG_MODE };
+
+constexpr int FPS_AVG_WINDOW_SIZE = 15;
 
 struct HUDData {
     float fps;
@@ -21,13 +24,23 @@ private:
     HUDState state;
     Font font;
 
+    float fps_avg[FPS_AVG_WINDOW_SIZE];
+    float sim_fps_avg[FPS_AVG_WINDOW_SIZE];
+    unsigned int fps_counter = 0;
+
     void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
     void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
+    float avg_fps() const {
+        return std::accumulate(fps_avg, fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
+    }
+    float avg_sim_fps() const {
+        return std::accumulate(sim_fps_avg, sim_fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
+    }
 public:
     HUD(Simulation * sim);
 
     void init();
-    void draw(const HUDData &data) const;
+    void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };
 
