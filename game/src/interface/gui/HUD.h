@@ -7,6 +7,7 @@
 
 class RenderCamera;
 class Simulation;
+class FontCache;
 
 // DEBUG is a macro so we can't use it as enum name
 enum class HUDState { NORMAL, DEBUG_MODE };
@@ -25,7 +26,6 @@ private:
     Simulation * sim;
     NavCube cube;
     HUDState state;
-    Font font;
 
     float fps_avg[FPS_AVG_WINDOW_SIZE];
     float sim_fps_avg[FPS_AVG_WINDOW_SIZE];

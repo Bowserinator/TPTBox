@@ -2,13 +2,14 @@
 #include "../../render/camera/camera.h"
 #include "../../simulation/SimulationDef.h"
 #include "../../util/util.h"
+#include "../FontCache.h"
 
 #include <cmath>
 #include <iostream>
 #include "rlgl.h"
 
 constexpr int CUBE_FACE_IMG_SIZE = 100;
-constexpr int CUBE_FACE_FONT_SIZE = 20;
+constexpr int CUBE_FACE_FONT_SIZE = 13;
 constexpr Vector2 NAVCUBE_POS{ 20, 70 };
 
 enum CUBE_FACES {
@@ -22,15 +23,24 @@ enum CUBE_FACES {
 
 // Make sure to call this after OpenGL context has been initialized!
 RenderTexture2D generateCubeFaceTexture(const char * faceName) {
+    constexpr float SPACING = -0.5f;
     auto tex = LoadRenderTexture(CUBE_FACE_IMG_SIZE, CUBE_FACE_IMG_SIZE);
-    int twidth = MeasureText(faceName, CUBE_FACE_FONT_SIZE);
+    Vector2 tsize = MeasureTextEx(FontCache::ref()->main_font, faceName, CUBE_FACE_FONT_SIZE, SPACING);
 
     BeginTextureMode(tex);
         ClearBackground(Color { 0, 0, 0, 255 });
-        DrawText(faceName,
-            CUBE_FACE_IMG_SIZE / 2 - twidth / 2, 
-            CUBE_FACE_IMG_SIZE / 2 - CUBE_FACE_FONT_SIZE / 2,
-            CUBE_FACE_FONT_SIZE, WHITE);
+        DrawTextEx(FontCache::ref()->main_font, faceName,
+            Vector2{
+                CUBE_FACE_IMG_SIZE / 2 - tsize.x / 2, 
+                CUBE_FACE_IMG_SIZE / 2 - tsize.y / 2
+            },
+            CUBE_FACE_FONT_SIZE, SPACING, WHITE);
+
+        // Face outline
+        DrawLine(1, 1, CUBE_FACE_IMG_SIZE - 1, 0, WHITE);
+        DrawLine(1, 1, 1, CUBE_FACE_IMG_SIZE - 1, WHITE);
+        DrawLine(CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, 1, WHITE);
+        DrawLine(CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, 1, CUBE_FACE_IMG_SIZE - 1, WHITE);
     EndTextureMode();
 
     return tex;
@@ -113,7 +123,6 @@ void NavCube::update() {
         rlMultMatrixf(MatrixToFloatV(transform_mat).v);
 
         DrawCubeCustom();
-        DrawCubeWires(Vector3{0.0f, 0.0f, 0.0f}, 1.0f, 1.0f, 1.0f, WHITE);
 
         { // Draw le coordinate axii, X = red, Y = green, Z = blue
             constexpr float lineThickness = 0.01f;

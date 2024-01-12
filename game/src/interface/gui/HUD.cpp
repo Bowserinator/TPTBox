@@ -1,13 +1,14 @@
 #include "HUD.h"
 #include "../../render/camera/camera.h"
+#include "../FontCache.h"
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ElementClasses.h"
 #include "../../util/str_format.h"
 #include "../../util/util.h"
+#include "../FontCache.h"
 
 #include <string>
 
-constexpr float FONT_SIZE = 11.0f;
 constexpr float PAD_X = 5.0f;
 constexpr float PAD_Y = 7.0f;
 constexpr float SPACING = -0.5f;
@@ -15,10 +16,10 @@ constexpr int RHUD_X_OFFSET = 100;
 
 constexpr Color BLUE_TEXT{21, 145, 171, 255};
 
-HUD::HUD(Simulation * sim, RenderCamera * cam): sim(sim), cube(cam), state(HUDState::NORMAL) {}
+HUD::HUD(Simulation * sim, RenderCamera * cam):
+    sim(sim), cube(cam), state(HUDState::NORMAL) {}
 
 void HUD::init() {
-    font = LoadFontEx("resources/dogicapixel.ttf", FONT_SIZE, 0, 250);
     std::fill(&fps_avg[0], &fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
     std::fill(&sim_fps_avg[0], &sim_fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
     cube.init();
@@ -32,7 +33,7 @@ void HUD::init() {
  * @param color Color of text
  */
 void HUD::drawText(const char * text, int x, const int y, const Color color, const bool ralign) const {
-    auto tsize = MeasureTextEx(font, text, FONT_SIZE, SPACING);
+    auto tsize = MeasureTextEx(FontCache::ref()->main_font, text, FONT_SIZE, SPACING);
     if (ralign)
         x -= tsize.x;
 
@@ -41,7 +42,7 @@ void HUD::drawText(const char * text, int x, const int y, const Color color, con
         tsize.x + PAD_X * 2,
         tsize.y + 2 * PAD_Y,
         Fade(BLACK, 0.5f));
-    DrawTextEx(font, text, Vector2{ (float)x, (float)y }, FONT_SIZE, SPACING, color);
+    DrawTextEx(FontCache::ref()->main_font, text, Vector2{ (float)x, (float)y }, FONT_SIZE, SPACING, color);
 }
 
 // RAlign version, x marks right hand side

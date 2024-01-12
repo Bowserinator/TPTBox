@@ -2,6 +2,7 @@
 #include "screens.h"
 
 #include "simulation/Simulation.h"
+#include "interface/FontCache.h"
 
 #include <omp.h>
 
@@ -23,6 +24,7 @@ int main(void)
     InitAudioDevice();
 
     omp_set_dynamic(false); // Don't allow dynamic scaling of num of threads
+    FontCache::ref()->init();
     currentScreen->init();
 
 #if defined(PLATFORM_WEB)
@@ -41,6 +43,7 @@ int main(void)
 #endif
 
     currentScreen->unload();
+    FontCache::ref()->destroy();
     CloseAudioDevice();
     CloseWindow();
     return 0;
