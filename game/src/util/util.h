@@ -6,6 +6,9 @@
 #include "rand.h"
 #include "vector_op.h"
 
+template <class T>
+concept arithmetic = std::integral<T> or std::floating_point<T>;
+
 namespace util {
     /**
      * @brief Round a float fast. WARNING: pass in only positive values
@@ -31,12 +34,16 @@ namespace util {
         const float tmp = val < min ? min : val;
         return tmp > max ? max : tmp;
     }
-
     constexpr int clamp(const int val, const int min, const int max) {
         const int tmp = val < min ? min : val;
         return tmp > max ? max : tmp;
     }
 
+    template <class T> requires arithmetic<T>
+    constexpr T clamp(const T val, const T min, const T max) {
+        const T tmp = val < min ? min : val;
+        return tmp > max ? max : tmp;
+    }
     /**
      * @brief Ceil a float, but round negative values away from 0
      *        This is slightly different from std::ceil which always
@@ -57,11 +64,17 @@ namespace util {
      * @param y 
      * @return constexpr float 
      */
-    constexpr float hypot(float x, float y) {
+    template <class T> requires arithmetic<T>
+    constexpr float hypot(T x, T y) {
         return std::sqrt(x * x + y * y);
     }
-    constexpr float hypot(float x, float y, float z) {
+    template <class T> requires arithmetic<T>
+    constexpr float hypot(T x, T y, T z) {
         return std::sqrt(x * x + y * y + z * z);
+    }
+    template <class T> requires arithmetic<T>
+    constexpr float hypot(T x, T y, T z, T w) {
+        return std::sqrt(x * x + y * y + z * z + w * w);
     }
 
     /**
@@ -71,7 +84,8 @@ namespace util {
      * @param c 
      * @return constexpr int 
      */
-    constexpr int argmax3(float a, float b, float c) {
+    template <class T> requires arithmetic<T>
+    constexpr int argmax3(T a, T b, T c) {
         a = std::abs(a);
         b = std::abs(b);
         c = std::abs(c);
@@ -89,7 +103,7 @@ namespace util {
      * @param a 
      * @return constexpr int -1 if negative, 0 if 0, 1 if pos
      */
-    template <class T> requires std::integral<T> or std::floating_point<T>
+    template <class T> requires arithmetic<T>
     constexpr int sign(T a) {
         if (a == 0) return 0;
         return a < 0 ? -1 : 1;
@@ -110,6 +124,55 @@ namespace util {
         Vector3 randv{ rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE) };
         randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
         return randv;
+    }
+
+    /**
+     * @brief Radians to degrees
+     * @param rad Radians
+     * @return constexpr float 
+     */
+    constexpr float rad2deg(const float rad) {
+        return rad * 180.0f / 3.1415926535897f;
+    }
+
+    /**
+     * @brief Degrees to radians
+     * @param deg Degrees
+     * @return constexpr float 
+     */
+    constexpr float deg2rad(const float deg) {
+        return deg * 3.1415926535897f / 180.0f;
+    }
+
+    /**
+     * @brief Take the given transform matrix, remove the translation
+     *        and scaling in-place. (Note: assumes there is no skew,
+     *        otherwise it will leave behind the skew and rotation)
+     * 
+     *        Assume matrix is multiplied with points so translation is last
+     *        column and not the other way around (being, translation is last row)
+     * @param mat Matrix to reduce in place
+     */
+    inline void reduce_to_rotation(Matrix &mat) {
+        mat.m12 = mat.m13 = mat.m14 = mat.m15 = 0.0f; // Remove translation column
+
+        // Normalize first 3 columns
+        // Blame raylib for having a variable for every matrix term
+        auto sx = util::hypot(mat.m0, mat.m1, mat.m2, mat.m3);
+        mat.m0 /= sx;
+        mat.m1 /= sx;
+        mat.m2 /= sx;
+        mat.m3 /= sx;
+        auto sy = util::hypot(mat.m4, mat.m5, mat.m6, mat.m7);
+        mat.m4 /= sy;
+        mat.m5 /= sy;
+        mat.m6 /= sy;
+        mat.m7 /= sy;
+        auto sz = util::hypot(mat.m8, mat.m9, mat.m10, mat.m11);
+        mat.m8 /= sy;
+        mat.m9 /= sy;
+        mat.m10 /= sy;
+        mat.m11 /= sy;
     }
 }
 

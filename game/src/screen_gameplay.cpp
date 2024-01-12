@@ -21,7 +21,7 @@
 
 static RenderCamera render_camera;
 static Simulation sim;
-static HUD hud(&sim);
+static HUD hud(&sim, &render_camera);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;

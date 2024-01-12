@@ -1,4 +1,5 @@
 #include "HUD.h"
+#include "../../render/camera/camera.h"
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ElementClasses.h"
 #include "../../util/str_format.h"
@@ -14,12 +15,13 @@ constexpr int RHUD_X_OFFSET = 100;
 
 constexpr Color BLUE_TEXT{21, 145, 171, 255};
 
-HUD::HUD(Simulation * sim): sim(sim), state(HUDState::NORMAL) {}
+HUD::HUD(Simulation * sim, RenderCamera * cam): sim(sim), cube(cam), state(HUDState::NORMAL) {}
 
 void HUD::init() {
     font = LoadFontEx("resources/dogicapixel.ttf", FONT_SIZE, 0, 250);
     std::fill(&fps_avg[0], &fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
     std::fill(&sim_fps_avg[0], &sim_fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
+    cube.init();
 }
 
 /**
@@ -103,4 +105,7 @@ void HUD::draw(const HUDData &data) {
                 GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
         }
     }
+
+    // Draw the nav cube
+    cube.update();
 }

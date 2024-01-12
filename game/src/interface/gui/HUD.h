@@ -2,8 +2,10 @@
 #define HUD_H
 
 #include "raylib.h"
+#include "NavCube.h"
 #include <numeric>
 
+class RenderCamera;
 class Simulation;
 
 // DEBUG is a macro so we can't use it as enum name
@@ -21,6 +23,7 @@ struct HUDData {
 class HUD {
 private:
     Simulation * sim;
+    NavCube cube;
     HUDState state;
     Font font;
 
@@ -37,9 +40,9 @@ private:
         return std::accumulate(sim_fps_avg, sim_fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
 public:
-    HUD(Simulation * sim);
+    HUD(Simulation * sim, RenderCamera * cam);
 
-    void init();
+    void init(); // called after OpenGL instance is initialized
     void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };
