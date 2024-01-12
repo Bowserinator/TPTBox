@@ -174,6 +174,19 @@ namespace util {
         mat.m10 /= sy;
         mat.m11 /= sy;
     }
+
+    /**
+     * @brief Are two vectors similar? Aka all components vary by at
+     *        most the given threshold
+     * @param a 
+     * @param b 
+     * @param thresh 
+     * @return true 
+     * @return false 
+     */
+    inline bool vec3_similar(const Vector3 &a, const Vector3& b, const float thresh) {
+        return fabsf(a.x - b.x) <= thresh && fabsf(a.y - b.y) <= thresh && fabsf(a.z - b.z) <= thresh;
+    }
 }
 
 #endif

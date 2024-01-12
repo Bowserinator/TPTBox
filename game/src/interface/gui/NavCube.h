@@ -2,6 +2,7 @@
 #define NAV_CUBE_H
 
 #include "raylib.h"
+#include "raymath.h"
 
 constexpr int NAV_CUBE_WINDOW_SIZE = 160;
 
@@ -23,6 +24,10 @@ private:
     RenderTexture2D target;
     Camera3D local_cam;
     RenderTexture2D cube_faces[6];
+
+    float16 transform_mat_cache;
+    Matrix transform_mat;
+    int cam_hash;
 
     void DrawCubeCustom();
 };

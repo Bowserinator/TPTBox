@@ -49,6 +49,8 @@ RenderTexture2D generateCubeFaceTexture(const char * faceName) {
 NavCube::NavCube(RenderCamera * cam): cam(cam) {}
 
 void NavCube::init() {
+    cam_hash = 99999;
+
     target = LoadRenderTexture(NAV_CUBE_WINDOW_SIZE, NAV_CUBE_WINDOW_SIZE);
     local_cam = {0};
     local_cam.position = Vector3{0.0f, 0.0f, 1.7f};
@@ -115,12 +117,16 @@ void NavCube::update() {
     BeginTextureMode(target);
     ClearBackground(Color{0, 0, 0, 127}); // Semi-transparent background
 
-    Matrix transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
-    util::reduce_to_rotation(transform_mat);
+    if (cam->hash() != cam_hash) {
+        transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
+        util::reduce_to_rotation(transform_mat);
+        transform_mat_cache = MatrixToFloatV(transform_mat);
+        cam_hash = cam->hash();
+    }
     
     BeginMode3D(local_cam);
         rlPushMatrix();
-        rlMultMatrixf(MatrixToFloatV(transform_mat).v);
+        rlMultMatrixf(transform_mat_cache.v);
 
         DrawCubeCustom();
 
@@ -167,8 +173,9 @@ void NavCube::update() {
         // Undo rotation matrix (R^T is the inverse for rot matrix)
         // We imagine the cube is fixed and we rotate the ray cast from the camera position
         // the opposite way the cube was rotated
-        ray.direction = Vector3Transform(ray.direction, MatrixTranspose(transform_mat));
-        ray.position = Vector3Transform(ray.position, MatrixTranspose(transform_mat));
+        const auto transform_mat_T = MatrixTranspose(transform_mat);
+        ray.direction = Vector3Transform(ray.direction, transform_mat_T);
+        ray.position = Vector3Transform(ray.position, transform_mat_T);
 
         auto collide = GetRayCollisionBox(ray, BoundingBox {
             .min = Vector3{ -0.5f, -0.5f, -0.5f },
@@ -212,7 +219,7 @@ void NavCube::update() {
             else if (faces_clicked[LEFT])
                 target_pos.x = -1.5f * (float)XRES;
 
-            cam->setLerpTarget(target_pos, target);  
+            cam->setLerpTarget(target_pos, target, Vector3{0.0f, 1.0f, 0.0f});  
         }
     }
 

@@ -22,23 +22,29 @@ public:
     Vector3 maxBound;
 
     RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
-            _isLerping(false), _lerpSteps(0),
+            _isLerping(false), _lerpSteps(0), _hash(0),
             minBound{INT_MIN, INT_MIN, INT_MIN},
             maxBound(INT_MAX, INT_MAX, INT_MAX)
     {
         frustum = std::vector<Plane>(6);
     }
 
-    void setLerpTarget(const Vector3 &pos, const Vector3 &target) {
+    void setLerpTarget(const Vector3 &pos, const Vector3 &target, const Vector3 &up) {
         _isLerping = true;
         _lerpPos = pos;
         _lerpTarget = target;
+        _lerpUp = up;
         _lerpSteps = 0;
     }
 
     void setBounds(const Vector3 &minBound, const Vector3 &maxBound) {
         this->minBound = minBound;
         this->maxBound = maxBound;
+    }
+
+    /** Can be used to check if camera state has been modified */
+    int hash() const {
+        return _hash;
     }
 
     /**
@@ -100,9 +106,11 @@ private:
     bool _viewProjMatrixUpdated;
     bool _isLerping;
     int _lerpSteps;
+    int _hash;
 
     Vector3 _lerpTarget;
     Vector3 _lerpPos;
+    Vector3 _lerpUp;
 
     void generateFrustum();
     void updateViewProjMatrix();

@@ -1,8 +1,6 @@
 #include "FontCache.h"
 #include "raylib.h"
 
-#include <iostream>
-
 FontCache * FontCache::single = nullptr;
 
 void FontCache::init() {
@@ -15,5 +13,4 @@ void FontCache::init() {
 
 FontCache::~FontCache() {
     UnloadFont(main_font);
-    std::cout << "destroyed\n";
 }

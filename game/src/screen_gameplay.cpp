@@ -160,8 +160,6 @@ void ScreenGameplay::update() {
 
 void ScreenGameplay::draw() {
     render_camera.update();
-    // camera.updateViewProjMatrix();
-
 
     ClearBackground(BLACK);
 
