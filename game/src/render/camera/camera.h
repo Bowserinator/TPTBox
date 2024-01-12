@@ -22,10 +22,18 @@ public:
     Vector3 maxBound;
 
     RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
+            _isLerping(false), _lerpSteps(0),
             minBound{INT_MIN, INT_MIN, INT_MIN},
             maxBound(INT_MAX, INT_MAX, INT_MAX)
     {
         frustum = std::vector<Plane>(6);
+    }
+
+    void setLerpTarget(const Vector3 &pos, const Vector3 &target) {
+        _isLerping = true;
+        _lerpPos = pos;
+        _lerpTarget = target;
+        _lerpSteps = 0;
     }
 
     void setBounds(const Vector3 &minBound, const Vector3 &maxBound) {
@@ -45,10 +53,10 @@ public:
     bool sphereOutsideFrustum(float x, float y, float z, float r);
 
     /**
-     * @brief Update camera controls from user input, call this at the beginning
+     * @brief Update camera controls from user input + lerp, call this at the beginning
      * of each frame
      */
-    void updateControls();
+    void update();
 
     /**
      * @brief Get approximation of distance outside bounding box
@@ -90,6 +98,11 @@ public:
     void moveToTarget(float amt);
 private:
     bool _viewProjMatrixUpdated;
+    bool _isLerping;
+    int _lerpSteps;
+
+    Vector3 _lerpTarget;
+    Vector3 _lerpPos;
 
     void generateFrustum();
     void updateViewProjMatrix();

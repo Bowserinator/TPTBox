@@ -33,14 +33,16 @@ static float test = 0.0f; // TODO
 
 
 void ScreenGameplay::init() {
-    hud.init();
-    hud.setState(HUDState::DEBUG_MODE);
-
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
     render_camera.camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
     render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
     render_camera.camera.fovy = 45.0f;
+    // render_camera.camera.projection = CAMERA_ORTHOGRAPHIC;
+
+    hud.init();
+    hud.setState(HUDState::DEBUG_MODE);
+
 
     render_camera.setBounds(Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES }, Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
 
@@ -157,7 +159,7 @@ void ScreenGameplay::update() {
 }
 
 void ScreenGameplay::draw() {
-    render_camera.updateControls();
+    render_camera.update();
     // camera.updateViewProjMatrix();
 
 

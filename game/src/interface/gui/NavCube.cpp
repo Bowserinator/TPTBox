@@ -9,6 +9,7 @@
 
 constexpr int CUBE_FACE_IMG_SIZE = 100;
 constexpr int CUBE_FACE_FONT_SIZE = 20;
+constexpr Vector2 NAVCUBE_POS{ 20, 70 };
 
 enum CUBE_FACES {
     FRONT = 0,
@@ -41,7 +42,7 @@ void NavCube::init() {
     target = LoadRenderTexture(NAV_CUBE_WINDOW_SIZE, NAV_CUBE_WINDOW_SIZE);
     local_cam = {0};
     local_cam.position = Vector3{0.0f, 0.0f, 1.7f};
-    local_cam.projection = CAMERA_PERSPECTIVE;
+    local_cam.projection = cam->camera.projection;
     local_cam.target = Vector3{0.0f, 0.0f, 0.0f};
     local_cam.up = Vector3{0.0f, 1.0f, 0.0f};
     local_cam.fovy = 70.0f;
@@ -54,7 +55,53 @@ void NavCube::init() {
     cube_faces[BOTTOM] = generateCubeFaceTexture("Bottom");
 }
 
+/**
+ * @brief This is copy paste of Raylib's GetMouseRay, but the aspect ratio
+ *        and screen dimensions are hard-coded in that function, so we have to
+ *        copy paste it here and replace the aspect ratio with 1.0f
+ * 
+ * @param mouse Mouse coords clicked (global, will be converted to local)
+ * @param camera Local camera
+ * @return Ray 
+ */
+Ray NavCubeGetMouseRay(Vector2 mouse, const Camera &camera) {
+    Ray ray = { 0 };
+
+    // Consider top left to be mini window bound
+    mouse.x -= NAVCUBE_POS.x;
+    mouse.y -= NAVCUBE_POS.y;
+
+    float x = (2.0f * mouse.x) / (float)NAV_CUBE_WINDOW_SIZE - 1.0f;
+    float y = 1.0f - (2.0f * mouse.y) / (float)NAV_CUBE_WINDOW_SIZE;
+    float z = 1.0f;
+
+    Vector3 deviceCoords = { x, y, z };
+    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+    Matrix matProj = MatrixIdentity();
+
+    if (camera.projection == CAMERA_PERSPECTIVE)
+        matProj = MatrixPerspective(camera.fovy * DEG2RAD, 1.0f, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+    else if (camera.projection == CAMERA_ORTHOGRAPHIC) {
+        double aspect = 1.0f;
+        double top = camera.fovy / 2.0;
+        double right = top*aspect;
+        matProj = MatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
+    }
+
+    Vector3 nearPoint = Vector3Unproject(Vector3{ deviceCoords.x, deviceCoords.y, 0.0f }, matProj, matView);
+    Vector3 farPoint = Vector3Unproject(Vector3{ deviceCoords.x, deviceCoords.y, 1.0f }, matProj, matView);
+    Vector3 cameraPlanePointerPos = Vector3Unproject(Vector3{ deviceCoords.x, deviceCoords.y, -1.0f }, matProj, matView);
+
+    Vector3 direction = Vector3Normalize(Vector3Subtract(farPoint, nearPoint));
+    if (camera.projection == CAMERA_PERSPECTIVE) ray.position = camera.position;
+    else if (camera.projection == CAMERA_ORTHOGRAPHIC) ray.position = cameraPlanePointerPos;
+    ray.direction = direction;
+    return ray;
+}
+
+
 void NavCube::update() {
+    // Begin drawing
     BeginTextureMode(target);
     ClearBackground(Color{0, 0, 0, 127}); // Semi-transparent background
 
@@ -91,14 +138,78 @@ void NavCube::update() {
 
             }
         }
+
         rlPopMatrix();
     EndMode3D();
+    EndTextureMode();
 
-    EndTextureMode(); 
+
+    // Mouse click in the nav cube window
+    bool clicked = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    if (clicked) {
+        const auto mousePos = GetMousePosition();
+        clicked = clicked && (mousePos.x >= NAVCUBE_POS.x && mousePos.x <= NAVCUBE_POS.x + NAV_CUBE_WINDOW_SIZE);
+        clicked = clicked && (mousePos.y >= NAVCUBE_POS.y && mousePos.y <= NAVCUBE_POS.y + NAV_CUBE_WINDOW_SIZE);
+    }
+
+    if (clicked) {
+        Ray ray = NavCubeGetMouseRay(GetMousePosition(), local_cam);
+
+        // Undo rotation matrix (R^T is the inverse for rot matrix)
+        // We imagine the cube is fixed and we rotate the ray cast from the camera position
+        // the opposite way the cube was rotated
+        ray.direction = Vector3Transform(ray.direction, MatrixTranspose(transform_mat));
+        ray.position = Vector3Transform(ray.position, MatrixTranspose(transform_mat));
+
+        auto collide = GetRayCollisionBox(ray, BoundingBox {
+            .min = Vector3{ -0.5f, -0.5f, -0.5f },
+            .max = Vector3{ 0.5f, 0.5f, 0.5f }
+        });
+        if (collide.hit) {
+            constexpr float EDGE_MARGIN = 0.05f; // If click is this close to edge, consider it clicking the edge
+            bool faces_clicked[6] = { false, false, false, false, false, false };
+
+            if (collide.point.z > 0.5f - EDGE_MARGIN)
+                faces_clicked[FRONT] = true;
+            else if (collide.point.z < -0.5f + EDGE_MARGIN)
+                faces_clicked[BACK] = true;
+            if (collide.point.x > 0.5f - EDGE_MARGIN)
+                faces_clicked[RIGHT] = true;
+            else if (collide.point.x < -0.5f + EDGE_MARGIN)
+                faces_clicked[LEFT] = true;
+            if (collide.point.y > 0.5f - EDGE_MARGIN)
+                faces_clicked[TOP] = true;
+            else if (collide.point.y < -0.5f + EDGE_MARGIN)
+                faces_clicked[BOTTOM] = true;
+
+            // Set lerp target based on faces
+            Vector3 target_pos{ XRES / 2, YRES / 2, ZRES / 2 };
+            Vector3 target{ XRES / 2, YRES / 2, ZRES / 2 };
+
+            if (faces_clicked[TOP]) {
+                target_pos.y = 2.5f * (float)YRES;
+                target_pos.z = 0.5f * ZRES + 0.1f; // Can't be perfectly on top of target
+            }
+            else if (faces_clicked[BOTTOM]) {
+                target_pos.y = -1.5f * (float)YRES;
+                target_pos.z = 0.5f * ZRES - 0.1f; // Can't be perfectly on top of target
+            }
+            if (faces_clicked[FRONT])
+                target_pos.z = 2.5f * (float)ZRES;
+            else if (faces_clicked[BACK])
+                target_pos.z = -1.5f * (float)ZRES;
+            if (faces_clicked[RIGHT])
+                target_pos.x = 2.5f * (float)XRES;
+            else if (faces_clicked[LEFT])
+                target_pos.x = -1.5f * (float)XRES;
+
+            cam->setLerpTarget(target_pos, target);  
+        }
+    }
 
     DrawTextureRec(target.texture,
         Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
-        Vector2{ 20, 70 }, WHITE);
+        NAVCUBE_POS, WHITE);
 }
 
 

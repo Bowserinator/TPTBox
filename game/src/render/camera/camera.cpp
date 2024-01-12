@@ -21,7 +21,35 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
     return false;
 }
 
-void RenderCamera::updateControls() {
+void RenderCamera::update() {
+    // Update lerp
+    if (_isLerping) {
+        constexpr float MAX_ERR = 0.001f;
+        constexpr int MAX_LERP_STEPS = 20; // If lerping doesn't converge just go straight to end
+        const float LERP_SPEED = _lerpSteps < MAX_LERP_STEPS / 4 ? 0.35f : 0.9f; // lerp faster as time goes on
+
+        _lerpSteps++;
+        camera.position.x = Lerp(camera.position.x, _lerpPos.x, LERP_SPEED);
+        camera.position.y = Lerp(camera.position.y, _lerpPos.y, LERP_SPEED);
+        camera.position.z = Lerp(camera.position.z, _lerpPos.z, LERP_SPEED);
+        camera.target.x = Lerp(camera.target.x, _lerpTarget.x, LERP_SPEED);
+        camera.target.y = Lerp(camera.target.y, _lerpTarget.y, LERP_SPEED);
+        camera.target.z = Lerp(camera.target.z, _lerpTarget.z, LERP_SPEED);
+        _viewProjMatrixUpdated = false;
+
+        auto vec_almost_equal = [](const Vector3 a, const Vector3 b) -> bool {
+            return fabs(a.x - b.x) < MAX_ERR && fabs(a.y - b.y) < MAX_ERR && fabs(a.z - b.z) < MAX_ERR;
+        };
+        if (_lerpSteps > MAX_LERP_STEPS || (vec_almost_equal(camera.position, _lerpPos) && vec_almost_equal(camera.target, _lerpTarget))) {
+            _isLerping = false;
+            _lerpSteps = 0;
+
+            camera.position = _lerpPos;
+            camera.target = _lerpTarget;
+        }
+    }
+
+    // Update controls
     Vector2 mousePositionDelta = GetMouseDelta();
 
     bool moveInWorldPlane = true;
