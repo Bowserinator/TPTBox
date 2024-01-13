@@ -8,6 +8,7 @@ project (workspaceName)
 
 	linkoptions { "-fopenmp" }
 	buildoptions {
+		"-fopenmp"
 		-- "-fopt-info-vec-optimized" -- Uncomment to display what operations were vectorized
 	}
 

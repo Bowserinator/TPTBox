@@ -224,19 +224,32 @@ void Simulation::move_behavior(const part_id idx) {
                 // We only wiggle if there is something in the direction we are currently traveling
                 // - Fluids only apply gravity if there's nothing below, otherwise wiggle
                 // - Powders always apply gravity, but only wiggle if there's something below
-                if (el.State == ElementState::TYPE_POWDER ||
-                        eval_move(idx, x + util::sign(part.vx), y + util::sign(part.vy), z + util::sign(part.vz)) != PartSwapBehavior::NOOP) {
+                bool apply_grav = el.State == ElementState::TYPE_POWDER ||
+                        (part.vx == 0.0f && part.vy == 0.0f && part.vz == 0.0f) ||
+                        eval_move(idx, x + util::sign(part.vx), y + util::sign(part.vy), z + util::sign(part.vz)) != PartSwapBehavior::NOOP;
+                if (apply_grav) {
                     part.vx += gravity_force.x * F;
                     part.vy += gravity_force.y * F;
                     part.vz += gravity_force.z * F;
-                } else {
-                    const float diffusion = el.Diffusion == UNSET_PROPERTY ? 1.0f : el.Diffusion;
-                    const float diff_force = el.State == ElementState::TYPE_POWDER ? diffusion * 3.5f : diffusion * 1.4f;
-
+                } 
+                if (el.State == ElementState::TYPE_LIQUID || !apply_grav) {
                     Vector3 randv = util::rand_perpendicular_vector(gravity_force, rng);
-                    part.vx += diff_force * randv.x;
-                    part.vy += diff_force * randv.y;
-                    part.vz += diff_force * randv.z;
+
+                    if (el.Diffusion != UNSET_PROPERTY) {
+                        const float diffusion = el.Diffusion == UNSET_PROPERTY ? 1.0f : el.Diffusion;
+                        const float diff_force = el.State == ElementState::TYPE_POWDER ? diffusion * 3.5f : diffusion * 1.4f;
+
+                        part.vx += diff_force * randv.x;
+                        part.vy += diff_force * randv.y;
+                        part.vz += diff_force * randv.z;
+                    } else {
+                        const float diff_force = 2.0f;
+                        auto nx = x + diff_force * randv.x;
+                        auto ny = y + diff_force * randv.y;
+                        auto nz = z + diff_force * randv.z;
+                        if (eval_move(idx, nx, ny, nz) != PartSwapBehavior::NOOP && nx > 0 && ny > 0 && nz > 0)
+                            try_move(idx, nx, ny, nz);
+                    }
                 }
                 return;
             }

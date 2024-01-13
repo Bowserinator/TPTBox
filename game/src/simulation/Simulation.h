@@ -34,6 +34,7 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     unsigned int sim_thread_count;
+    unsigned int actual_thread_count;
     RNG rng;
 
 

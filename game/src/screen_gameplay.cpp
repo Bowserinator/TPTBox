@@ -75,7 +75,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 2; y++) {
+    for (int y = 1; y < 15; y++) {
         sim.create_part(x, y, z, PT_WATR);
     }
 
@@ -201,7 +201,7 @@ void ScreenGameplay::draw() {
     // }
 
 
-    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, WHITE);
+    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
     // RaycastOutput out;
     // const float S = 90.0f * std::sin(test) + 30.0f;

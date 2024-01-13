@@ -67,7 +67,7 @@ void HUD::draw(const HUDData &data) {
     drawText(text, 20, 20, BLUE_TEXT);
 
     if (state == HUDState::DEBUG_MODE)
-        drawText(TextFormat("Sim: %.3f", avg_sim_fps()), 20, 20 + OFFSET, BLUE_TEXT);
+        drawText(TextFormat("Sim: %.3f  Thrd: %d", avg_sim_fps(), sim->actual_thread_count), 20, 20 + OFFSET, BLUE_TEXT);
 
     // Top right corner
     const int x = util::clamp(data.x, 0, XRES);

@@ -10,7 +10,7 @@
 
 constexpr int CUBE_FACE_IMG_SIZE = 100;
 constexpr int CUBE_FACE_FONT_SIZE = 13;
-constexpr Vector2 NAVCUBE_POS{ 20, 70 };
+constexpr Vector2 NAVCUBE_POS{ 15, 70 };
 
 enum CUBE_FACES {
     FRONT = 0,

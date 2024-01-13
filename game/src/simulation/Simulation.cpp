@@ -34,6 +34,7 @@ Simulation::Simulation():
     constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
 
     sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
+    actual_thread_count = 0;
 
     // TODO: singleton?
     _init_can_move();
@@ -144,7 +145,7 @@ void Simulation::update_part(const part_id i) {
     const auto frame_count_parity = frame_count & 1;
     if (part.flag[PartFlags::UPDATE_FRAME] == frame_count_parity)
         return;
-    part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity;
+    part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
     const coord_t x = util::roundf(part.x);
     const coord_t y = util::roundf(part.y);
@@ -177,14 +178,15 @@ void Simulation::update_part(const part_id i) {
 void Simulation::update() {
     // air.update(); // TODO
 
-    // omp_set_dynamic(0);
-    // omp_set_num_threads(omp_get_max_threads());
-
     #pragma omp parallel num_threads(sim_thread_count)
     { 
-        const int z_chunk_size = ZRES / (2 * sim_thread_count) + 1;
+        const int thread_count = omp_get_num_threads();
+        const int z_chunk_size = ZRES / (2 * thread_count) + 1;
         const int tid = omp_get_thread_num();
         coord_t z_start = z_chunk_size * (2 * tid);
+
+        if (tid == 0)
+            actual_thread_count = thread_count;
 
         for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
             update_zslice(z);

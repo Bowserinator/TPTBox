@@ -62,10 +62,12 @@ workspace (workspaceName)
     filter "configurations:Debug"
         defines { "DEBUG" }
         symbols "On"
+        openmp "On"
 
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "Speed"
+        openmp "On"
 
     filter { "platforms:x64" }
         architecture "x86_64"
