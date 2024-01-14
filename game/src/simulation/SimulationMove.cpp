@@ -31,15 +31,15 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
     int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
     bool early_stop = false;
 
-    if (largest_axis == 0 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
+    if (largest_axis == 0 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
         early_stop = true;
         out.faces = RayCast::FACE_X;
     }
-    else if (largest_axis == 1 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
+    else if (largest_axis == 1 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
         early_stop = true;
         out.faces = RayCast::FACE_Y;
     }
-    else if (largest_axis == 2 && pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
+    else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
         early_stop = true;
         out.faces = RayCast::FACE_Z;
     }
@@ -47,6 +47,7 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
         out.x = in.x;
         out.y = in.y;
         out.z = in.z;
+        out.move = PartSwapBehavior::NOOP;
         return true;
     }
 
@@ -103,11 +104,11 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
             if (prev_loc.z != final_loc.z)
                 faces |= RayCast::FACE_Z;
         } else {
-            if (pmapOccupied(Vector3T<signed_coord_t>{ final_loc.x, prev_loc.y, prev_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ final_loc.x, prev_loc.y, prev_loc.z }))
                 faces |= RayCast::FACE_X;
-            if (pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, final_loc.y, prev_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, final_loc.y, prev_loc.z }))
                 faces |= RayCast::FACE_Y;
-            if (pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, prev_loc.y, final_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, prev_loc.y, final_loc.z }))
                 faces |= RayCast::FACE_Z;
         }
         return faces;
@@ -133,11 +134,12 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
                 tMaxZ += tDeltaZ;
             }
         }
-    
-        if (pmapOccupied(current_voxel)) {
+
+        if (PartSwapBehavior::NOOP == pmapOccupied(current_voxel)) {
             out.x = previous_voxel.x;
             out.y = previous_voxel.y;
             out.z = previous_voxel.z;
+            out.move = PartSwapBehavior::SWAP;
 
             if (in.compute_faces)
                 out.faces = getFaces(previous_voxel, current_voxel);
@@ -149,6 +151,7 @@ bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto
     out.y = current_voxel.y;
     out.z = current_voxel.z;
     out.faces = 0; // No faces to bounce off
+    out.move = PartSwapBehavior::SWAP;
     return false;
 }
 
@@ -163,9 +166,9 @@ void Simulation::move_behavior(const part_id idx) {
         return; // Solids can't move, energy doesn't have custom behavior
 
     auto &part = parts[idx];
-    const coord_t x = util::roundf(part.x);
-    const coord_t y = util::roundf(part.y);
-    const coord_t z = util::roundf(part.z);
+    const coord_t x = part.rx;
+    const coord_t y = part.ry;
+    const coord_t z = part.rz;
 
     // Apply gravity
     Vector3 gravity_force{0.0f, 0.0f, 0.0f};
@@ -174,7 +177,8 @@ void Simulation::move_behavior(const part_id idx) {
             case GravityMode::ZERO_G:
                 break;
             case GravityMode::VERTICAL:
-                part.vy -= el.Gravity;
+                if (eval_move(idx, x, y - 1, z) != PartSwapBehavior::NOOP)
+                    part.vy -= el.Gravity;
                 break;
             case GravityMode::RADIAL:
                 gravity_force = Vector3{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
@@ -214,12 +218,12 @@ void Simulation::move_behavior(const part_id idx) {
                     bool hit = false;
 
                     if (std::abs(dx) > 1.0f || std::abs(dz) > 1.0f) {
-                        auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> bool {
+                        auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> PartSwapBehavior {
                             if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
-                                return true;
+                                return PartSwapBehavior::NOOP;
                             if (TYP(pmap[loc.z][loc.y][loc.x]) == parts[idx].type)
-                                return false;
-                            return eval_move(idx, loc.x, loc.y, loc.z) == PartSwapBehavior::NOOP;
+                                return PartSwapBehavior::SWAP;
+                            return eval_move(idx, loc.x, loc.y, loc.z);
                         };
 
                         RaycastOutput out;
@@ -230,7 +234,7 @@ void Simulation::move_behavior(const part_id idx) {
                         }, out, pmapOccupied);
 
                         if (hit)
-                            try_move(idx, out.x, newyf, out.z);
+                            try_move(idx, out.x, newyf, out.z, out.move);
                     }
                     if (!hit) // Haven't already tried to move in raycast
                         try_move(idx, part.x + dx, newyf, part.z + dz);
@@ -261,7 +265,6 @@ void Simulation::move_behavior(const part_id idx) {
                     // Technically this allows us to jump through walls in radial gravity
                     // but this makes the best spheres; raycasting made weird non-sphere artifacts
                     // TODO
-                    // TODO: the if statement can be removed if we delete the roundf function
                     if (nx >= 0 && ny >= 0 && nz >= 0) [[likely]]
                         try_move(idx, nx, ny, nz);
                 }
@@ -296,10 +299,10 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
     // TODO: consider edge mode
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         return;
-        
-    const coord_t oldx = util::roundf(parts[idx].x);
-    const coord_t oldy = util::roundf(parts[idx].y);
-    const coord_t oldz = util::roundf(parts[idx].z);
+
+    const coord_t oldx = parts[idx].rx;
+    const coord_t oldy = parts[idx].ry;
+    const coord_t oldz = parts[idx].rz;
     
     // Particle did not move, but target pos could
     // potentially have changed (ie +0.1) but not
@@ -308,10 +311,14 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         parts[idx].x = tx;
         parts[idx].y = ty;
         parts[idx].z = tz;
+
+        parts[idx].rx = x;
+        parts[idx].ry = y;
+        parts[idx].rz = z;
         return;
     }
 
-    auto &part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
+    auto part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
     auto old_pmap_val = part_map[oldz][oldy][oldx];
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
@@ -339,6 +346,10 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
     parts[idx].x = tx;
     parts[idx].y = ty;
     parts[idx].z = tz;
+
+    parts[idx].rx = x;
+    parts[idx].ry = y;
+    parts[idx].rz = z;
 }
 
 /**
@@ -349,6 +360,10 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);
+
+    std::swap(parts[id1].rx, parts[id2].rx);
+    std::swap(parts[id1].ry, parts[id2].ry);
+    std::swap(parts[id1].rz, parts[id2].rz);
 
     auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY]; 
     auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
@@ -383,10 +398,10 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
     // Condition for early termination:
     // return true if it "hit" something (current spot is occupied or the next spot)
     // is outside of the simulation bounds
-    auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> bool {
+    auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> PartSwapBehavior {
         if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
-            return true;
-        return eval_move(idx, loc.x, loc.y, loc.z) == PartSwapBehavior::NOOP;
+            return PartSwapBehavior::NOOP;
+        return eval_move(idx, loc.x, loc.y, loc.z);
     };
 
     // Repeatedly ray cast until we "run out" of distance
@@ -415,7 +430,8 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
 
         // The little velocity we have left is not enough to move to
         // another voxel, so the next raycast is always no_move, terminate early
-        if (fabsf(part.vy) < 0.5f && fabsf(part.vx) < 0.5f && fabsf(part.vx) < 0.5f) {
+        // Not exactly accurate but close enough
+        if (fabsf(part.vy) < 0.1f && fabsf(part.vx) < 0.1f && fabsf(part.vx) < 0.1f) {
             no_move = true;
             break;
         }
@@ -431,7 +447,7 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
             util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f),
             util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f));
     } else {
-        try_move(idx, out.x, out.y, out.z);
+        try_move(idx, out.x, out.y, out.z, out.move);
     }
 }
 

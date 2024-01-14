@@ -19,6 +19,7 @@ struct alignas(64) Particle {
     uint16_t ctype;
     int16_t life = 0;
     float x, y, z, vx, vy, vz;
+    coord_t rx, ry, rz; // Rounded coordinates
     float temp;
     uint16_t tmp1, tmp2;
     RGBA dcolor{0, 0, 0, 0};

@@ -20,6 +20,7 @@ struct RaycastInput {
 struct RaycastOutput {
     coord_t x, y, z;
     RayCast::RayHitFace faces;
+    PartSwapBehavior move;
 };
 
 #endif

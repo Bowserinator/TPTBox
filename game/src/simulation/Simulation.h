@@ -35,6 +35,8 @@ public:
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
+    coord_t min_y_per_zslice[ZRES - 2];
+    coord_t max_y_per_zslice[ZRES - 2];
     RNG rng;
 
 

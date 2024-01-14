@@ -75,7 +75,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 2; y++) {
+    for (int y = 1; y < 20; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
