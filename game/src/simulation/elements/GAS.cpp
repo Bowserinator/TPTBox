@@ -4,5 +4,6 @@ void Element::Element_GAS() {
     State = ElementState::TYPE_GAS;
     Color = 0x00FF00AA;
 
-    Diffusion = UNSET_PROPERTY;
+    Gravity = 0.005f;
+    Diffusion = 1.0f;
 };

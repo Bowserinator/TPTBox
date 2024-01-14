@@ -5,6 +5,10 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "vector_op.h"
+#include "util.h"
+#include "raymath.h"
+
 /* xoroshiro128+ by David Blackman and Sebastiano Vigna */
 
 static inline uint64_t rotl(const uint64_t x, int k) {
@@ -53,6 +57,22 @@ float RNG::uniform01() {
 float RNG::uniform(float lower, float upper) {
 	return uniform01() * (upper - lower) + lower;
 }
+
+Vector3 RNG::rand_perpendicular_vector(const Vector3 ray) {
+	constexpr float RANGE = 0.57735026919f; // sqrt(1/3), should cap max magnitude at 1.0f
+
+	// Project random vector to first and subtract component
+	Vector3 randv{ uniform(-RANGE, RANGE), uniform(-RANGE, RANGE), uniform(-RANGE, RANGE) };
+	randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
+	return randv;
+}
+
+Vector3 RNG::rand_norm_vector() {
+	constexpr float RANGE = 1.0f;
+	Vector3 randv{ uniform(-RANGE, RANGE), uniform(-RANGE, RANGE), uniform(-RANGE, RANGE) };
+	return util::norm_vector(randv);
+}
+
 
 RNG::RNG() {
 	s[0] = time(NULL);

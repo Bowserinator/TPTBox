@@ -6,4 +6,8 @@ void Element::Element_DUST() {
     Color = 0xFFFF00FF;
     Weight = 20;
     Advection = 0.1f;
+    Diffusion = 1.0f;
+
+    Gravity = 0.1f;
+    Loss = 1.0f;
 };

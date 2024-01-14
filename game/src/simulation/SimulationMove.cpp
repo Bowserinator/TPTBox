@@ -163,123 +163,120 @@ void Simulation::move_behavior(const part_id idx) {
         return; // Solids can't move, energy doesn't have custom behavior
 
     auto &part = parts[idx];
-
     const coord_t x = util::roundf(part.x);
     const coord_t y = util::roundf(part.y);
     const coord_t z = util::roundf(part.z);
 
+    // Apply gravity
+    Vector3 gravity_force{0.0f, 0.0f, 0.0f};
+    if (el.Gravity) {
+        switch (gravity_mode) {
+            case GravityMode::ZERO_G:
+                break;
+            case GravityMode::VERTICAL:
+                part.vy -= el.Gravity;
+                break;
+            case GravityMode::RADIAL:
+                gravity_force = Vector3{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
+                gravity_force = util::norm_vector(gravity_force);
+                part.vx += gravity_force.x * el.Gravity;
+                part.vy += gravity_force.y * el.Gravity;
+                part.vz += gravity_force.z * el.Gravity;
+                break;
+        }
+    }
+
     if (el.State == ElementState::TYPE_LIQUID || el.State == ElementState::TYPE_POWDER) {
+        bool is_liquid = el.State == ElementState::TYPE_LIQUID;
+
         switch (gravity_mode) {
             case GravityMode::ZERO_G:
                 return;
             case GravityMode::VERTICAL: {
-                const auto behavior = eval_move(idx, x, y - 1, z);
-                if (y > 1 && behavior != PartSwapBehavior::NOOP) {
-                    try_move(idx, x, y - 1, z, behavior);
+                if (y > 1 && eval_move(idx, x, y - 1, z) != PartSwapBehavior::NOOP) // Particle can move down
                     return;
-                }
+                float dx, dz;
+                do {
+                    dx = rng.uniform(-el.Diffusion, el.Diffusion);
+                    dz = rng.uniform(-el.Diffusion, el.Diffusion);
+                } while (!dx && !dz);
 
-                // Diffusive wiggling for fluids
-                // This is slower than the basic rule-based one below
-                // so we avoid it if possible
-                if (el.State == ElementState::TYPE_LIQUID && el.Diffusion != UNSET_PROPERTY) {
-                    part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
-                    part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
+                const int newy = is_liquid ? y : y - 1;
+                if (REVERSE_BOUNDS_CHECK(x + std::round(dx), newy, z + std::round(dz)))
                     return;
-                }
 
-                // Check surroundings or below surroundings
-                std::array<int32_t, 2 * 8> next; // 8 neighboring spots it could go
-                std::size_t next_spot_count = 0;
+                const float newyf = is_liquid ? part.y : part.y - 1.0f;
+                bool can_move_y_check = is_liquid || (eval_move(idx, x + std::round(dx), y, z + std::round(dz)) != PartSwapBehavior::NOOP);
+    
+                if (can_move_y_check) {
+                    // If we raycast and collide with another voxel we can't
+                    // do the naive try_move
+                    bool hit = false;
 
-                const int ylvl = el.State == ElementState::TYPE_LIQUID ? y : y - 1;
-                const float ylvlf = el.State == ElementState::TYPE_LIQUID ? part.y : part.y - 1;
+                    if (std::abs(dx) > 1.0f || std::abs(dz) > 1.0f) {
+                        auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> bool {
+                            if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
+                                return true;
+                            if (TYP(pmap[loc.z][loc.y][loc.x]) == parts[idx].type)
+                                return false;
+                            return eval_move(idx, loc.x, loc.y, loc.z) == PartSwapBehavior::NOOP;
+                        };
 
-                if (ylvl >= 1 && (pmap[z][y - 1][x] > 0 || y == 1)) {
-                    for (int dz = -1; dz <= 1; dz++)
-                    for (int dx = -1; dx <= 1; dx++) {
-                        if (!dx && !dz) continue;
-                        auto self_y_check = ylvl == y ? true : (eval_move(idx, x + dx, y, z + dz) != PartSwapBehavior::NOOP);
-                        if (self_y_check && eval_move(idx, x + dx, ylvl, z + dz) != PartSwapBehavior::NOOP) {
-                            next[next_spot_count++] = dx;
-                            next[next_spot_count++] = dz;
-                        }
+                        RaycastOutput out;
+                        hit = raycast(RaycastInput {
+                            .x = x, .y = y, .z = z,
+                            .vx = dx, .vy = 0.0f, .vz = dz,
+                            .compute_faces = false
+                        }, out, pmapOccupied);
+
+                        if (hit)
+                            try_move(idx, out.x, newyf, out.z);
                     }
-
-                    if (next_spot_count) {
-                        int spot_idx = (rng.rand() % (next_spot_count / 2)) * 2;
-                        try_move(idx, part.x + next[spot_idx], ylvlf, part.z + next[spot_idx + 1]);
-                    }
+                    if (!hit) // Haven't already tried to move in raycast
+                        try_move(idx, part.x + dx, newyf, part.z + dz);
                 }
                 break;
             }
             case GravityMode::RADIAL: {
-                Vector3 gravity_force{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
-                auto dist = util::hypot(gravity_force.x, gravity_force.y, gravity_force.z);
-                gravity_force /= dist;
-
-                constexpr float F = 0.3f; // Gravity force multiplier
-
                 // Generate random unit vector orthogonal to gravity for wiggling around
-                // We only wiggle if there is something in the direction we are currently traveling
-                // - Fluids only apply gravity if there's nothing below, otherwise wiggle
-                // - Powders always apply gravity, but only wiggle if there's something below
-                bool apply_grav = el.State == ElementState::TYPE_POWDER ||
-                        (part.vx == 0.0f && part.vy == 0.0f && part.vz == 0.0f) ||
-                        eval_move(idx, x + util::sign(part.vx), y + util::sign(part.vy), z + util::sign(part.vz)) != PartSwapBehavior::NOOP;
-                if (apply_grav) {
-                    part.vx += gravity_force.x * F;
-                    part.vy += gravity_force.y * F;
-                    part.vz += gravity_force.z * F;
-                } 
-                if (el.State == ElementState::TYPE_LIQUID || !apply_grav) {
-                    Vector3 randv = util::rand_perpendicular_vector(gravity_force, rng);
+                // We only wiggle if
+                // a) the element is a fluid
+                // b) the element is a powder (not a fluid)
+                //    and the powder is not stable (there is nothing "below"
+                //    it, where below is the direction of gravity)
+                if (is_liquid ||
+                    eval_move(idx,
+                            x + util::sign(gravity_force.x),
+                            y + util::sign(gravity_force.y),
+                            z + util::sign(gravity_force.z)
+                        ) != PartSwapBehavior::NOOP
+                ) {
+                    Vector3 randv = rng.rand_perpendicular_vector(gravity_force);
+                    randv = el.Diffusion * util::norm_vector(randv);
 
-                    if (el.Diffusion != UNSET_PROPERTY) {
-                        const float diffusion = el.Diffusion == UNSET_PROPERTY ? 1.0f : el.Diffusion;
-                        const float diff_force = el.State == ElementState::TYPE_POWDER ? diffusion * 3.5f : diffusion * 1.4f;
+                    auto nx = x + randv.x;
+                    auto ny = y + randv.y;
+                    auto nz = z + randv.z;
 
-                        part.vx += diff_force * randv.x;
-                        part.vy += diff_force * randv.y;
-                        part.vz += diff_force * randv.z;
-                    } else {
-                        const float diff_force = 2.0f;
-                        auto nx = x + diff_force * randv.x;
-                        auto ny = y + diff_force * randv.y;
-                        auto nz = z + diff_force * randv.z;
-                        if (eval_move(idx, nx, ny, nz) != PartSwapBehavior::NOOP && nx > 0 && ny > 0 && nz > 0)
-                            try_move(idx, nx, ny, nz);
-                    }
+                    // Technically this allows us to jump through walls in radial gravity
+                    // but this makes the best spheres; raycasting made weird non-sphere artifacts
+                    // TODO
+                    // TODO: the if statement can be removed if we delete the roundf function
+                    if (nx >= 0 && ny >= 0 && nz >= 0) [[likely]]
+                        try_move(idx, nx, ny, nz);
                 }
                 return;
             }
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        if (el.Diffusion != UNSET_PROPERTY) {
-            part.vx = rng.uniform(-el.Diffusion, el.Diffusion);
-            part.vy = rng.uniform(-el.Diffusion, el.Diffusion);
-            part.vz = rng.uniform(-el.Diffusion, el.Diffusion);
-            return;
-        }
+        Vector3 randv = rng.rand_norm_vector();
+        auto nx = x + el.Diffusion * randv.x;
+        auto ny = y + el.Diffusion * randv.y;
+        auto nz = z + el.Diffusion * randv.z;
 
-        std::array<int32_t, 3 * 26> next; // 26 neighboring spots it could go
-        std::size_t next_spot_count = 0;
-
-        for (int dz = -1; dz <= 1; dz++)
-        for (int dy = -1; dy <= 1; dy++)
-        for (int dx = -1; dx <= 1; dx++) {
-            if (!dx && !dz && !dy) continue;
-            if (pmap[z + dz][y + dy][x + dx] == 0) {
-                next[next_spot_count++] = dx;
-                next[next_spot_count++] = dy;
-                next[next_spot_count++] = dz;
-            }
-        }
-        if (next_spot_count) {
-            int spot_idx = (rng.rand() % (next_spot_count / 3)) * 3;
-            try_move(idx, part.x + next[spot_idx], part.y + next[spot_idx + 1], part.z + next[spot_idx + 2]);
-        }
+        if (nx >= 0 && ny >= 0 && nz >= 0) [[likely]]
+            try_move(idx, nx, ny, nz);
     }
 }
 
@@ -426,12 +423,9 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
         // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
         // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
         portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
-    } while(!(hit || no_move || portion_velocity <= 0.5f));
+    } while(!(hit || no_move || portion_velocity <= 0.01f));
 
-    if (no_move) {
-        // Try move provides bounds safety here, don't set pos directly
-        try_move(idx, part.x, part.y, part.z);
-    } else if (!hit) {
+    if (no_move || !hit) {
         try_move(idx,
             util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f),
             util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f),

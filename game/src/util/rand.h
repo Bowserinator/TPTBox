@@ -3,6 +3,8 @@
 #ifndef UTIL_RAND_H
 #define UTIL_RAND_H
 
+#include "raylib.h"
+
 #include <stdint.h>
 #include <array>
 
@@ -61,6 +63,22 @@ public:
      * @return float 
      */
     float uniform(float lower, float upper);
+
+    /**
+     * @brief Returns a random vector3 orthogonal to the given one
+     *        with a magnitude between 0 and 1.0. Does not guarantee the result
+     *        is non-zero
+     * @param ray Given vector, must have non-zero magnitude
+     * @param rng RNG instance
+     * @return Vector3 
+     */
+    Vector3 rand_perpendicular_vector(const Vector3 ray);
+
+    /**
+     * @brief Generate a random vector with magnitude 1.0f
+     * @return Vector3 
+     */
+    Vector3 rand_norm_vector();
 
 	RNG();
 	void seed(unsigned int sd);

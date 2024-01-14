@@ -21,9 +21,9 @@ Element::Element() {
 	AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops*/
 	Loss = 1.0f;
 	Collision = 0.0f;
-	/*Gravity;           // How much particle is affected by gravity
-	NewtonianGravity;  // How much particle is affected by newtonian gravity*/
-	Diffusion = UNSET_PROPERTY;
+	Gravity = 0.0f;
+	/*NewtonianGravity;  // How much particle is affected by newtonian gravity*/
+	Diffusion = 0.0f;
 	/* HotAir;            // How much particle increases pressure by
 
 	Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect

@@ -110,23 +110,6 @@ namespace util {
     }
 
     /**
-     * @brief Returns a random vector3 orthogonal to the given one
-     *        with a magnitude between 0 and 1.0. Does not guarantee the result
-     *        is non-zero
-     * @param ray Given vector, must have non-zero magnitude
-     * @param rng RNG instance
-     * @return Vector3 
-     */
-    inline Vector3 rand_perpendicular_vector(const Vector3 ray, RNG &rng) {
-        constexpr float RANGE = 0.57735026919f; // sqrt(1/3), should cap max magnitude at 1.0f
-
-        // Project random vector to first and subtract component
-        Vector3 randv{ rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE), rng.uniform(-RANGE, RANGE) };
-        randv -= Vector3DotProduct(randv, ray) / Vector3DotProduct(ray, ray) * ray;
-        return randv;
-    }
-
-    /**
      * @brief Radians to degrees
      * @param rad Radians
      * @return constexpr float 
@@ -186,6 +169,16 @@ namespace util {
      */
     inline bool vec3_similar(const Vector3 &a, const Vector3& b, const float thresh) {
         return fabsf(a.x - b.x) <= thresh && fabsf(a.y - b.y) <= thresh && fabsf(a.z - b.z) <= thresh;
+    }
+
+    inline Vector3 norm_vector(const Vector3 &v) {
+        return v / (hypot(v.x, v.y, v.z) + 0.001f);
+    }
+    inline Vector2 norm_vector(const Vector2 &v) {
+        return v / (hypot(v.x, v.y) + 0.001f);
+    }
+    inline Vector4 norm_vector(const Vector4 &v) {
+        return v / (hypot(v.x, v.y, v.z, v.w) + 0.001f);
     }
 }
 
