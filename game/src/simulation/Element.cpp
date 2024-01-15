@@ -19,7 +19,7 @@ Element::Element() {
 	Advection = 0.0f;
 	/*AirDrag;           // How much air particle produces in direction of travel
 	AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops*/
-	Loss = 1.0f;
+	Loss = 0.0f;
 	Collision = 0.0f;
 	Gravity = 0.0f;
 	/*NewtonianGravity;  // How much particle is affected by newtonian gravity*/

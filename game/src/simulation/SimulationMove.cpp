@@ -172,6 +172,8 @@ void Simulation::move_behavior(const part_id idx) {
 
     // Apply gravity
     Vector3 gravity_force{0.0f, 0.0f, 0.0f};
+    bool gravity_radial_neighbors_occupied = false;
+
     if (el.Gravity) {
         switch (gravity_mode) {
             case GravityMode::ZERO_G:
@@ -181,11 +183,21 @@ void Simulation::move_behavior(const part_id idx) {
                     part.vy -= el.Gravity;
                 break;
             case GravityMode::RADIAL:
-                gravity_force = Vector3{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
-                gravity_force = util::norm_vector(gravity_force);
-                part.vx += gravity_force.x * el.Gravity;
-                part.vy += gravity_force.y * el.Gravity;
-                part.vz += gravity_force.z * el.Gravity;
+                gravity_radial_neighbors_occupied =
+                    TYP(pmap[z - 1][y][x]) == part.type &&
+                    TYP(pmap[z + 1][y][x]) == part.type &&
+                    TYP(pmap[z][y][x - 1]) == part.type &&
+                    TYP(pmap[z][y][x + 1]) == part.type &&
+                    TYP(pmap[z][y + 1][x]) == part.type &&
+                    TYP(pmap[z][y - 1][x]) == part.type;
+
+                if (!gravity_radial_neighbors_occupied) {
+                    gravity_force = Vector3{ XRES / 2 - part.x, YRES / 2 - part.y, ZRES / 2 - part.z };
+                    gravity_force = util::norm_vector(gravity_force);
+                    part.vx += gravity_force.x * el.Gravity;
+                    part.vy += gravity_force.y * el.Gravity;
+                    part.vz += gravity_force.z * el.Gravity;
+                }
                 break;
         }
     }
@@ -262,6 +274,8 @@ void Simulation::move_behavior(const part_id idx) {
                             z + util::sign(gravity_force.z)
                         ) != PartSwapBehavior::NOOP
                 ) {
+                    if (gravity_radial_neighbors_occupied) return;
+
                     Vector3 randv = rng.rand_perpendicular_vector(gravity_force);
                     randv = el.Diffusion * util::norm_vector(randv);
 
