@@ -9,6 +9,7 @@ void Element::Element_GOL() {
     Color = 0xFF0000AA;
 
     Update = &update;
+    Weight = 100;
 };
 
 static int update(UPDATE_FUNC_ARGS) {
@@ -26,8 +27,8 @@ static int update(UPDATE_FUNC_ARGS) {
         parts[i].life = neighbors;
     } else { // Compute phase
         if (parts[i].life > 16) {
-            sim->kill_part(i);
-            return -1;
+            //sim->kill_part(i);
+            //return -1;
         }
     }
     

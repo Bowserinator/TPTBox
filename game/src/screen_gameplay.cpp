@@ -73,11 +73,21 @@ void ScreenGameplay::init() {
         //sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
     }
 
+    // for (int x = 1; x < XRES - 1; x++) 
+    // for (int z = 1; z < ZRES - 1; z++)
+    // for (int y = 1; y < 20; y++) {
+    //     // sim.create_part(x, y, z, PT_DUST);
+    //     sim.create_part(x, y + 1, z, PT_WATR);
+    // }
+
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
     for (int y = 1; y < 20; y++) {
-        // sim.create_part(x, y, z, PT_DUST);
-        sim.create_part(x, y + 1, z, PT_WATR);
+        if (x > XRES / 2 && y > 10) continue;
+        if (x == XRES / 2)
+            sim.create_part(x, y, z, PT_GOL);
+        else
+            sim.create_part(x, y, z, PT_WATR);
     }
 
 
@@ -101,8 +111,6 @@ void ScreenGameplay::init() {
 }
 
 void ScreenGameplay::update() {
-    auto t = GetTime();
-
     sim.air.cells[AIR_XRES / 2][4][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
     // for (int x = 10; x < 100; x += 10)
     //      for (int z = 10; z < 100; z += 10)
@@ -153,9 +161,8 @@ void ScreenGameplay::update() {
                 sim.kill_part(ID(sim.pmap[z][y][x]));
     }
 
-     
+    auto t = GetTime();
     sim.update();
-
     simTime = GetTime() - t;
 }
 

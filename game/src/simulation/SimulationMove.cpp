@@ -197,20 +197,27 @@ void Simulation::move_behavior(const part_id idx) {
             case GravityMode::ZERO_G:
                 return;
             case GravityMode::VERTICAL: {
+                if (!el.Diffusion)
+                    return;
                 if (y > 1 && eval_move(idx, x, y - 1, z) != PartSwapBehavior::NOOP) // Particle can move down
                     return;
-                float dx, dz;
-                do {
-                    dx = rng.uniform(-el.Diffusion, el.Diffusion);
-                    dz = rng.uniform(-el.Diffusion, el.Diffusion);
-                } while (!dx && !dz);
 
+                if ( // No neighboring spots anyways, terminate
+                    TYP(pmap[z - 1][y][x]) == part.type &&
+                    TYP(pmap[z + 1][y][x]) == part.type &&
+                    TYP(pmap[z][y][x - 1]) == part.type &&
+                    TYP(pmap[z][y][x + 1]) == part.type
+                ) return;
+
+                float dx = rng.uniform(-el.Diffusion, el.Diffusion);
+                float dz = rng.uniform(-el.Diffusion, el.Diffusion);
                 const int newy = is_liquid ? y : y - 1;
-                if (REVERSE_BOUNDS_CHECK(x + std::round(dx), newy, z + std::round(dz)))
+
+                if (REVERSE_BOUNDS_CHECK(x + util::ceil_proper(dx), newy, z + util::ceil_proper(dz)))
                     return;
 
                 const float newyf = is_liquid ? part.y : part.y - 1.0f;
-                bool can_move_y_check = is_liquid || (eval_move(idx, x + std::round(dx), y, z + std::round(dz)) != PartSwapBehavior::NOOP);
+                bool can_move_y_check = is_liquid || (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz)) != PartSwapBehavior::NOOP);
     
                 if (can_move_y_check) {
                     // If we raycast and collide with another voxel we can't
