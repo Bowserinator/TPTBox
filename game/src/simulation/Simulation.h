@@ -35,6 +35,7 @@ public:
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
+    unsigned int max_ok_causality_range;
     coord_t min_y_per_zslice[ZRES - 2];
     coord_t max_y_per_zslice[ZRES - 2];
     RNG rng;
@@ -48,7 +49,7 @@ public:
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();
 
-    void update_part(const part_id i);
+    void update_part(const part_id i, const bool consider_causality = true);
 
     void move_behavior(const part_id idx);
     void try_move(const part_id idx, const float x, const float y, const float z,

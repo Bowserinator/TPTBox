@@ -8,7 +8,8 @@
 
 namespace PartFlags {
     constexpr uint8_t UPDATE_FRAME = 0;
-    constexpr uint8_t IS_ENERGY = 1;
+    constexpr uint8_t MOVE_FRAME = 1;
+    constexpr uint8_t IS_ENERGY = 2;
 }
 
 struct alignas(64) Particle {

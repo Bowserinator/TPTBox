@@ -37,6 +37,7 @@ Simulation::Simulation():
     constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
 
     sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
+    max_ok_causality_range = ZRES / (sim_thread_count * 4);
     actual_thread_count = 0;
 
     // TODO: singleton?
@@ -82,6 +83,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     const part_id old_pfree = pfree;
 
     parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+    parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
     parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
 
     parts[pfree].id = pfree;
@@ -140,7 +142,7 @@ void Simulation::update_zslice(const coord_t pz) {
     }
 }
 
-void Simulation::update_part(const part_id i) {
+void Simulation::update_part(const part_id i, const bool consider_causality) {
     auto &part = parts[i];
 
     // Since a particle might move we might update it again
@@ -149,36 +151,50 @@ void Simulation::update_part(const part_id i) {
     // and only updates the particle if the last frame it was updated
     // has the same parity
     const auto frame_count_parity = frame_count & 1;
-    if (part.flag[PartFlags::UPDATE_FRAME] == frame_count_parity)
-        return;
-    part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
-
     const coord_t x = part.rx;
     const coord_t y = part.ry;
     const coord_t z = part.rz;
 
-    // Air acceleration
-    const auto &el = GetElements()[part.type];
+    // Update causality constraint: depends on move_behavior and update step
+    // Velocity can be set but the particle cannot move beyond its causality radius
+    if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity) { // Need to update
+        const auto &el = GetElements()[part.type];
 
-    part.vx *= el.Loss;
-    part.vy *= el.Loss;
-    part.vz *= el.Loss;
+        if (consider_causality && el.Causality > max_ok_causality_range)
+            return;
+        part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
-    if (el.Advection) {
-        const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-        part.vx += el.Advection * airCell.data[VX_IDX];
-        part.vy += el.Advection * airCell.data[VY_IDX];
-        part.vz += el.Advection * airCell.data[VZ_IDX];
+        // Air acceleration
+        part.vx *= el.Loss;
+        part.vy *= el.Loss;
+        part.vz *= el.Loss;
+
+        if (el.Advection) {
+            const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            part.vx += el.Advection * airCell.data[VX_IDX];
+            part.vy += el.Advection * airCell.data[VY_IDX];
+            part.vz += el.Advection * airCell.data[VZ_IDX];
+        }
+
+        if (el.Update) {
+            const auto result = el.Update(this, i, x, y, z, parts, pmap);
+            if (result == -1) return;
+        }
+        move_behavior(i); // Apply element specific movement, like powder / liquid spread
     }
 
-    if (el.Update) {
-        const auto result = el.Update(this, i, x, y, z, parts, pmap);
-        if (result == -1) return;
-    }
+    // Movement causality constraint: depends on velocity
+    if (part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) { // Need to move
+        // Causality check only needs to consider Z direction
+        // since threads operate on XY slices, so only z velocity will
+        // move a part into another thread domain
+        if (consider_causality && fabs(part.vz) > max_ok_causality_range)
+            return;
+        part.flag[PartFlags::MOVE_FRAME] = frame_count_parity > 0;
 
-    move_behavior(i); // Apply element specific movement, like powder / liquid spread
-    if (part.vx || part.vy || part.vz)
-        _raycast_movement(i, x, y, z); // Apply velocity to displacement
+        if (part.vx || part.vy || part.vz)
+            _raycast_movement(i, x, y, z); // Apply velocity to displacement
+    }
 }
 
 void Simulation::update() {
@@ -232,7 +248,7 @@ void Simulation::recalc_free_particles() {
         if (!map[z][y][x])
             map[z][y][x] = PMAP(part.type, i);
 
-        update_part(i);
+        update_part(i, false);
     }
     maxId = newMaxId + 1;
 }
