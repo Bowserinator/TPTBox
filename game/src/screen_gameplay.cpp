@@ -39,46 +39,58 @@ void ScreenGameplay::init() {
 #version 430 compatibility
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(binding=4) buffer readonly InBuff {
-    float in_data[];
-};
-layout(binding=5) buffer writeonly OutBuff {
-    float out_data[];
-};
+// layout(std430, binding=4) buffer readonly InBuff {
+//     float in_data[];
+// };
+// layout(std430, binding=5) buffer writeonly OutBuff {
+//     float out_data[];
+// };
+layout(r32f, binding = 0) uniform image3D in_data;
+layout(r32f, binding = 1) uniform image3D out_data;
 
 void main() {
     ivec3 pos = ivec3(gl_GlobalInvocationID.xyz);
-    const uint i = pos.x
-        + gl_NumWorkGroups.x * pos.y
-        + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
-    const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
+    // const uint i = pos.x
+    //     + gl_NumWorkGroups.x * pos.y
+    //     + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
+    // const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
 
-    float left = (i > 0) ? in_data[i - 1] : 0.0f;
-    float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
-    out_data[i] = (left + in_data[i] + right) / 3.0f;
+    // float left = (i > 0) ? in_data[i - 1] : 0.0f;
+    // float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
+    // out_data[i] = (left + in_data[i] + right) / 3.0f;
 }
 )###";
+    const int R = 25;
     ComputeShader3D<float> s(program, ComputeShaderInput {
-        .sizex = 4,
-        .sizey = 4,
-        .sizez = 4,
-        .flat_size = 64,
+        .sizex = R,
+        .sizey = R,
+        .sizez = R,
+        .flat_size = R * R* R,
         .bind_idx1 = 4,
         .bind_idx2 = 5
     });
-    float x[4 * 4 * 4];
-    for (int i = 0; i < 64; i++)
+    float * x = new float[R * R* R];
+    for (int i = 0; i < R * R* R; i++)
         x[i] = i % 2;
-    s.set_buff1(x);
-    s.use_and_dispatch();
-    s.wait();
 
-    std::vector<float> r(64);
+    std::vector<float> r(R * R* R);
 
-    s.write_buff2_to(&r[0]);
-    for (auto &y : r)
-        std::cout << y << " ";
-    std::cout << "\n";
+    int times = 10;
+    auto t = GetTime();
+    for (int j = 0; j < times; j++) {
+        // s.set_buff1(x);      // 0.67 us
+        //s.use_and_dispatch(); // Time to dispatch and wait: 12 us
+        //s.wait();
+
+        s.write_buff2_to(&r[0]); // 170 ms
+    }
+
+    std::cout << (GetTime() - t) / times << " TIME\n";
+
+    // for (auto &y : r)
+    //     std::cout << y << " ";
+    // std::cout << "\n";
+    delete[] x;
 
     
 

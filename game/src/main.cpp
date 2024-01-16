@@ -17,15 +17,37 @@ Screen * currentScreen = &gameplay;
 constexpr int screenWidth = 1280;
 constexpr int screenHeight = 720;
 
-int main(void)
-{
+#ifdef DEBUG
+#include <glad.h>
+
+void GLAPIENTRY
+MessageCallback(GLenum source,
+                GLenum type,
+                GLuint id,
+                GLenum severity,
+                GLsizei length,
+                const GLchar* message,
+                const void* userParam ) {
+    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+            type, severity, message);
+}
+#endif
+
+int main(void) {
     InitWindow(screenWidth, screenHeight, "The Powder Box");
     SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitAudioDevice();
 
+    #ifdef DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, nullptr);
+    #endif
+
     omp_set_dynamic(false); // Don't allow dynamic scaling of num of threads
     FontCache::ref()->init();
     currentScreen->init();
+
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);

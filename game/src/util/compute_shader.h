@@ -33,7 +33,7 @@ public:
     ComputeShader3D(const char * code, const ComputeShaderInput &in):
             bind_idx1(in.bind_idx1), bind_idx2(in.bind_idx2) {
         work_size = glm::uvec3(in.sizex, in.sizey, in.sizez);
-        flat_size = in.flat_size < 0 ? work_size.x * work_size.y * work_size.z : in.flat_size;
+        flat_size = in.flat_size;
 
         // Compile shader
         unsigned int shader = glCreateShader(GL_COMPUTE_SHADER);
@@ -59,14 +59,17 @@ public:
         glGenBuffers(1, &ssbo1);
         glGenBuffers(1, &ssbo2);
 
+        const auto flags = GL_DYNAMIC_STORAGE_BIT | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(T), NULL, GL_STATIC_DRAW);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(T), NULL, flags | GL_MAP_WRITE_BIT );
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(S), NULL, GL_STATIC_DRAW);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(S), NULL, flags | GL_MAP_READ_BIT);
     }
 
     ~ComputeShader3D() {
         glDeleteProgram(id);
+        glDeleteBuffers(1, &ssbo1);
+        glDeleteBuffers(1, &ssbo2);
     }
 
     void set_buff1(T* values) {
@@ -76,7 +79,7 @@ public:
 
     void set_buff2(S* values) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(S), values, GL_STATIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, flat_size * sizeof(S), values, GL_DYNAMIC_READ);
     }
 
     void use_and_dispatch() {
@@ -86,22 +89,19 @@ public:
         glDispatchCompute(work_size.x, work_size.y, work_size.z);
     }
 
+
     void wait() {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     void write_buff1_to(T * out) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
-        T *ptr = (T*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-        std::copy(&ptr[0], &ptr[flat_size], out);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(T) * flat_size, out);
     }
 
     void write_buff2_to(S * out) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2);
-        S *ptr = (S*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-        std::copy(&ptr[0], &ptr[flat_size], out);
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(S) * flat_size, out);
     }
 
 private:
