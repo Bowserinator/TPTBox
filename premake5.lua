@@ -67,7 +67,6 @@ workspace (workspaceName)
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "Speed"
-        openmp "On"
 
     filter { "platforms:x64" }
         architecture "x86_64"
@@ -87,6 +86,7 @@ workspace (workspaceName)
     cppdialect "C++20"
 check_raylib();
 
+include ("libs")
 include ("raylib_premake5.lua")
 
 if(os.isdir("game")) then

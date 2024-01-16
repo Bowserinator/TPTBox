@@ -6,6 +6,8 @@ void Element::Element_WATR() {
     Color = 0x0000FFFF;
     Weight = 10;
 
+    Advection = 0.2f;
+
     Loss = 0.96f;
     Gravity = 0.3f;
     Diffusion = 5.0f;

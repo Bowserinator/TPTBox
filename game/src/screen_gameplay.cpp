@@ -32,7 +32,56 @@ static int currentElementId = 1;
 static float test = 0.0f; // TODO
 
 
+#include "util/compute_shader.h"
+
 void ScreenGameplay::init() {
+    char program[] =  R"###(
+#version 430 compatibility
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(binding=4) buffer readonly InBuff {
+    float in_data[];
+};
+layout(binding=5) buffer writeonly OutBuff {
+    float out_data[];
+};
+
+void main() {
+    ivec3 pos = ivec3(gl_GlobalInvocationID.xyz);
+    const uint i = pos.x
+        + gl_NumWorkGroups.x * pos.y
+        + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
+    const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
+
+    float left = (i > 0) ? in_data[i - 1] : 0.0f;
+    float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
+    out_data[i] = (left + in_data[i] + right) / 3.0f;
+}
+)###";
+    ComputeShader3D<float> s(program, ComputeShaderInput {
+        .sizex = 4,
+        .sizey = 4,
+        .sizez = 4,
+        .flat_size = 64,
+        .bind_idx1 = 4,
+        .bind_idx2 = 5
+    });
+    float x[4 * 4 * 4];
+    for (int i = 0; i < 64; i++)
+        x[i] = i % 2;
+    s.set_buff1(x);
+    s.use_and_dispatch();
+    s.wait();
+
+    std::vector<float> r(64);
+
+    s.write_buff2_to(&r[0]);
+    for (auto &y : r)
+        std::cout << y << " ";
+    std::cout << "\n";
+
+    
+
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES / 2, 20.0f, ZRES / 2}; // Camera position
     render_camera.camera.target = Vector3{0.0f, 0.0f, 0.0f};      // Camera looking at point
@@ -75,7 +124,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 20; y++) {
+    for (int y = 1; y < 5; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
@@ -111,7 +160,7 @@ void ScreenGameplay::init() {
 }
 
 void ScreenGameplay::update() {
-    sim.air.cells[AIR_XRES / 2][4][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
+    sim.air.cells[AIR_XRES / 2][2][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
     // for (int x = 10; x < 100; x += 10)
     //      for (int z = 10; z < 100; z += 10)
     //      if (sim.pmap[z][90][x] == 0)
