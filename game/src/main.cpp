@@ -3,6 +3,7 @@
 
 #include "simulation/Simulation.h"
 #include "interface/FontCache.h"
+#include "interface/EventConsumer.h"
 
 #include <omp.h>
 
@@ -66,6 +67,8 @@ int main(void) {
 
     currentScreen->unload();
     FontCache::ref()->destroy();
+    EventConsumer::ref()->destroy();
+
     CloseAudioDevice();
     CloseWindow();
     return 0;

@@ -125,9 +125,9 @@ void RenderCamera::update() {
 
     // Zoom in / out
     moveToTarget(-12 * GetMouseWheelMove());
-    if (IsKeyPressed(KEY_KP_SUBTRACT))
+    if (IsKeyDown(KEY_KP_SUBTRACT))
         moveToTarget(6.0f);
-    if (IsKeyPressed(KEY_KP_ADD))
+    if (IsKeyDown(KEY_KP_ADD))
         moveToTarget(-6.0f);
 }
 

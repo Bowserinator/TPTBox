@@ -3,6 +3,7 @@
 #include "../../simulation/SimulationDef.h"
 #include "../../util/util.h"
 #include "../FontCache.h"
+#include "../EventConsumer.h"
 
 #include <cmath>
 #include <iostream>
@@ -160,14 +161,12 @@ void NavCube::update() {
 
 
     // Mouse click in the nav cube window
-    bool clicked = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-    if (clicked) {
-        const auto mousePos = GetMousePosition();
-        clicked = clicked && (mousePos.x >= NAVCUBE_POS.x && mousePos.x <= NAVCUBE_POS.x + NAV_CUBE_WINDOW_SIZE);
-        clicked = clicked && (mousePos.y >= NAVCUBE_POS.y && mousePos.y <= NAVCUBE_POS.y + NAV_CUBE_WINDOW_SIZE);
-    }
+    const auto mousePos = GetMousePosition();
+    bool mouseInBounds = (mousePos.x >= NAVCUBE_POS.x && mousePos.x <= NAVCUBE_POS.x + NAV_CUBE_WINDOW_SIZE) &&
+                         (mousePos.y >= NAVCUBE_POS.y && mousePos.y <= NAVCUBE_POS.y + NAV_CUBE_WINDOW_SIZE);
+    bool clicked = EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
-    if (clicked) {
+    if (clicked && mouseInBounds) {
         Ray ray = NavCubeGetMouseRay(GetMousePosition(), local_cam);
 
         // Undo rotation matrix (R^T is the inverse for rot matrix)
@@ -222,6 +221,8 @@ void NavCube::update() {
             cam->setLerpTarget(target_pos, target, Vector3{0.0f, 1.0f, 0.0f});  
         }
     }
+    if (mouseInBounds)
+        EventConsumer::ref()->consumeMouse();
 
     DrawTextureRec(target.texture,
         Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },

@@ -8,6 +8,7 @@
 #include "src/simulation/Simulation.h"
 
 #include "src/interface/gui/HUD.h"
+#include "src/interface/EventConsumer.h"
 
 #include <algorithm>
 
@@ -35,62 +36,63 @@ static float test = 0.0f; // TODO
 #include "util/compute_shader.h"
 
 void ScreenGameplay::init() {
-    char program[] =  R"###(
-#version 430 compatibility
+//     char program[] =  R"###(
+// #version 430 compatibility
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-// layout(std430, binding=4) buffer readonly InBuff {
-//     float in_data[];
-// };
-// layout(std430, binding=5) buffer writeonly OutBuff {
-//     float out_data[];
-// };
-layout(r32f, binding = 0) uniform image3D in_data;
-layout(r32f, binding = 1) uniform image3D out_data;
+// layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+// // layout(std430, binding=4) buffer readonly InBuff {
+// //     float in_data[];
+// // };
+// // layout(std430, binding=5) buffer writeonly OutBuff {
+// //     float out_data[];
+// // };
+// layout(r32f, binding = 0) uniform image3D in_data;
+// layout(r32f, binding = 1) uniform image3D out_data;
 
-void main() {
-    ivec3 pos = ivec3(gl_GlobalInvocationID.xyz);
-    // const uint i = pos.x
-    //     + gl_NumWorkGroups.x * pos.y
-    //     + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
-    // const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
+// void main() {
+//     ivec3 pos = ivec3(gl_GlobalInvocationID.xyz);
+//     // const uint i = pos.x
+//     //     + gl_NumWorkGroups.x * pos.y
+//     //     + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
+//     // const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
 
-    // float left = (i > 0) ? in_data[i - 1] : 0.0f;
-    // float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
-    // out_data[i] = (left + in_data[i] + right) / 3.0f;
-}
-)###";
-    const int R = 25;
-    ComputeShader3D<float> s(program, ComputeShaderInput {
-        .sizex = R,
-        .sizey = R,
-        .sizez = R,
-        .flat_size = R * R* R,
-        .bind_idx1 = 4,
-        .bind_idx2 = 5
-    });
-    float * x = new float[R * R* R];
-    for (int i = 0; i < R * R* R; i++)
-        x[i] = i % 2;
+//     // float left = (i > 0) ? in_data[i - 1] : 0.0f;
+//     // float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
+//     // out_data[i] = (left + in_data[i] + right) / 3.0f;
+// }
+// )###";
+//     const int R = 200;
+//     ComputeShader3D<float> s(program, ComputeShaderInput {
+//         .sizex = R,
+//         .sizey = R,
+//         .sizez = R,
+//         .flat_size = R * R* R,
+//         .bind_idx1 = 4,
+//         .bind_idx2 = 5
+//     });
+//     float * x = new float[R * R* R];
+//     for (int i = 0; i < R * R* R; i++)
+//         x[i] = i % 2;
 
-    std::vector<float> r(R * R* R);
+//     float * r = new float[R * R* R];
 
-    int times = 10;
-    auto t = GetTime();
-    for (int j = 0; j < times; j++) {
-        // s.set_buff1(x);      // 0.67 us
-        //s.use_and_dispatch(); // Time to dispatch and wait: 12 us
-        //s.wait();
+//     int times = 10;
+//     auto t = GetTime();
+//     for (int j = 0; j < times; j++) {
+//         // s.set_buff1(x);      // 0.67 us
+//         s.use_and_dispatch(); // Time to dispatch and wait: 12 us
+//         s.wait();
 
-        s.write_buff2_to(&r[0]); // 170 ms
-    }
+//         s.write_buff2_to(r); // 170 ms
+//     }
 
-    std::cout << (GetTime() - t) / times << " TIME\n";
+//     std::cout << (GetTime() - t) / times << " TIME\n";
 
-    // for (auto &y : r)
-    //     std::cout << y << " ";
-    // std::cout << "\n";
-    delete[] x;
+//     // for (auto &y : r)
+//     //     std::cout << y << " ";
+//     // std::cout << "\n";
+//     delete[] x;
+//     delete[] r;
 
     
 
@@ -178,56 +180,15 @@ void ScreenGameplay::update() {
     //      if (sim.pmap[z][90][x] == 0)
     //          sim.create_part(x, 90, z, 1);
 
-    if (IsKeyDown(KEY_ONE))
-        currentElementId = 1;
-    else if (IsKeyDown(KEY_TWO))
-        currentElementId = 2;
-    else if (IsKeyDown(KEY_THREE))
-        currentElementId = 3;
-    else if (IsKeyDown(KEY_FOUR))
-        currentElementId = 4;
-
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        Vector3 forward = GetCameraForward(&render_camera.camera);
-        forward = render_camera.camera.position + forward * 20.0f;
-        forward.x = std::round(forward.x);
-        forward.y = std::round(forward.y);
-        forward.z = std::round(forward.z);
-
-        // const int S = 5;
-        // for (int x = forward.x / AIR_CELL_SIZE; x < forward.x / AIR_CELL_SIZE + S; x++)
-        // for (int y = forward.y / AIR_CELL_SIZE; y < forward.y / AIR_CELL_SIZE + S; y++)
-        // for (int z = forward.z / AIR_CELL_SIZE; z < forward.z / AIR_CELL_SIZE + S; z++)
-        //     if (x > 0 && x < AIR_XRES -1 && y > 0 && y < AIR_YRES -1 && z > 0 && z < AIR_ZRES - 1)
-        //         sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
-
-        const int S = 5;
-        for (int x = forward.x; x < forward.x + S; x++)
-        for (int y = forward.y; y < forward.y + S; y++)
-        for (int z = forward.z; z < forward.z + S; z++)
-            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                sim.create_part(x, y, z, currentElementId);
-    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        Vector3 forward = GetCameraForward(&render_camera.camera);
-        forward = render_camera.camera.position + forward * 20.0f;
-        forward.x = std::round(forward.x);
-        forward.y = std::round(forward.y);
-        forward.z = std::round(forward.z);
-
-        const int S = 15;
-        for (int x = forward.x; x < forward.x + S; x++)
-        for (int y = forward.y; y < forward.y + S; y++)
-        for (int z = forward.z; z < forward.z + S; z++)
-            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                sim.kill_part(ID(sim.pmap[z][y][x]));
-    }
-
     auto t = GetTime();
     sim.update();
     simTime = GetTime() - t;
 }
 
 void ScreenGameplay::draw() {
+    // TODO
+    EventConsumer::ref()->reset();
+
     render_camera.update();
 
     ClearBackground(BLACK);
@@ -251,7 +212,7 @@ void ScreenGameplay::draw() {
 
     
     DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
-     drawTime = GetTime() - t;
+    drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
 
     // Visualize air
@@ -294,6 +255,55 @@ void ScreenGameplay::draw() {
         .y = std::round(render_camera.camera.position.y),
         .z = std::round(render_camera.camera.position.z),
     });
+
+
+    if (IsKeyDown(KEY_ONE))
+        currentElementId = 1;
+    else if (IsKeyDown(KEY_TWO))
+        currentElementId = 2;
+    else if (IsKeyDown(KEY_THREE))
+        currentElementId = 3;
+    else if (IsKeyDown(KEY_FOUR))
+        currentElementId = 4;
+
+    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        EventConsumer::ref()->consumeMouse();
+
+        Vector3 forward = GetCameraForward(&render_camera.camera);
+        forward = render_camera.camera.position + forward * 20.0f;
+        forward.x = std::round(forward.x);
+        forward.y = std::round(forward.y);
+        forward.z = std::round(forward.z);
+
+        // const int S = 5;
+        // for (int x = forward.x / AIR_CELL_SIZE; x < forward.x / AIR_CELL_SIZE + S; x++)
+        // for (int y = forward.y / AIR_CELL_SIZE; y < forward.y / AIR_CELL_SIZE + S; y++)
+        // for (int z = forward.z / AIR_CELL_SIZE; z < forward.z / AIR_CELL_SIZE + S; z++)
+        //     if (x > 0 && x < AIR_XRES -1 && y > 0 && y < AIR_YRES -1 && z > 0 && z < AIR_ZRES - 1)
+        //         sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
+
+        const int S = 5;
+        for (int x = forward.x; x < forward.x + S; x++)
+        for (int y = forward.y; y < forward.y + S; y++)
+        for (int z = forward.z; z < forward.z + S; z++)
+            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
+                sim.create_part(x, y, z, currentElementId);
+    } else if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        EventConsumer::ref()->consumeMouse();
+
+        Vector3 forward = GetCameraForward(&render_camera.camera);
+        forward = render_camera.camera.position + forward * 20.0f;
+        forward.x = std::round(forward.x);
+        forward.y = std::round(forward.y);
+        forward.z = std::round(forward.z);
+
+        const int S = 15;
+        for (int x = forward.x; x < forward.x + S; x++)
+        for (int y = forward.y; y < forward.y + S; y++)
+        for (int z = forward.z; z < forward.z + S; z++)
+            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
+                sim.kill_part(ID(sim.pmap[z][y][x]));
+    }
 
     fps = 1.0f / drawTime;
 }
