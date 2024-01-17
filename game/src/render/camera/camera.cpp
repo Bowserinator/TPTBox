@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <numeric>
 
 #include "camera.h"
 #include "../constants.h"
@@ -31,9 +32,13 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
 void RenderCamera::update() {
     updateLerp();
 
-    const float delta = GetTime() - _lastTime;
-    updateControls3DEditor(delta);
-    updateControlsShared(delta);
+    const float thisDelta = GetTime() - _lastTime;
+    _deltaSamples[_deltaSampleIdx] = thisDelta;
+    _deltaSampleIdx = (_deltaSampleIdx + 1) % DELTA_SAMPLES_FOR_AVG;
+    const float deltaAvg = std::accumulate(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
+
+    updateControls3DEditor(deltaAvg);
+    updateControlsShared(deltaAvg);
     _lastTime = GetTime();
 }
 
@@ -66,6 +71,7 @@ void RenderCamera::updateControls3DEditor(const float delta) {
         yaw(-CAMERA_MOUSE_ROTATION_SPEED * mouseDelta.x * dm, rotateAroundTarget);
     }
 }
+
 
 void RenderCamera::updateControlsShared(const float delta) {
     const Vector2 mouseDelta = GetMouseDelta();
@@ -111,6 +117,7 @@ void RenderCamera::updateControlsShared(const float delta) {
     if (EventConsumer::ref()->isKeyDown(KEY_KP_ADD))
         moveToTarget(-CAMERA_ZOOM_SPEED * dm);
 }
+
 
 void RenderCamera::updateLerp() {
     // Update lerp
