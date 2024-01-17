@@ -62,8 +62,8 @@ void RenderCamera::updateControls3DEditor(const float delta) {
 
     // RMouse drag to rotate
     if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        pitch(-CAMERA_ROTATION_SPEED * mouseDelta.y * 0.2 * dm, lockView, rotateAroundTarget, rotateUp);
-        yaw(-CAMERA_ROTATION_SPEED * mouseDelta.x * 0.2 * dm, rotateAroundTarget);
+        pitch(-CAMERA_MOUSE_ROTATION_SPEED * mouseDelta.y * dm, lockView, rotateAroundTarget, rotateUp);
+        yaw(-CAMERA_MOUSE_ROTATION_SPEED * mouseDelta.x * dm, rotateAroundTarget);
     }
 }
 
@@ -105,11 +105,11 @@ void RenderCamera::updateControlsShared(const float delta) {
         roll(CAMERA_ROTATION_SPEED * dm);
 
     // Scroll to zoom in / out
-    moveToTarget(-12 * dm * GetMouseWheelMove());
+    moveToTarget(-CAMERA_MOUSE_ZOOM_SPEED * dm * GetMouseWheelMove());
     if (EventConsumer::ref()->isKeyDown(KEY_KP_SUBTRACT))
-        moveToTarget(6.0f * dm);
+        moveToTarget(CAMERA_ZOOM_SPEED * dm);
     if (EventConsumer::ref()->isKeyDown(KEY_KP_ADD))
-        moveToTarget(-6.0f * dm);
+        moveToTarget(-CAMERA_ZOOM_SPEED * dm);
 }
 
 void RenderCamera::updateLerp() {
