@@ -83,7 +83,8 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
             // the current camera position, this is distance from camera to the projected point
             // This is our pseudo "x" for rotation
             const float XZDistance = Vector3Distance(camera.position, Vector3{ camera.target.x, camera.position.y, camera.target.z });
-            const float newXZDistance = XZDistance * std::cos(theta) - targetPrime.y * std::sin(theta);
+            // If the new distance is right below / above us the camera gets all glitchy since we use Euler angles
+            const float newXZDistance = std::max(3.0f, XZDistance * std::cos(theta) - targetPrime.y * std::sin(theta));
             camera.target.y = targetPrime.y * std::cos(theta) + XZDistance * std::sin(theta) + camera.position.y;
 
             Vector3 originalXZVec = Vector3Normalize(Vector3{ targetPrime.x, 0.0f, targetPrime.z });
