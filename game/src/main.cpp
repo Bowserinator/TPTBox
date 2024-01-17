@@ -3,6 +3,7 @@
 
 #include "simulation/Simulation.h"
 #include "interface/FontCache.h"
+#include "render/constants.h"
 #include "interface/EventConsumer.h"
 
 #include <omp.h>
@@ -53,7 +54,7 @@ int main(void) {
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
 #else
-    SetTargetFPS(60);
+    SetTargetFPS(TARGET_FPS);
 
     while (!WindowShouldClose())
     {

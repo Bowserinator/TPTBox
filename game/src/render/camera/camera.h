@@ -24,7 +24,8 @@ public:
     RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
             _isLerping(false), _lerpSteps(0), _hash(0),
             minBound{INT_MIN, INT_MIN, INT_MIN},
-            maxBound(INT_MAX, INT_MAX, INT_MAX)
+            maxBound(INT_MAX, INT_MAX, INT_MAX),
+            _lastTime(0)
     {
         frustum = std::vector<Plane>(6);
     }
@@ -107,6 +108,7 @@ private:
     bool _isLerping;
     int _lerpSteps;
     int _hash;
+    double _lastTime;
 
     Vector3 _lerpTarget;
     Vector3 _lerpPos;
@@ -114,6 +116,11 @@ private:
 
     void generateFrustum();
     void updateViewProjMatrix();
+
+    void updateControlsFirstPerson(const float delta);
+    void updateControls3DEditor(const float delta);
+    void updateControlsShared(const float delta);
+    void updateLerp();
 };
 
 #endif

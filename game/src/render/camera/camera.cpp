@@ -2,7 +2,13 @@
 
 #include "camera.h"
 #include "../constants.h"
+#include "../../interface/EventConsumer.h"
 #include "../../util/util.h"
+
+constexpr bool moveInWorldPlane = true;
+constexpr bool rotateAroundTarget = true;
+constexpr bool lockView = true;
+constexpr bool rotateUp = false;
 
 bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
     // Update cache if invalidated
@@ -23,6 +29,90 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
 }
 
 void RenderCamera::update() {
+    updateLerp();
+
+    const float delta = GetTime() - _lastTime;
+    updateControls3DEditor(delta);
+    updateControlsShared(delta);
+    _lastTime = GetTime();
+}
+
+void RenderCamera::updateControlsFirstPerson(const float delta) {
+    Vector2 mouseDelta = GetMouseDelta();
+
+    // Keyboard support
+    if (EventConsumer::ref()->isKeyDown(KEY_W))
+        moveForward(CAMERA_MOVE_SPEED, moveInWorldPlane);
+    if (EventConsumer::ref()->isKeyDown(KEY_A))
+        moveRight(-CAMERA_MOVE_SPEED, moveInWorldPlane);
+    if (EventConsumer::ref()->isKeyDown(KEY_S))
+        moveForward(-CAMERA_MOVE_SPEED, moveInWorldPlane);
+    if (EventConsumer::ref()->isKeyDown(KEY_D))
+        moveRight(CAMERA_MOVE_SPEED, moveInWorldPlane);
+    if (EventConsumer::ref()->isKeyDown(KEY_SPACE))
+        moveUp(CAMERA_MOVE_SPEED);
+    if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT))
+        moveUp(-CAMERA_MOVE_SPEED);
+}
+
+
+void RenderCamera::updateControls3DEditor(const float delta) {
+    const Vector2 mouseDelta = GetMouseDelta();
+    const float dm = delta * TARGET_FPS;
+
+    // RMouse drag to rotate
+    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        pitch(-CAMERA_ROTATION_SPEED * mouseDelta.y * 0.2 * dm, lockView, rotateAroundTarget, rotateUp);
+        yaw(-CAMERA_ROTATION_SPEED * mouseDelta.x * 0.2 * dm, rotateAroundTarget);
+    }
+}
+
+void RenderCamera::updateControlsShared(const float delta) {
+    const Vector2 mouseDelta = GetMouseDelta();
+    const float dm = delta * TARGET_FPS;
+
+    // Hold middle to pan
+    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+        const float deltaScaleFactor = GetScreenWidth() / 60.0f; // Arbritrary scaling for how much pan affects
+        const Vector3 rightDir = Vector3Normalize(GetCameraRight(&camera)) * -mouseDelta.x / deltaScaleFactor;
+
+        // Raylib's GetCameraUp gets up direction for rotation, not the 2D "up"
+        // direction on your screen for panning, so we have to do cross product here
+        const Vector3 trueUp = Vector3Normalize(
+                Vector3CrossProduct(GetCameraRight(&camera), GetCameraForward(&camera)));
+        const Vector3 upDir = trueUp * mouseDelta.y / deltaScaleFactor;
+        const Vector3 posDelta = (rightDir + upDir) * (CAMERA_MOVE_SPEED * dm);
+
+        camera.position += posDelta;
+        camera.target += posDelta;
+
+        if (mouseDelta.x || mouseDelta.y)
+            _viewProjMatrixUpdated = false;
+    }
+
+    // Keyboard camera rotation
+    if (EventConsumer::ref()->isKeyDown(KEY_DOWN))
+        pitch(-CAMERA_ROTATION_SPEED * dm, lockView, rotateAroundTarget, rotateUp);
+    if (EventConsumer::ref()->isKeyDown(KEY_UP))
+        pitch(CAMERA_ROTATION_SPEED * dm, lockView, rotateAroundTarget, rotateUp);
+    if (EventConsumer::ref()->isKeyDown(KEY_RIGHT))
+        yaw(-CAMERA_ROTATION_SPEED * dm, rotateAroundTarget);
+    if (EventConsumer::ref()->isKeyDown(KEY_LEFT))
+        yaw(CAMERA_ROTATION_SPEED * dm, rotateAroundTarget);
+    if (EventConsumer::ref()->isKeyDown(KEY_Q))
+        roll(-CAMERA_ROTATION_SPEED * dm);
+    if (EventConsumer::ref()->isKeyDown(KEY_E))
+        roll(CAMERA_ROTATION_SPEED * dm);
+
+    // Scroll to zoom in / out
+    moveToTarget(-12 * dm * GetMouseWheelMove());
+    if (EventConsumer::ref()->isKeyDown(KEY_KP_SUBTRACT))
+        moveToTarget(6.0f * dm);
+    if (EventConsumer::ref()->isKeyDown(KEY_KP_ADD))
+        moveToTarget(-6.0f * dm);
+}
+
+void RenderCamera::updateLerp() {
     // Update lerp
     if (_isLerping) {
         constexpr float MAX_ERR = 0.001f;
@@ -54,81 +144,6 @@ void RenderCamera::update() {
             camera.up = _lerpUp;
         }
     }
-
-    // Update controls
-    Vector2 mousePositionDelta = GetMouseDelta();
-
-    bool moveInWorldPlane = true;
-    bool rotateAroundTarget = true;
-    bool lockView = true;
-    bool rotateUp = false;
-
-    Vector3 oldTarget = camera.target;
-
-    // Camera rotation
-    if (IsKeyDown(KEY_DOWN))
-        pitch(-CAMERA_ROTATION_SPEED, lockView, rotateAroundTarget, rotateUp);
-    if (IsKeyDown(KEY_UP))
-        pitch(CAMERA_ROTATION_SPEED, lockView, rotateAroundTarget, rotateUp);
-    if (IsKeyDown(KEY_RIGHT))
-        yaw(-CAMERA_ROTATION_SPEED, rotateAroundTarget);
-    if (IsKeyDown(KEY_LEFT))
-        yaw(CAMERA_ROTATION_SPEED, rotateAroundTarget);
-    if (IsKeyDown(KEY_Q))
-        roll(-CAMERA_ROTATION_SPEED);
-    if (IsKeyDown(KEY_E))
-        roll(CAMERA_ROTATION_SPEED);
-
-    // Camera movement
-    // Camera pan (for CAMERA_FREE)
-    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
-        const Vector2 mouseDelta = GetMouseDelta();
-        if (mouseDelta.x > 0.0f)
-            moveRight(CAMERA_PAN_SPEED, moveInWorldPlane);
-        if (mouseDelta.x < 0.0f)
-            moveRight(-CAMERA_PAN_SPEED, moveInWorldPlane);
-        if (mouseDelta.y > 0.0f)
-            moveUp(-CAMERA_PAN_SPEED);
-        if (mouseDelta.y < 0.0f)
-            moveUp(CAMERA_PAN_SPEED);
-    }
-
-    // Keyboard support
-    if (IsKeyDown(KEY_W))
-        moveForward(CAMERA_MOVE_SPEED, moveInWorldPlane);
-    if (IsKeyDown(KEY_A))
-        moveRight(-CAMERA_MOVE_SPEED, moveInWorldPlane);
-    if (IsKeyDown(KEY_S))
-        moveForward(-CAMERA_MOVE_SPEED, moveInWorldPlane);
-    if (IsKeyDown(KEY_D))
-        moveRight(CAMERA_MOVE_SPEED, moveInWorldPlane);
-    if (IsKeyDown(KEY_SPACE))
-        moveUp(CAMERA_MOVE_SPEED);
-    if (IsKeyDown(KEY_LEFT_SHIFT))
-        moveUp(-CAMERA_MOVE_SPEED);
-
-    // Gamepad movement
-    if (IsGamepadAvailable(0)) {
-        // Gamepad controller support
-        yaw(-(GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X) * 2) * CAMERA_MOUSE_MOVE_SENSITIVITY, rotateAroundTarget);
-        pitch(-(GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y) * 2) * CAMERA_MOUSE_MOVE_SENSITIVITY, lockView, rotateAroundTarget, rotateUp);
-
-        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y) <= -0.25f)
-            moveForward(CAMERA_MOVE_SPEED, moveInWorldPlane);
-        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X) <= -0.25f)
-            moveRight(-CAMERA_MOVE_SPEED, moveInWorldPlane);
-        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y) >= 0.25f)
-            moveForward(-CAMERA_MOVE_SPEED, moveInWorldPlane);
-        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X) >= 0.25f)
-            moveRight(CAMERA_MOVE_SPEED, moveInWorldPlane);
-    }
-
-    // Zoom in / out
-    moveToTarget(-12 * GetMouseWheelMove());
-    if (IsKeyDown(KEY_KP_SUBTRACT))
-        moveToTarget(6.0f);
-    if (IsKeyDown(KEY_KP_ADD))
-        moveToTarget(-6.0f);
 }
 
 
