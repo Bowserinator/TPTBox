@@ -9,6 +9,7 @@
 #include "../types/plane.h"
 #include "../../util/vector_op.h"
 
+#include <climits>
 #include <vector>
 
 constexpr std::size_t DELTA_SAMPLES_FOR_AVG = 10;
@@ -25,8 +26,8 @@ public:
 
     RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
             _isLerping(false), _lerpSteps(0), _hash(0),
-            minBound{INT_MIN, INT_MIN, INT_MIN},
-            maxBound(INT_MAX, INT_MAX, INT_MAX),
+            minBound{(float)INT_MIN, (float)INT_MIN, (float)INT_MIN},
+            maxBound{(float)INT_MAX, (float)INT_MAX, (float)INT_MAX},
             _lastTime(0), _deltaSampleIdx(0), _first_person_locked(true)
     {
         frustum = std::vector<Plane>(6);

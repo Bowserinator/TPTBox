@@ -9,9 +9,10 @@
 #include <iostream>
 #include "rlgl.h"
 
-constexpr int CUBE_FACE_IMG_SIZE = 100;
-constexpr int CUBE_FACE_FONT_SIZE = 13;
+constexpr int CUBE_FACE_IMG_SIZE = 200;
+constexpr int CUBE_FACE_FONT_SIZE = 26;
 constexpr Vector2 NAVCUBE_POS{ 15, 70 };
+constexpr float CUBE_TEXTURE_DOWNSCALE = 0.5f;
 
 enum CUBE_FACES {
     FRONT = 0,
@@ -38,10 +39,10 @@ RenderTexture2D generateCubeFaceTexture(const char * faceName) {
             CUBE_FACE_FONT_SIZE, SPACING, WHITE);
 
         // Face outline
-        DrawLine(1, 1, CUBE_FACE_IMG_SIZE - 1, 0, WHITE);
-        DrawLine(1, 1, 1, CUBE_FACE_IMG_SIZE - 1, WHITE);
-        DrawLine(CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, 1, WHITE);
-        DrawLine(CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1, 1, CUBE_FACE_IMG_SIZE - 1, WHITE);
+        DrawLineEx(Vector2{1, 1}, Vector2{CUBE_FACE_IMG_SIZE - 1, 0}, 3, WHITE);
+        DrawLineEx(Vector2{1, 1}, Vector2{1, CUBE_FACE_IMG_SIZE - 1}, 3, WHITE);
+        DrawLineEx(Vector2{CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1}, Vector2{CUBE_FACE_IMG_SIZE - 1, 1}, 3, WHITE);
+        DrawLineEx(Vector2{CUBE_FACE_IMG_SIZE - 1, CUBE_FACE_IMG_SIZE - 1}, Vector2{1, CUBE_FACE_IMG_SIZE - 1}, 3, WHITE);
     EndTextureMode();
 
     return tex;
@@ -52,7 +53,9 @@ NavCube::NavCube(RenderCamera * cam): cam(cam) {}
 void NavCube::init() {
     cam_hash = 99999;
 
-    target = LoadRenderTexture(NAV_CUBE_WINDOW_SIZE, NAV_CUBE_WINDOW_SIZE);
+    target = LoadRenderTexture(NAV_CUBE_WINDOW_SIZE / CUBE_TEXTURE_DOWNSCALE, NAV_CUBE_WINDOW_SIZE / CUBE_TEXTURE_DOWNSCALE);
+    SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
+
     local_cam = {0};
     local_cam.position = Vector3{0.0f, 0.0f, 1.7f};
     local_cam.projection = cam->camera.projection;
@@ -280,9 +283,13 @@ void NavCube::update() {
     EndTextureMode();
 #pragma endregion NavCubeDraw
 
-    DrawTextureRec(target.texture,
-        Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
-        NAVCUBE_POS, WHITE);
+    const Rectangle source{ 0.0f, 0.0f, (float)target.texture.width, -(float)target.texture.height };
+    const Rectangle dest{
+        NAVCUBE_POS.x, NAVCUBE_POS.y,
+        (float)target.texture.width * CUBE_TEXTURE_DOWNSCALE,
+        (float)target.texture.height * CUBE_TEXTURE_DOWNSCALE
+    };
+    DrawTexturePro(target.texture, source, dest, Vector2{ 0.0f, 0.0f }, 0.0f, WHITE);
 }
 
 

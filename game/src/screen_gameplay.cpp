@@ -208,7 +208,6 @@ void ScreenGameplay::draw() {
 
     unsigned char red = 255;
     auto t = GetTime();
-
     
     DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
     drawTime = GetTime() - t;
