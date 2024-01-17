@@ -177,11 +177,11 @@ void NavCube::update() {
         ray.position = Vector3Transform(ray.position, transform_mat_T);
 
         auto collide = GetRayCollisionBox(ray, BoundingBox {
-            .min = Vector3{ -0.5f, -0.5f, -0.5f },
-            .max = Vector3{ 0.5f, 0.5f, 0.5f }
+            .min = Vector3{ -0.52f, -0.52f, -0.52f },
+            .max = Vector3{ 0.52f, 0.52f, 0.52f }
         });
         if (collide.hit) {
-            constexpr float EDGE_MARGIN = 0.05f; // If click is this close to edge, consider it clicking the edge
+            constexpr float EDGE_MARGIN = 0.08f; // If click is this close to edge, consider it clicking the edge
             bool faces_clicked[6] = { false, false, false, false, false, false };
 
             if (collide.point.z > 0.5f - EDGE_MARGIN)
