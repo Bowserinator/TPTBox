@@ -27,7 +27,7 @@ public:
             _isLerping(false), _lerpSteps(0), _hash(0),
             minBound{INT_MIN, INT_MIN, INT_MIN},
             maxBound(INT_MAX, INT_MAX, INT_MAX),
-            _lastTime(0), _deltaSampleIdx(0)
+            _lastTime(0), _deltaSampleIdx(0), _first_person_locked(true)
     {
         frustum = std::vector<Plane>(6);
         std::fill(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f);
@@ -111,6 +111,7 @@ private:
     bool _isLerping;
     int _lerpSteps;
     int _hash;
+    bool _first_person_locked;
     double _lastTime;
 
     Vector3 _lerpTarget;

@@ -60,8 +60,11 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT))
         moveUp(-CAMERA_MOVE_SPEED * dm);
 
-    // Look where pointing (hold right mouse button)
-    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT) && (mouseDelta.x || mouseDelta.y)) {
+    // Look where pointing (press r mouse btn to toggle)
+    if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        _first_person_locked = !_first_person_locked;
+
+    if (_first_person_locked && (mouseDelta.x || mouseDelta.y)) {
         const float dis = Vector3Distance(camera.position, camera.target);
         Vector3 targetPrime = camera.target - camera.position;
 
