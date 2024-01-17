@@ -114,6 +114,75 @@ Ray NavCubeGetMouseRay(Vector2 mouse, const Camera &camera) {
 
 
 void NavCube::update() {
+#pragma region NavCubeInput
+    // Mouse click in the nav cube window
+    const auto mousePos = GetMousePosition();
+    bool mouseInBounds = (mousePos.x >= NAVCUBE_POS.x && mousePos.x <= NAVCUBE_POS.x + NAV_CUBE_WINDOW_SIZE) &&
+                         (mousePos.y >= NAVCUBE_POS.y && mousePos.y <= NAVCUBE_POS.y + NAV_CUBE_WINDOW_SIZE);
+    bool clicked = EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    bool faces_clicked[6] = { false, false, false, false, false, false };
+
+    if (mouseInBounds) {
+        Ray ray = NavCubeGetMouseRay(GetMousePosition(), local_cam);
+
+        // Undo rotation matrix (R^T is the inverse for rot matrix)
+        // We imagine the cube is fixed and we rotate the ray cast from the camera position
+        // the opposite way the cube was rotated
+        const auto transform_mat_T = MatrixTranspose(transform_mat);
+        ray.direction = Vector3Transform(ray.direction, transform_mat_T);
+        ray.position = Vector3Transform(ray.position, transform_mat_T);
+
+        auto collide = GetRayCollisionBox(ray, BoundingBox {
+            .min = Vector3{ -0.52f, -0.52f, -0.52f },
+            .max = Vector3{ 0.52f, 0.52f, 0.52f }
+        });
+        if (collide.hit) {
+            constexpr float EDGE_MARGIN = 0.08f; // If click is this close to edge, consider it clicking the edge
+
+            if (collide.point.z > 0.5f - EDGE_MARGIN)
+                faces_clicked[FRONT] = true;
+            else if (collide.point.z < -0.5f + EDGE_MARGIN)
+                faces_clicked[BACK] = true;
+            if (collide.point.x > 0.5f - EDGE_MARGIN)
+                faces_clicked[RIGHT] = true;
+            else if (collide.point.x < -0.5f + EDGE_MARGIN)
+                faces_clicked[LEFT] = true;
+            if (collide.point.y > 0.5f - EDGE_MARGIN)
+                faces_clicked[TOP] = true;
+            else if (collide.point.y < -0.5f + EDGE_MARGIN)
+                faces_clicked[BOTTOM] = true;
+
+            // Clicked, Set lerp target based on faces
+            if (clicked) {
+                Vector3 target_pos{ XRES / 2, YRES / 2, ZRES / 2 };
+                Vector3 target{ XRES / 2, YRES / 2, ZRES / 2 };
+
+                if (faces_clicked[TOP]) {
+                    target_pos.y = 2.5f * (float)YRES;
+                    target_pos.z = 0.5f * ZRES + 0.1f; // Can't be perfectly on top of target
+                }
+                else if (faces_clicked[BOTTOM]) {
+                    target_pos.y = -1.5f * (float)YRES;
+                    target_pos.z = 0.5f * ZRES - 0.1f; // Can't be perfectly on top of target
+                }
+                if (faces_clicked[FRONT])
+                    target_pos.z = 2.5f * (float)ZRES;
+                else if (faces_clicked[BACK])
+                    target_pos.z = -1.5f * (float)ZRES;
+                if (faces_clicked[RIGHT])
+                    target_pos.x = 2.5f * (float)XRES;
+                else if (faces_clicked[LEFT])
+                    target_pos.x = -1.5f * (float)XRES;
+
+                cam->setLerpTarget(target_pos, target, Vector3{0.0f, 1.0f, 0.0f});
+            }
+        }
+    }
+
+    if (mouseInBounds)
+        EventConsumer::ref()->consumeMouse();
+#pragma endregion NavCubeInput
+#pragma region NavCubeDraw
     // Begin drawing
     BeginTextureMode(target);
     ClearBackground(Color{0, 0, 0, 127}); // Semi-transparent background
@@ -155,74 +224,61 @@ void NavCube::update() {
             }
         }
 
+        { // Draw the preview for faces/edges/corners selected
+            constexpr Color HOVER_COLOR{ 255, 236, 179, 255 };
+            constexpr Color HOVER_COLOR_TRANSPARENT{ HOVER_COLOR.r, HOVER_COLOR.g, HOVER_COLOR.b, 70 };
+
+            int faces_hovered = 0;
+            for (std::size_t i = 0; i < 6; i++)
+                faces_hovered += faces_clicked[i] ? 1 : 0;
+
+            float cornerZ = faces_clicked[FRONT] ? 0.5f : -0.5f;
+            float cornerY = faces_clicked[TOP] ? 0.5f : -0.5f;
+            float cornerX = faces_clicked[RIGHT] ? 0.5f : -0.5f;
+            
+            // Single face
+            if (faces_hovered == 1) {
+                if (faces_clicked[FRONT])
+                    DrawCube(Vector3{0.0f, 0.0f, 0.5f}, 1.0f, 1.0f, 0.02f, HOVER_COLOR_TRANSPARENT);
+                else if (faces_clicked[BACK])
+                    DrawCube(Vector3{0.0f, 0.0f, -0.5f}, 1.0f, 1.0f, 0.02f, HOVER_COLOR_TRANSPARENT);
+                else if (faces_clicked[TOP])
+                    DrawCube(Vector3{0.0f, 0.5f, 0.0f}, 1.0f, 0.02f, 1.0f, HOVER_COLOR_TRANSPARENT);
+                else if (faces_clicked[BOTTOM])
+                    DrawCube(Vector3{0.0f, -0.5f, 0.0f}, 1.0f, 0.02f, 1.0f, HOVER_COLOR_TRANSPARENT);
+                else if (faces_clicked[RIGHT])
+                    DrawCube(Vector3{0.5f, 0.0f, 0.0f}, 0.02f, 1.0f, 1.0f, HOVER_COLOR_TRANSPARENT);
+                else if (faces_clicked[LEFT])
+                    DrawCube(Vector3{-0.5f, 0.0f, 0.0f}, 0.02f, 1.0f, 1.0f, HOVER_COLOR_TRANSPARENT);
+            }
+            // Individual edge
+            else if (faces_hovered == 2) {
+                constexpr float lineThickness = 0.015f;
+                if (!faces_clicked[FRONT] && !faces_clicked[BACK])
+                    DrawCylinderEx(
+                        Vector3{cornerX, cornerY, -0.5f},
+                        Vector3{cornerX, cornerY, 0.5f},
+                        lineThickness, lineThickness, 7, HOVER_COLOR);
+                else if (!faces_clicked[LEFT] && !faces_clicked[RIGHT])
+                    DrawCylinderEx(
+                        Vector3{-0.5f, cornerY, cornerZ},
+                        Vector3{ 0.5f, cornerY, cornerZ},
+                        lineThickness, lineThickness, 7, HOVER_COLOR);
+                else if (!faces_clicked[TOP] && !faces_clicked[BOTTOM])
+                    DrawCylinderEx(
+                        Vector3{cornerX, -0.5f, cornerZ},
+                        Vector3{cornerX,  0.5f, cornerZ},
+                        lineThickness, lineThickness, 7, HOVER_COLOR);
+            }
+            // Corner
+            else if (faces_hovered == 3)
+                DrawSphereEx(Vector3{ cornerX, cornerY, cornerZ }, 0.04f, 8, 8, HOVER_COLOR); 
+        }
+
         rlPopMatrix();
     EndMode3D();
     EndTextureMode();
-
-
-    // Mouse click in the nav cube window
-    const auto mousePos = GetMousePosition();
-    bool mouseInBounds = (mousePos.x >= NAVCUBE_POS.x && mousePos.x <= NAVCUBE_POS.x + NAV_CUBE_WINDOW_SIZE) &&
-                         (mousePos.y >= NAVCUBE_POS.y && mousePos.y <= NAVCUBE_POS.y + NAV_CUBE_WINDOW_SIZE);
-    bool clicked = EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT);
-
-    if (clicked && mouseInBounds) {
-        Ray ray = NavCubeGetMouseRay(GetMousePosition(), local_cam);
-
-        // Undo rotation matrix (R^T is the inverse for rot matrix)
-        // We imagine the cube is fixed and we rotate the ray cast from the camera position
-        // the opposite way the cube was rotated
-        const auto transform_mat_T = MatrixTranspose(transform_mat);
-        ray.direction = Vector3Transform(ray.direction, transform_mat_T);
-        ray.position = Vector3Transform(ray.position, transform_mat_T);
-
-        auto collide = GetRayCollisionBox(ray, BoundingBox {
-            .min = Vector3{ -0.52f, -0.52f, -0.52f },
-            .max = Vector3{ 0.52f, 0.52f, 0.52f }
-        });
-        if (collide.hit) {
-            constexpr float EDGE_MARGIN = 0.08f; // If click is this close to edge, consider it clicking the edge
-            bool faces_clicked[6] = { false, false, false, false, false, false };
-
-            if (collide.point.z > 0.5f - EDGE_MARGIN)
-                faces_clicked[FRONT] = true;
-            else if (collide.point.z < -0.5f + EDGE_MARGIN)
-                faces_clicked[BACK] = true;
-            if (collide.point.x > 0.5f - EDGE_MARGIN)
-                faces_clicked[RIGHT] = true;
-            else if (collide.point.x < -0.5f + EDGE_MARGIN)
-                faces_clicked[LEFT] = true;
-            if (collide.point.y > 0.5f - EDGE_MARGIN)
-                faces_clicked[TOP] = true;
-            else if (collide.point.y < -0.5f + EDGE_MARGIN)
-                faces_clicked[BOTTOM] = true;
-
-            // Set lerp target based on faces
-            Vector3 target_pos{ XRES / 2, YRES / 2, ZRES / 2 };
-            Vector3 target{ XRES / 2, YRES / 2, ZRES / 2 };
-
-            if (faces_clicked[TOP]) {
-                target_pos.y = 2.5f * (float)YRES;
-                target_pos.z = 0.5f * ZRES + 0.1f; // Can't be perfectly on top of target
-            }
-            else if (faces_clicked[BOTTOM]) {
-                target_pos.y = -1.5f * (float)YRES;
-                target_pos.z = 0.5f * ZRES - 0.1f; // Can't be perfectly on top of target
-            }
-            if (faces_clicked[FRONT])
-                target_pos.z = 2.5f * (float)ZRES;
-            else if (faces_clicked[BACK])
-                target_pos.z = -1.5f * (float)ZRES;
-            if (faces_clicked[RIGHT])
-                target_pos.x = 2.5f * (float)XRES;
-            else if (faces_clicked[LEFT])
-                target_pos.x = -1.5f * (float)XRES;
-
-            cam->setLerpTarget(target_pos, target, Vector3{0.0f, 1.0f, 0.0f});  
-        }
-    }
-    if (mouseInBounds)
-        EventConsumer::ref()->consumeMouse();
+#pragma endregion NavCubeDraw
 
     DrawTextureRec(target.texture,
         Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
