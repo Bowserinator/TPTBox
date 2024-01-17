@@ -37,27 +37,60 @@ void RenderCamera::update() {
     _deltaSampleIdx = (_deltaSampleIdx + 1) % DELTA_SAMPLES_FOR_AVG;
     const float deltaAvg = std::accumulate(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
 
-    updateControls3DEditor(deltaAvg);
+    updateControlsFirstPerson(deltaAvg);
     updateControlsShared(deltaAvg);
     _lastTime = GetTime();
 }
 
 void RenderCamera::updateControlsFirstPerson(const float delta) {
     Vector2 mouseDelta = GetMouseDelta();
+    const float dm = delta * TARGET_FPS;
 
-    // Keyboard support
+    // Keyboard WASD to move
     if (EventConsumer::ref()->isKeyDown(KEY_W))
-        moveForward(CAMERA_MOVE_SPEED, moveInWorldPlane);
+        moveForward(CAMERA_MOVE_SPEED * dm, moveInWorldPlane);
     if (EventConsumer::ref()->isKeyDown(KEY_A))
-        moveRight(-CAMERA_MOVE_SPEED, moveInWorldPlane);
+        moveRight(-CAMERA_MOVE_SPEED * dm, moveInWorldPlane);
     if (EventConsumer::ref()->isKeyDown(KEY_S))
-        moveForward(-CAMERA_MOVE_SPEED, moveInWorldPlane);
+        moveForward(-CAMERA_MOVE_SPEED * dm, moveInWorldPlane);
     if (EventConsumer::ref()->isKeyDown(KEY_D))
-        moveRight(CAMERA_MOVE_SPEED, moveInWorldPlane);
+        moveRight(CAMERA_MOVE_SPEED * dm, moveInWorldPlane);
     if (EventConsumer::ref()->isKeyDown(KEY_SPACE))
-        moveUp(CAMERA_MOVE_SPEED);
+        moveUp(CAMERA_MOVE_SPEED * dm);
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT))
-        moveUp(-CAMERA_MOVE_SPEED);
+        moveUp(-CAMERA_MOVE_SPEED * dm);
+
+    // Look where pointing (hold right mouse button)
+    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT) && (mouseDelta.x || mouseDelta.y)) {
+        const float dis = Vector3Distance(camera.position, camera.target);
+        Vector3 targetPrime = camera.target - camera.position;
+
+        // Rotate point in XZ plane (looking left/right)
+        if (mouseDelta.x) {
+            const float theta = CAMERA_FIRST_PERSON_ROTATION_SPEED * mouseDelta.x;
+            camera.target.x = targetPrime.x * std::cos(theta) - targetPrime.z * std::sin(theta) + camera.position.x;
+            camera.target.z = targetPrime.z * std::cos(theta) + targetPrime.x * std::sin(theta) + camera.position.z;
+            targetPrime = camera.target - camera.position;
+        }
+        // Rotate vertically (XZ / Y) plane
+        if (mouseDelta.y) {
+            const float theta = -CAMERA_FIRST_PERSON_ROTATION_SPEED * mouseDelta.y;
+
+            // Project the current target onto a XZ plane with the same y level as
+            // the current camera position, this is distance from camera to the projected point
+            // This is our pseudo "x" for rotation
+            const float XZDistance = Vector3Distance(camera.position, Vector3{ camera.target.x, camera.position.y, camera.target.z });
+            const float newXZDistance = XZDistance * std::cos(theta) - targetPrime.y * std::sin(theta);
+            camera.target.y = targetPrime.y * std::cos(theta) + XZDistance * std::sin(theta) + camera.position.y;
+
+            Vector3 originalXZVec = Vector3Normalize(Vector3{ targetPrime.x, 0.0f, targetPrime.z });
+            camera.target.x = camera.position.x + originalXZVec.x * newXZDistance;
+            camera.target.z = camera.position.z + originalXZVec.z * newXZDistance;
+        }
+
+        SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+        _viewProjMatrixUpdated = false;
+    }
 }
 
 
@@ -87,7 +120,7 @@ void RenderCamera::updateControlsShared(const float delta) {
         const Vector3 trueUp = Vector3Normalize(
                 Vector3CrossProduct(GetCameraRight(&camera), GetCameraForward(&camera)));
         const Vector3 upDir = trueUp * mouseDelta.y / deltaScaleFactor;
-        const Vector3 posDelta = (rightDir + upDir) * (CAMERA_MOVE_SPEED * dm);
+        const Vector3 posDelta = (rightDir + upDir) * (CAMERA_MOVE_SPEED_PAN * dm);
 
         camera.position += posDelta;
         camera.target += posDelta;
