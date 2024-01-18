@@ -45,9 +45,9 @@ void BrushRenderer::update() {
 void BrushRenderer::do_controls(Simulation * sim) {
     bool consumeMouse = false;
     const float deltaAvg = FrameTime::ref()->getDelta();
+    const float scroll = EventConsumer::ref()->getMouseWheelMove();
 
     // LCtrl + scroll to change brush size
-    float scroll = EventConsumer::ref()->getMouseWheelMove();
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL) && scroll) {
         size += std::round(scroll * deltaAvg * TARGET_FPS);
         size = util::clamp(size, 1, (XRES + YRES + ZRES) * 2);
@@ -57,8 +57,8 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // LShift + scroll to change brush offset
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT) && scroll) {
         offset += std::round(scroll * deltaAvg * TARGET_FPS);
-        prevMousePos = Vector2{0.0f, 0.0f}; // Clear mouse pos cache since offset changes pos
         consumeMouse = true;
+        prevMousePos = Vector2{0.0f, 0.0f}; // Clear mouse pos cache since offset changes pos
     }
 
     // LClick to place parts
@@ -85,7 +85,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
 
 void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     const auto mousePos = GetMousePosition();
-    if (mousePos == prevMousePos)
+    if (mousePos == prevMousePos && camera->camera.position == prevCameraPos)
         return;
 
     Ray ray = GetMouseRay(mousePos, camera->camera);
@@ -127,6 +127,7 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     }, out, pmapOccupied);
 
     prevMousePos = mousePos;
+    prevCameraPos = camera->camera.position;
     this->x = this->bx = out.x;
     this->y = this->by = out.y;
     this->z = this->bz = out.z;

@@ -42,6 +42,7 @@ private:
     int bx, by, bz; // Actual brush pos 
     int selected_element;
     Vector2 prevMousePos;
+    Vector3 prevCameraPos;
 
     Simulation * sim;
     RenderCamera * camera;
