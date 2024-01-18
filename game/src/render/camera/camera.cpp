@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "../constants.h"
 #include "../../interface/EventConsumer.h"
+#include "../../interface/FrameTimeAvg.h"
 #include "../../util/util.h"
 
 constexpr bool moveInWorldPlane = true;
@@ -31,16 +32,12 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
 
 void RenderCamera::update() {
     updateLerp();
-
-    const float thisDelta = GetTime() - _lastTime;
-    _deltaSamples[_deltaSampleIdx] = thisDelta;
-    _deltaSampleIdx = (_deltaSampleIdx + 1) % DELTA_SAMPLES_FOR_AVG;
-    const float deltaAvg = std::accumulate(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
+    const float deltaAvg = FrameTime::ref()->getDelta();
 
     // updateControlsFirstPerson(deltaAvg);
     updateControls3DEditor(deltaAvg);
     updateControlsShared(deltaAvg);
-    _lastTime = GetTime();
+
 }
 
 void RenderCamera::updateControlsFirstPerson(const float delta) {

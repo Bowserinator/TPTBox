@@ -1,8 +1,6 @@
 #ifndef RENDER_CONSTANTS_H
 #define RENDER_CONSTANTS_H
 
-constexpr unsigned int TARGET_FPS = 60;
-
 // Math
 constexpr float DIS_UNIT_CUBE_CENTER_TO_CORNER = 0.8660254038f;
 

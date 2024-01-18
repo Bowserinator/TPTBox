@@ -12,8 +12,6 @@
 #include <climits>
 #include <vector>
 
-constexpr std::size_t DELTA_SAMPLES_FOR_AVG = 10;
-
 /* A wrapper around Raylib's builtin Camera3D */
 class RenderCamera {
 public:
@@ -28,10 +26,9 @@ public:
             _isLerping(false), _lerpSteps(0), _hash(0),
             minBound{(float)INT_MIN, (float)INT_MIN, (float)INT_MIN},
             maxBound{(float)INT_MAX, (float)INT_MAX, (float)INT_MAX},
-            _lastTime(0), _deltaSampleIdx(0), _first_person_locked(false)
+            _first_person_locked(false)
     {
         frustum = std::vector<Plane>(6);
-        std::fill(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f);
     }
 
     void setLerpTarget(const Vector3 &pos, const Vector3 &target, const Vector3 &up) {
@@ -113,14 +110,10 @@ private:
     int _lerpSteps;
     int _hash;
     bool _first_person_locked;
-    double _lastTime;
 
     Vector3 _lerpTarget;
     Vector3 _lerpPos;
     Vector3 _lerpUp;
-
-    float _deltaSamples[DELTA_SAMPLES_FOR_AVG];
-    int _deltaSampleIdx;
 
     void generateFrustum();
     void updateViewProjMatrix();

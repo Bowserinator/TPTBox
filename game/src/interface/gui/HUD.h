@@ -17,6 +17,7 @@ enum class HUDState { NORMAL, DEBUG_MODE };
 
 constexpr int FPS_AVG_WINDOW_SIZE = 15;
 constexpr int MAX_TOOLTIP_LENGTH = 128;
+constexpr double TOOLTIP_TIME_SECONDS = 0.7;
 
 struct HUDData {
     float fps;

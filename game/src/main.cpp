@@ -3,7 +3,7 @@
 
 #include "simulation/Simulation.h"
 #include "interface/FontCache.h"
-#include "render/constants.h"
+#include "interface/FrameTimeAvg.h"
 #include "interface/EventConsumer.h"
 
 #include <omp.h>

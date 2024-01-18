@@ -2,6 +2,7 @@
 #include "../../simulation/Simulation.h"
 #include "../../render/camera/camera.h"
 #include "../EventConsumer.h"
+#include "../FrameTimeAvg.h"
 #include "../../util/util.h"
 
 void BrushRenderer::draw() {
@@ -43,18 +44,19 @@ void BrushRenderer::update() {
 
 void BrushRenderer::do_controls(Simulation * sim) {
     bool consumeMouse = false;
+    const float deltaAvg = FrameTime::ref()->getDelta();
 
     // LCtrl + scroll to change brush size
     float scroll = EventConsumer::ref()->getMouseWheelMove();
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL) && scroll) {
-        size += std::round(scroll);
+        size += std::round(scroll * deltaAvg * TARGET_FPS);
         size = util::clamp(size, 1, (XRES + YRES + ZRES) * 2);
         consumeMouse = true;
     }
 
     // LShift + scroll to change brush offset
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT) && scroll) {
-        offset += std::round(scroll);
+        offset += std::round(scroll * deltaAvg * TARGET_FPS);
         prevMousePos = Vector2{0.0f, 0.0f}; // Clear mouse pos cache since offset changes pos
         consumeMouse = true;
     }

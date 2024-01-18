@@ -10,6 +10,7 @@
 #include "src/interface/gui/HUD.h"
 #include "src/interface/brush/Brush.h"
 #include "src/interface/EventConsumer.h"
+#include "src/interface/FrameTimeAvg.h"
 
 #include <algorithm>
 
@@ -188,6 +189,7 @@ void ScreenGameplay::update() {
 
 void ScreenGameplay::draw() {
     // TODO
+    FrameTime::ref()->update();
     EventConsumer::ref()->reset();
 
     hud.update_controls();

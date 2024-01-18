@@ -1,6 +1,7 @@
 #include "HUD.h"
 #include "../../render/camera/camera.h"
 #include "../EventConsumer.h"
+#include "../FrameTimeAvg.h"
 #include "../FontCache.h"
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ElementClasses.h"
@@ -174,7 +175,7 @@ void HUD::draw(const HUDData &data) {
             Vector2{ (float)(GetScreenWidth() / 2 - tsize.x / 2), (float)(GetScreenHeight() / 2) },
             FONT_SIZE, SPACING, Color{ 255, 255, 255, (uint8_t)(tooltip_opacity * 255) });
 
-        tooltip_opacity -= 0.02;
+        tooltip_opacity -= FrameTime::ref()->getDelta() / TOOLTIP_TIME_SECONDS;
         if (tooltip_opacity < 0.01)
             tooltip_opacity = 0.0;
     }
