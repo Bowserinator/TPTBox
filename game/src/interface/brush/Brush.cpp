@@ -68,9 +68,9 @@ void BrushRenderer::do_controls(Simulation * sim) {
         const bool delete_mode = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
         const int half_size = size / 2;
 
-        for (int x = bx - half_size; x < bx + half_size; x++)
-        for (int y = by - half_size; y < by + half_size; y++)
-        for (int z = bz - half_size; z < bz + half_size; z++)
+        for (int x = bx - half_size; x <= bx + half_size; x++)
+        for (int y = by - half_size; y <= by + half_size; y++)
+        for (int z = bz - half_size; z <= bz + half_size; z++)
             if (BOUNDS_CHECK(x, y, z)) {
                 if (delete_mode)
                     sim->kill_part(ID(sim->pmap[z][y][x]));
@@ -133,15 +133,11 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     this->z = this->bz = out.z;
 
     if (offset != 0) {
-        offset = util::clamp(offset, -this->x + 1, XRES - 2 - this->x);
-        offset = util::clamp(offset, -this->y + 1, YRES - 2 - this->y);
-        offset = util::clamp(offset, -this->z + 1, ZRES - 2 - this->z);
-
         if ((out.faces & RayCast::FACE_X).any())
-            this->bx = this->x + offset;
+            this->bx = this->x + offset * util::sign(camera->camera.position.x - this->x);
         else if ((out.faces & RayCast::FACE_Y).any())
-            this->by = this->y + offset;
+            this->by = this->y + offset * util::sign(camera->camera.position.y - this->y);
         else if ((out.faces & RayCast::FACE_Z).any())
-            this->bz = this->z + offset;
+            this->bz = this->z + offset * util::sign(camera->camera.position.z - this->z);
     }
 }
