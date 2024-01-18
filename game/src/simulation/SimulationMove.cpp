@@ -15,147 +15,6 @@
 #include <string>
 
 /**
- * @brief Perform a raycast starting at (x,y,z) with max displacement
- *        and direction indicated by (vx, vy, vz). The last empty voxel
- *        before colliding is written to (ox, oy, oz)
- * @see https://github.com/francisengelmann/fast_voxel_traversal/tree/master
- *        Licensed under LICENSES/
- * @return Whether it terminated because it hit a voxel (true if yes)
- */
-bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const std::function<PartSwapBehavior(const Vector3T<signed_coord_t>&)> pmapOccupied) const {
-    // For raycasts that stop early, ie right on the next frame, we can simply check
-    // if there's a particle in the direction of the greatest velocity. This saves
-    // ~5ms per frame on a grid of 350k water particles
-    // When the grid is that full, statistically most particles will not be able to move
-    // hence the "optimization"
-    int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
-    bool early_stop = false;
-
-    if (largest_axis == 0 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
-        early_stop = true;
-        out.faces = RayCast::FACE_X;
-    }
-    else if (largest_axis == 1 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
-        early_stop = true;
-        out.faces = RayCast::FACE_Y;
-    }
-    else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
-        early_stop = true;
-        out.faces = RayCast::FACE_Z;
-    }
-    if (early_stop) {
-        out.x = in.x;
-        out.y = in.y;
-        out.z = in.z;
-        out.move = PartSwapBehavior::NOOP;
-        return true;
-    }
-
-    // Actual raycast --------------
-    Vector3T<signed_coord_t> current_voxel{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z };
-    const Vector3T<signed_coord_t> last_voxel{
-        (signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
-        (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
-        (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))
-    };
-    Vector3T<signed_coord_t> diff{ 0, 0, 0 };
-    Vector3T<signed_coord_t> previous_voxel = current_voxel;
-
-    const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
-
-    // Step to take per direction (+-1)
-    const float dx = (ray.x >= 0) * 2 - 1;
-    const float dy = (ray.y >= 0) * 2 - 1;
-    const float dz = (ray.z >= 0) * 2 - 1;
-
-    const Vector3 next_voxel_boundary{ in.x + dx, in.y + dy, in.z + dz };
-
-    // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
-    // the value of t at which the ray crosses the first vertical voxel boundary
-    float tMaxX = (ray.x != 0) ? (next_voxel_boundary.x - in.x) / ray.x : std::numeric_limits<float>::max();
-    float tMaxY = (ray.y != 0) ? (next_voxel_boundary.y - in.y) / ray.y : std::numeric_limits<float>::max();
-    float tMaxZ = (ray.z != 0) ? (next_voxel_boundary.z - in.z) / ray.z : std::numeric_limits<float>::max();
-
-    // tDeltaX, tDeltaY, tDeltaZ --
-    // how far along the ray we must move for the horizontal component to equal the width of a voxel
-    // the direction in which we traverse the grid
-    // can only be FLT_MAX if we never go in that direction
-    const float tDeltaX = (ray.x != 0) ? 1.0f / ray.x * dx : std::numeric_limits<float>::max();
-    const float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
-    const float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
-
-    bool neg_ray = false;
-    if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; neg_ray = true; }
-    if (ray.y < 0 && current_voxel.y != last_voxel.y) { diff.y--; neg_ray = true; }
-    if (ray.z < 0 && current_voxel.z != last_voxel.z) { diff.z--; neg_ray = true; }
-
-    // Get which "faces" to bounce off of
-    // prev is now, final is the voxel we will collide with if we continue
-    // down our current trajectory
-    // Precondition: prev_loc != final_loc
-    auto getFaces = [this, &pmapOccupied](const Vector3T<signed_coord_t> &prev_loc, const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
-        RayCast::RayHitFace faces = 0;
-
-        if ((prev_loc.x != final_loc.x) + (prev_loc.y != final_loc.y) + (prev_loc.z != final_loc.z) == 1) {
-            if (prev_loc.x != final_loc.x)
-                faces |= RayCast::FACE_X;
-            if (prev_loc.y != final_loc.y)
-                faces |= RayCast::FACE_Y;
-            if (prev_loc.z != final_loc.z)
-                faces |= RayCast::FACE_Z;
-        } else {
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ final_loc.x, prev_loc.y, prev_loc.z }))
-                faces |= RayCast::FACE_X;
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, final_loc.y, prev_loc.z }))
-                faces |= RayCast::FACE_Y;
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, prev_loc.y, final_loc.z }))
-                faces |= RayCast::FACE_Z;
-        }
-        return faces;
-    };
-
-    while (current_voxel != last_voxel) {
-        previous_voxel = current_voxel;
-
-        if (tMaxX < tMaxY) {
-            if (tMaxX < tMaxZ) {
-                current_voxel.x += dx;
-                tMaxX += tDeltaX;
-            } else {
-                current_voxel.z += dz;
-                tMaxZ += tDeltaZ;
-            }
-        } else {
-            if (tMaxY < tMaxZ) {
-                current_voxel.y += dy;
-                tMaxY += tDeltaY;
-            } else {
-                current_voxel.z += dz;
-                tMaxZ += tDeltaZ;
-            }
-        }
-
-        if (PartSwapBehavior::NOOP == pmapOccupied(current_voxel)) {
-            out.x = previous_voxel.x;
-            out.y = previous_voxel.y;
-            out.z = previous_voxel.z;
-            out.move = PartSwapBehavior::SWAP;
-
-            if (in.compute_faces)
-                out.faces = getFaces(previous_voxel, current_voxel);
-            return true;
-        }
-    }
-
-    out.x = current_voxel.x;
-    out.y = current_voxel.y;
-    out.z = current_voxel.z;
-    out.faces = 0; // No faces to bounce off
-    out.move = PartSwapBehavior::SWAP;
-    return false;
-}
-
-/**
  * @brief Perform default movement behaviors for different
  *        states of matter (ie powder, fluid, etc...)
  * @param idx 
@@ -248,8 +107,7 @@ void Simulation::move_behavior(const part_id idx) {
                         RaycastOutput out;
                         hit = raycast(RaycastInput {
                             .x = x, .y = y, .z = z,
-                            .vx = dx, .vy = 0.0f, .vz = dz,
-                            .compute_faces = false
+                            .vx = dx, .vy = 0.0f, .vz = dz
                         }, out, pmapOccupied);
 
                         if (hit)
@@ -431,12 +289,11 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
     float org_dis = util::hypot(part.vx, part.vy, part.vz);
 
     do {
-        hit = raycast(RaycastInput {
+        hit = raycast<true>(RaycastInput {
             .x = sx, .y = sy, .z = sz,
             .vx = part.vx * portion_velocity,
             .vy = part.vy * portion_velocity,
-            .vz = part.vz * portion_velocity,
-            .compute_faces = true
+            .vz = part.vz * portion_velocity
         }, out, pmapOccupied);
 
         if (!hit) break;

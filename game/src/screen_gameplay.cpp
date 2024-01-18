@@ -138,7 +138,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 3; y++) {
+    for (int y = 1; y < 20; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
@@ -246,41 +246,32 @@ void ScreenGameplay::draw() {
     EndMode3D();
 
 
-    hud.draw(HUDData {
-        .fps = fps,
-        .sim_fps = (1.0f / simTime),
+    const Vector3T<int> raycast_pos = BrushRenderer::ref()->get_raycast_pos();
+    const int rx = raycast_pos.x;
+    const int ry = raycast_pos.y;
+    const int rz = raycast_pos.z;
+    uint32_t idx = 0;
+    if (rx >= 0 && ry >= 0 && rz >= 0) {
+        idx = ID(sim.pmap[rz][ry][rx]);
+        if (ID(sim.photons[rz][ry][rx]))
+            idx = ID(sim.photons[rz][ry][rx]);
+    }
 
-        .idx = 1,
-        .x = std::round(render_camera.camera.position.x),
-        .y = std::round(render_camera.camera.position.y),
-        .z = std::round(render_camera.camera.position.z),
+    hud.draw(HUDData {
+        .fps = (float)fps,
+        .sim_fps = (float)(1.0f / simTime),
+        .idx = idx,
+        .x = rx, .y = ry, .z = rz,
     });
 
     if (IsKeyDown(KEY_ONE))
-        currentElementId = 1;
+        BrushRenderer::ref()->set_selected_element(1);
     else if (IsKeyDown(KEY_TWO))
-        currentElementId = 2;
+        BrushRenderer::ref()->set_selected_element(2);
     else if (IsKeyDown(KEY_THREE))
-        currentElementId = 3;
+        BrushRenderer::ref()->set_selected_element(3);
     else if (IsKeyDown(KEY_FOUR))
-        currentElementId = 4;
-
-    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        EventConsumer::ref()->consumeMouse();
-
-        Vector3 forward = GetCameraForward(&render_camera.camera);
-        forward = render_camera.camera.position + forward * 20.0f;
-        forward.x = std::round(forward.x);
-        forward.y = std::round(forward.y);
-        forward.z = std::round(forward.z);
-
-        const int S = 15;
-        for (int x = forward.x; x < forward.x + S; x++)
-        for (int y = forward.y; y < forward.y + S; y++)
-        for (int z = forward.z; z < forward.z + S; z++)
-            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                sim.kill_part(ID(sim.pmap[z][y][x]));
-    }
+        BrushRenderer::ref()->set_selected_element(4);
 
     fps = 1.0f / drawTime;
 }

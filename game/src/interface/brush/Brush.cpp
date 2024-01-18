@@ -66,11 +66,18 @@ void BrushRenderer::do_controls(Simulation * sim) {
     if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         consumeMouse = true;
         const int S = 5;
-        for (int x = bx; x < bx + size; x++)
-        for (int y = by; y < by + size; y++)
-        for (int z = bz; z < bz + size; z++)
-            if (BOUNDS_CHECK(x, y, z))
-                sim->create_part(x, y, z, 1);
+        const bool delete_mode = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
+        const int half_size = size / 2;
+
+        for (int x = bx - half_size; x < bx + half_size; x++)
+        for (int y = by - half_size; y < by + half_size; y++)
+        for (int z = bz - half_size; z < bz + half_size; z++)
+            if (BOUNDS_CHECK(x, y, z)) {
+                if (delete_mode)
+                    sim->kill_part(ID(sim->pmap[z][y][x]));
+                else
+                    sim->create_part(x, y, z, selected_element);
+            }
     }
 
     if (consumeMouse)
@@ -115,10 +122,9 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
 
     RaycastOutput out;
     ray.direction *= (XRES + YRES + ZRES);
-    bool hit = sim->raycast(RaycastInput {
+    bool hit = sim->raycast<true, true>(RaycastInput {
         .x = (coord_t)cx, .y = (coord_t)cy, .z = (coord_t)cz,
-        .vx = ray.direction.x, .vy = ray.direction.y, .vz = ray.direction.z,
-        .compute_faces = true
+        .vx = ray.direction.x, .vy = ray.direction.y, .vz = ray.direction.z
     }, out, pmapOccupied);
 
     prevMousePos = mousePos;
