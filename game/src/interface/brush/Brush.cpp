@@ -35,7 +35,6 @@ void BrushRenderer::draw() {
             for (float dz = z - 1; dz > bz + half_size; dz -= spacing)
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
-
     DrawCubeWires(Vector3{ (float)bx, (float)by, (float)bz }, size, size, size, WHITE);
 }
 

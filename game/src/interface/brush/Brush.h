@@ -34,6 +34,8 @@ public:
 
     Vector3T<int> get_raycast_pos() const { return Vector3T<int>{ x, y, z }; };
     Vector3T<int> get_brush_pos() const { return Vector3T<int>{ bx, by, bz }; };
+    int get_offset() const { return offset; }
+    unsigned int get_size() const { return size; }
 private:
     Brush currentBrush;
     int offset;

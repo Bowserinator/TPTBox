@@ -17,8 +17,6 @@ constexpr int FPS_AVG_WINDOW_SIZE = 15;
 struct HUDData {
     float fps;
     float sim_fps;
-    int idx;
-    int x, y, z;
 };
 
 class HUD {
@@ -31,8 +29,6 @@ private:
     float sim_fps_avg[FPS_AVG_WINDOW_SIZE];
     unsigned int fps_counter = 0;
 
-    void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
-    void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
     float avg_fps() const {
         return std::accumulate(fps_avg, fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
@@ -41,6 +37,9 @@ private:
     }
 public:
     HUD(Simulation * sim, RenderCamera * cam);
+
+    void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
+    void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
 
     void init(); // called after OpenGL instance is initialized
     void draw(const HUDData &data);

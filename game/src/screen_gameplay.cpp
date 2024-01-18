@@ -245,23 +245,9 @@ void ScreenGameplay::draw() {
     BrushRenderer::ref()->draw();
     EndMode3D();
 
-
-    const Vector3T<int> raycast_pos = BrushRenderer::ref()->get_raycast_pos();
-    const int rx = raycast_pos.x;
-    const int ry = raycast_pos.y;
-    const int rz = raycast_pos.z;
-    uint32_t idx = 0;
-    if (rx >= 0 && ry >= 0 && rz >= 0) {
-        idx = ID(sim.pmap[rz][ry][rx]);
-        if (ID(sim.photons[rz][ry][rx]))
-            idx = ID(sim.photons[rz][ry][rx]);
-    }
-
     hud.draw(HUDData {
         .fps = (float)fps,
-        .sim_fps = (float)(1.0f / simTime),
-        .idx = idx,
-        .x = rx, .y = ry, .z = rz,
+        .sim_fps = (float)(1.0f / simTime)
     });
 
     if (IsKeyDown(KEY_ONE))

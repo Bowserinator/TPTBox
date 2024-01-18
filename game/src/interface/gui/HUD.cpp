@@ -6,6 +6,7 @@
 #include "../../util/str_format.h"
 #include "../../util/util.h"
 #include "../FontCache.h"
+#include "../brush/Brush.h"
 
 #include <string>
 
@@ -51,14 +52,34 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
 }
 
 void HUD::draw(const HUDData &data) {
+    // Actually draw
+    constexpr int OFFSET = 2 * PAD_Y + FONT_SIZE;
+    const bool debug = state == HUDState::DEBUG_MODE;
+
+    // Raycast into sim
+    const Vector3T<int> raycast_pos = BrushRenderer::ref()->get_raycast_pos();
+    const int rx = raycast_pos.x;
+    const int ry = raycast_pos.y;
+    const int rz = raycast_pos.z;
+    uint32_t idx = 0;
+    if (rx >= 0 && ry >= 0 && rz >= 0) {
+        idx = ID(sim->pmap[rz][ry][rx]);
+        if (ID(sim->photons[rz][ry][rx]))
+            idx = ID(sim->photons[rz][ry][rx]);
+    }
+
+    if (debug) {
+        const Vector3T<int> brush_pos = BrushRenderer::ref()->get_brush_pos();
+        drawText(TextFormat("%d, %d, %d / d%d / s%d",
+                brush_pos.x, brush_pos.y, brush_pos.z, BrushRenderer::ref()->get_offset(), BrushRenderer::ref()->get_size()),
+            GetMouseX() + 20.0f, GetMouseY() + 20.0f, WHITE);
+    }
+
+
     // Update the average fps
     fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.fps;
     sim_fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.sim_fps;
     fps_counter++;
-
-    // Actually draw
-    constexpr int OFFSET = 2 * PAD_Y + FONT_SIZE;
-    const bool debug = state == HUDState::DEBUG_MODE;
 
     // Top left corner: FPS, [Parts, sim FPS]
     const char * text  = !debug ?
@@ -70,38 +91,38 @@ void HUD::draw(const HUDData &data) {
         drawText(TextFormat("Sim: %.3f  Thrd: %d", avg_sim_fps(), sim->actual_thread_count), 20, 20 + OFFSET, BLUE_TEXT);
 
     // Top right corner
-    const int x = util::clamp(data.x, 0, XRES);
-    const int y = util::clamp(data.y, 0, YRES);
-    const int z = util::clamp(data.z, 0, ZRES);
+    const int x = util::clamp(rx, 0, XRES);
+    const int y = util::clamp(ry, 0, YRES);
+    const int z = util::clamp(rz, 0, ZRES);
 
     const char * air_data = TextFormat("Pressure: %.2f",
         sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
-    const char * line11 = data.idx ?
-        TextFormat("%s,  %s", GetElements()[sim->parts[data.idx].type].Name.c_str(), air_data) :
+    const char * line11 = idx ?
+        TextFormat("%s,  %s", GetElements()[sim->parts[idx].type].Name.c_str(), air_data) :
         TextFormat("Empty,  %s", air_data);
 
-    const char * pos_data = TextFormat("X: %i Y: %i Z: %i", data.x, data.y, data.z);
-    const char * line12 = (data.idx && debug) ? TextFormat("#%i, %s", data.idx, pos_data) : pos_data;
+    const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
+    const char * line12 = (idx && debug) ? TextFormat("#%i, %s", idx, pos_data) : pos_data;
     drawTextRAlign(TextFormat("%s,  %s", line11, line12), GetScreenWidth() - RHUD_X_OFFSET, 20, WHITE);
 
     // Additional lines if currently hovering an element
-    if (data.idx) {
-        const char * dcolor = sim->parts[data.idx].dcolor.as_int() ?
-            TextFormat("#%08X", sim->parts[data.idx].dcolor.as_int()) : "0";
+    if (idx) {
+        const char * dcolor = sim->parts[idx].dcolor.as_int() ?
+            TextFormat("#%08X", sim->parts[idx].dcolor.as_int()) : "0";
         drawTextRAlign(TextFormat("Temp: %.2f C  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
-                sim->parts[data.idx].temp,
-                sim->parts[data.idx].life,
-                sim->parts[data.idx].tmp1,
-                sim->parts[data.idx].tmp2,
+                sim->parts[idx].temp,
+                sim->parts[idx].life,
+                sim->parts[idx].tmp1,
+                sim->parts[idx].tmp2,
                 dcolor),
             GetScreenWidth() - RHUD_X_OFFSET, 20 + OFFSET, WHITE);
 
         if (debug) {
             drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
-                    sim->parts[data.idx].vx,
-                    sim->parts[data.idx].vy,
-                    sim->parts[data.idx].vz,
-                    util::bitset_to_str<8>(sim->parts[data.idx].flag).c_str()
+                    sim->parts[idx].vx,
+                    sim->parts[idx].vy,
+                    sim->parts[idx].vz,
+                    util::bitset_to_str<8>(sim->parts[idx].flag).c_str()
                 ),
                 GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
         }
