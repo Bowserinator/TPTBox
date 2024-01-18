@@ -81,7 +81,7 @@ void HUD::draw(const HUDData &data) {
     const bool debug = state == HUDState::DEBUG_MODE;
 
     // Raycast into sim
-    const Vector3T<int> raycast_pos = BrushRenderer::ref()->get_raycast_pos();
+    const Vector3T<int> raycast_pos = data.brush_renderer->get_raycast_pos();
     const int rx = raycast_pos.x;
     const int ry = raycast_pos.y;
     const int rz = raycast_pos.z;
@@ -93,9 +93,9 @@ void HUD::draw(const HUDData &data) {
     }
 
     if (debug) {
-        const Vector3T<int> brush_pos = BrushRenderer::ref()->get_brush_pos();
+        const Vector3T<int> brush_pos = data.brush_renderer->get_brush_pos();
         drawText(TextFormat("%d, %d, %d / d%d / s%d",
-                brush_pos.x, brush_pos.y, brush_pos.z, BrushRenderer::ref()->get_offset(), BrushRenderer::ref()->get_size()),
+                brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(), data.brush_renderer->get_size()),
             GetMouseX() + 20.0f, GetMouseY() + 20.0f, WHITE);
     }
 

@@ -23,6 +23,7 @@
 
 static RenderCamera render_camera;
 static Simulation sim;
+static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
 
 static double simTime = 0.0f;
@@ -190,7 +191,7 @@ void ScreenGameplay::draw() {
     EventConsumer::ref()->reset();
 
     hud.update_controls();
-    BrushRenderer::ref()->update(&sim, &render_camera);
+    brush_renderer.update();
     render_camera.update();
 
     ClearBackground(BLACK);
@@ -235,22 +236,23 @@ void ScreenGameplay::draw() {
 
 
    // rlDisableWireMode();
-    BrushRenderer::ref()->draw();
+    brush_renderer.draw();
     EndMode3D();
 
     hud.draw(HUDData {
         .fps = (float)fps,
-        .sim_fps = (float)(1.0f / simTime)
+        .sim_fps = (float)(1.0f / simTime),
+        .brush_renderer = &brush_renderer
     });
 
     if (IsKeyDown(KEY_ONE))
-        BrushRenderer::ref()->set_selected_element(1);
+        brush_renderer.set_selected_element(1);
     else if (IsKeyDown(KEY_TWO))
-        BrushRenderer::ref()->set_selected_element(2);
+        brush_renderer.set_selected_element(2);
     else if (IsKeyDown(KEY_THREE))
-        BrushRenderer::ref()->set_selected_element(3);
+        brush_renderer.set_selected_element(3);
     else if (IsKeyDown(KEY_FOUR))
-        BrushRenderer::ref()->set_selected_element(4);
+        brush_renderer.set_selected_element(4);
 
     fps = 1.0f / drawTime;
 }

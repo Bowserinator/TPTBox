@@ -4,8 +4,6 @@
 #include "../EventConsumer.h"
 #include "../../util/util.h"
 
-BrushRenderer * BrushRenderer::single = nullptr;
-
 void BrushRenderer::draw() {
     if (x < 0 || y < 0 || z < 0) return;
     if (offset != 0) {
@@ -38,7 +36,7 @@ void BrushRenderer::draw() {
     DrawCubeWires(Vector3{ (float)bx, (float)by, (float)bz }, size, size, size, WHITE);
 }
 
-void BrushRenderer::update(Simulation * sim, RenderCamera * camera) {
+void BrushRenderer::update() {
     do_raycast(sim, camera);
     do_controls(sim);
 }

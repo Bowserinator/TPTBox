@@ -3,11 +3,13 @@
 
 #include "raylib.h"
 #include "NavCube.h"
+#include "../../util/vector_op.h"
 #include <numeric>
 
 class RenderCamera;
 class Simulation;
 class FontCache;
+class BrushRenderer;
 
 // DEBUG is a macro so we can't use it as enum name
 enum class HUDState { NORMAL, DEBUG_MODE };
@@ -17,6 +19,7 @@ constexpr int FPS_AVG_WINDOW_SIZE = 15;
 struct HUDData {
     float fps;
     float sim_fps;
+    BrushRenderer * brush_renderer;
 };
 
 class HUD {
