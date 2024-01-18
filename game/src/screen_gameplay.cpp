@@ -8,6 +8,7 @@
 #include "src/simulation/Simulation.h"
 
 #include "src/interface/gui/HUD.h"
+#include "src/interface/brush/Brush.h"
 #include "src/interface/EventConsumer.h"
 
 #include <algorithm>
@@ -137,7 +138,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 5; y++) {
+    for (int y = 1; y < 3; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
@@ -188,6 +189,7 @@ void ScreenGameplay::draw() {
     // TODO
     EventConsumer::ref()->reset();
 
+    BrushRenderer::ref()->update(&sim, &render_camera);
     render_camera.update();
 
     ClearBackground(BLACK);
@@ -202,7 +204,6 @@ void ScreenGameplay::draw() {
     forward.x = std::round(forward.x);
     forward.y = std::round(forward.y);
     forward.z = std::round(forward.z);
-    DrawCubeWires(forward, 1, 1, 1, WHITE);
         
     //rlEnableWireMode();
 
@@ -241,6 +242,7 @@ void ScreenGameplay::draw() {
 
 
    // rlDisableWireMode();
+    BrushRenderer::ref()->draw();
     EndMode3D();
 
 
@@ -254,7 +256,6 @@ void ScreenGameplay::draw() {
         .z = std::round(render_camera.camera.position.z),
     });
 
-
     if (IsKeyDown(KEY_ONE))
         currentElementId = 1;
     else if (IsKeyDown(KEY_TWO))
@@ -264,29 +265,7 @@ void ScreenGameplay::draw() {
     else if (IsKeyDown(KEY_FOUR))
         currentElementId = 4;
 
-    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        EventConsumer::ref()->consumeMouse();
-
-        Vector3 forward = GetCameraForward(&render_camera.camera);
-        forward = render_camera.camera.position + forward * 20.0f;
-        forward.x = std::round(forward.x);
-        forward.y = std::round(forward.y);
-        forward.z = std::round(forward.z);
-
-        // const int S = 5;
-        // for (int x = forward.x / AIR_CELL_SIZE; x < forward.x / AIR_CELL_SIZE + S; x++)
-        // for (int y = forward.y / AIR_CELL_SIZE; y < forward.y / AIR_CELL_SIZE + S; y++)
-        // for (int z = forward.z / AIR_CELL_SIZE; z < forward.z / AIR_CELL_SIZE + S; z++)
-        //     if (x > 0 && x < AIR_XRES -1 && y > 0 && y < AIR_YRES -1 && z > 0 && z < AIR_ZRES - 1)
-        //         sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
-
-        const int S = 5;
-        for (int x = forward.x; x < forward.x + S; x++)
-        for (int y = forward.y; y < forward.y + S; y++)
-        for (int z = forward.z; z < forward.z + S; z++)
-            if (x > 0 && x < XRES -1 && y > 0 && y < YRES -1 && z > 0 && z < ZRES - 1)
-                sim.create_part(x, y, z, currentElementId);
-    } else if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         EventConsumer::ref()->consumeMouse();
 
         Vector3 forward = GetCameraForward(&render_camera.camera);

@@ -7,7 +7,9 @@
 #include "Air.h"
 
 #include "../util/rand.h"
+#include "../util/vector_op.h"
 #include <vector>
+#include <functional>
 
 enum class GravityMode {
     VERTICAL = 0,
@@ -58,7 +60,8 @@ public:
         const coord_t x2, const coord_t y2, const coord_t z2,
         const part_id id1, const part_id id2);
 
-    bool raycast(const RaycastInput &in, RaycastOutput &out, const auto &pmapOccupied) const;
+    bool raycast(const RaycastInput &in, RaycastOutput &out,
+        const std::function<PartSwapBehavior(const Vector3T<signed_coord_t>&)> pmapOccupied) const;
     PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
 private:

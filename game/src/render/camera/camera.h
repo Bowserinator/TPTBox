@@ -28,7 +28,7 @@ public:
             _isLerping(false), _lerpSteps(0), _hash(0),
             minBound{(float)INT_MIN, (float)INT_MIN, (float)INT_MIN},
             maxBound{(float)INT_MAX, (float)INT_MAX, (float)INT_MAX},
-            _lastTime(0), _deltaSampleIdx(0), _first_person_locked(true)
+            _lastTime(0), _deltaSampleIdx(0), _first_person_locked(false)
     {
         frustum = std::vector<Plane>(6);
         std::fill(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f);

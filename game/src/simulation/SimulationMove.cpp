@@ -22,7 +22,7 @@
  *        Licensed under LICENSES/
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
-bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const auto &pmapOccupied) const {
+bool Simulation::raycast(const RaycastInput &in,  RaycastOutput &out, const std::function<PartSwapBehavior(const Vector3T<signed_coord_t>&)> pmapOccupied) const {
     // For raycasts that stop early, ie right on the next frame, we can simply check
     // if there's a particle in the direction of the greatest velocity. This saves
     // ~5ms per frame on a grid of 350k water particles

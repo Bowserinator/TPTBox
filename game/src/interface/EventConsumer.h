@@ -31,6 +31,7 @@ public:
     // Input-related functions: mouse
     bool isMouseButtonPressed(const int button);
     bool isMouseButtonDown(const int button);
+    float getMouseWheelMove();
 
     static EventConsumer * ref() {
         if (single == nullptr) [[unlikely]]

@@ -37,7 +37,8 @@ void RenderCamera::update() {
     _deltaSampleIdx = (_deltaSampleIdx + 1) % DELTA_SAMPLES_FOR_AVG;
     const float deltaAvg = std::accumulate(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
 
-    updateControlsFirstPerson(deltaAvg);
+    // updateControlsFirstPerson(deltaAvg);
+    updateControls3DEditor(deltaAvg);
     updateControlsShared(deltaAvg);
     _lastTime = GetTime();
 }
@@ -148,7 +149,7 @@ void RenderCamera::updateControlsShared(const float delta) {
         roll(CAMERA_ROTATION_SPEED * dm);
 
     // Scroll to zoom in / out
-    moveToTarget(-CAMERA_MOUSE_ZOOM_SPEED * dm * GetMouseWheelMove());
+    moveToTarget(-CAMERA_MOUSE_ZOOM_SPEED * dm * EventConsumer::ref()->getMouseWheelMove());
     if (EventConsumer::ref()->isKeyDown(KEY_KP_SUBTRACT))
         moveToTarget(CAMERA_ZOOM_SPEED * dm);
     if (EventConsumer::ref()->isKeyDown(KEY_KP_ADD))
