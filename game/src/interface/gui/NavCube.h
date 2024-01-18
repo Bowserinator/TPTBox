@@ -19,6 +19,7 @@ public:
     
     void init(); // called after OpenGL instance is initialized
     void update();
+    void draw();
 private:
     RenderCamera * cam;
     RenderTexture2D target;

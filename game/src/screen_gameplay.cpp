@@ -189,6 +189,7 @@ void ScreenGameplay::draw() {
     // TODO
     EventConsumer::ref()->reset();
 
+    hud.update_controls();
     BrushRenderer::ref()->update(&sim, &render_camera);
     render_camera.update();
 

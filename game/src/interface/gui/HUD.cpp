@@ -51,6 +51,10 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
     drawText(text, x, y, color, true);
 }
 
+void HUD::update_controls() {
+    cube.update();
+}
+
 void HUD::draw(const HUDData &data) {
     // Actually draw
     constexpr int OFFSET = 2 * PAD_Y + FONT_SIZE;
@@ -129,5 +133,5 @@ void HUD::draw(const HUDData &data) {
     }
 
     // Draw the nav cube
-    cube.update();
+    cube.draw();
 }

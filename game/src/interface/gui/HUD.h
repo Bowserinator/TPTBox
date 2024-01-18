@@ -42,6 +42,7 @@ public:
     void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
 
     void init(); // called after OpenGL instance is initialized
+    void update_controls();
     void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };

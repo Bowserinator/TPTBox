@@ -282,7 +282,10 @@ void NavCube::update() {
     EndMode3D();
     EndTextureMode();
 #pragma endregion NavCubeDraw
+}
 
+
+void NavCube::draw() {
     const Rectangle source{ 0.0f, 0.0f, (float)target.texture.width, -(float)target.texture.height };
     const Rectangle dest{
         NAVCUBE_POS.x, NAVCUBE_POS.y,
