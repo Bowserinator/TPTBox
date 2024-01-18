@@ -1,5 +1,6 @@
 #include "HUD.h"
 #include "../../render/camera/camera.h"
+#include "../EventConsumer.h"
 #include "../FontCache.h"
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ElementClasses.h"
@@ -52,7 +53,26 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
 }
 
 void HUD::update_controls() {
+    // This updates cube controls and textures
     cube.update();
+
+    // Rest of HUD controls
+    bool consumeKey = false;
+    if (EventConsumer::ref()->isKeyPressed(KEY_P)) { // Pause
+        sim->set_paused(!sim->paused);
+        consumeKey = true;
+    }
+    if (EventConsumer::ref()->isKeyPressed(KEY_G)) { // Grid
+        // TODO
+        consumeKey = true;
+    }
+    if (EventConsumer::ref()->isKeyPressed(KEY_H)) { // Cycle gravity
+        sim->cycle_gravity_mode();
+        consumeKey = true;
+    }
+
+    if (consumeKey)
+        EventConsumer::ref()->consumeKeyboard();
 }
 
 void HUD::draw(const HUDData &data) {
@@ -78,7 +98,6 @@ void HUD::draw(const HUDData &data) {
                 brush_pos.x, brush_pos.y, brush_pos.z, BrushRenderer::ref()->get_offset(), BrushRenderer::ref()->get_size()),
             GetMouseX() + 20.0f, GetMouseY() + 20.0f, WHITE);
     }
-
 
     // Update the average fps
     fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.fps;

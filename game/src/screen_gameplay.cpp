@@ -138,7 +138,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 20; y++) {
+    for (int y = 1; y < 2; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
@@ -197,14 +197,6 @@ void ScreenGameplay::draw() {
 
     BeginMode3D(render_camera.camera);
 
-
-    // TODO
-    Vector3 forward = GetCameraForward(&render_camera.camera);
-
-    forward = render_camera.camera.position + forward * 20.0f;
-    forward.x = std::round(forward.x);
-    forward.y = std::round(forward.y);
-    forward.z = std::round(forward.z);
         
     //rlEnableWireMode();
 

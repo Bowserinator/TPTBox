@@ -44,6 +44,10 @@ public:
 
 
     Simulation();
+
+    void cycle_gravity_mode();
+    void set_paused(const bool paused) { this->paused = paused; };
+
     part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
     void kill_part(const part_id id);
 

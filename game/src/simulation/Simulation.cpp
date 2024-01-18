@@ -64,6 +64,10 @@ void Simulation::_init_can_move() {
     }
 }
 
+void Simulation::cycle_gravity_mode() {
+    gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % 3 );
+}
+
 part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
@@ -198,6 +202,8 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
 }
 
 void Simulation::update() {
+    if (paused) return;
+
     // air.update(); // TODO
 
     #pragma omp parallel num_threads(sim_thread_count)
