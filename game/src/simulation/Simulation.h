@@ -71,6 +71,18 @@ public:
 
     PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
+
+    static const char * getGravityModeName(const GravityMode mode) {
+        switch (mode) {
+            case GravityMode::VERTICAL:
+                return "Vertical";
+            case GravityMode::ZERO_G:
+                return "Off";
+            case GravityMode::RADIAL:
+                return "Radial";
+        }
+        return "Unknown";
+    }
 private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);

@@ -10,6 +10,7 @@
 #include "../brush/Brush.h"
 
 #include <string>
+#include <cstring>
 
 constexpr float PAD_X = 5.0f;
 constexpr float PAD_Y = 7.0f;
@@ -35,7 +36,7 @@ void HUD::init() {
  * @param color Color of text
  */
 void HUD::drawText(const char * text, int x, const int y, const Color color, const bool ralign) const {
-    auto tsize = MeasureTextEx(FontCache::ref()->main_font, text, FONT_SIZE, SPACING);
+    const auto tsize = MeasureTextEx(FontCache::ref()->main_font, text, FONT_SIZE, SPACING);
     if (ralign)
         x -= tsize.x;
 
@@ -52,6 +53,16 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
     drawText(text, x, y, color, true);
 }
 
+void HUD::displayTooltip(const char * text) {
+    #ifdef DEBUG
+    if (strlen(text) > MAX_TOOLTIP_LENGTH)
+        throw std::invalid_argument(TextFormat("Tooltip '%s' exceeds max length of %i characters", text, MAX_TOOLTIP_LENGTH));
+    #endif
+
+    tooltip_opacity = 1.0;
+    strcpy(tooltip, text);
+}
+
 void HUD::update_controls() {
     // This updates cube controls and textures
     cube.update();
@@ -60,6 +71,7 @@ void HUD::update_controls() {
     bool consumeKey = false;
     if (EventConsumer::ref()->isKeyPressed(KEY_P)) { // Pause
         sim->set_paused(!sim->paused);
+        displayTooltip(sim->paused ? "Paused" : "Unpaused");
         consumeKey = true;
     }
     if (EventConsumer::ref()->isKeyPressed(KEY_G)) { // Grid
@@ -68,6 +80,7 @@ void HUD::update_controls() {
     }
     if (EventConsumer::ref()->isKeyPressed(KEY_H)) { // Cycle gravity
         sim->cycle_gravity_mode();
+        displayTooltip(TextFormat("Gravity: %s", Simulation::getGravityModeName(sim->gravity_mode)));
         consumeKey = true;
     }
 
@@ -153,4 +166,16 @@ void HUD::draw(const HUDData &data) {
 
     // Draw the nav cube
     cube.draw();
+
+    // Tooltip
+    if (tooltip_opacity) {
+        const auto tsize = MeasureTextEx(FontCache::ref()->main_font, tooltip, FONT_SIZE, SPACING);
+        DrawTextEx(FontCache::ref()->main_font, tooltip,
+            Vector2{ (float)(GetScreenWidth() / 2 - tsize.x / 2), (float)(GetScreenHeight() / 2) },
+            FONT_SIZE, SPACING, Color{ 255, 255, 255, (uint8_t)(tooltip_opacity * 255) });
+
+        tooltip_opacity -= 0.02;
+        if (tooltip_opacity < 0.01)
+            tooltip_opacity = 0.0;
+    }
 }

@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "NavCube.h"
 #include "../../util/vector_op.h"
+
 #include <numeric>
 
 class RenderCamera;
@@ -15,6 +16,7 @@ class BrushRenderer;
 enum class HUDState { NORMAL, DEBUG_MODE };
 
 constexpr int FPS_AVG_WINDOW_SIZE = 15;
+constexpr int MAX_TOOLTIP_LENGTH = 128;
 
 struct HUDData {
     float fps;
@@ -32,6 +34,9 @@ private:
     float sim_fps_avg[FPS_AVG_WINDOW_SIZE];
     unsigned int fps_counter = 0;
 
+    char tooltip[MAX_TOOLTIP_LENGTH];
+    double tooltip_opacity = 0.0f;
+
     float avg_fps() const {
         return std::accumulate(fps_avg, fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
@@ -43,6 +48,7 @@ public:
 
     void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
     void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
+    void displayTooltip(const char * text);
 
     void init(); // called after OpenGL instance is initialized
     void update_controls();
