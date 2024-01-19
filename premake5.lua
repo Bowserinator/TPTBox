@@ -67,6 +67,10 @@ workspace (workspaceName)
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "Speed"
+        buildoptions {
+			"-fno-exceptions",
+			"-Ofast"
+		}
 
     filter { "platforms:x64" }
         architecture "x86_64"
