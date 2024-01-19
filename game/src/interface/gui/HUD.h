@@ -52,7 +52,7 @@ public:
     void displayTooltip(const char * text);
 
     void init(); // called after OpenGL instance is initialized
-    void update_controls();
+    void update_controls(RenderCamera &render_camera, const BrushRenderer &brush_renderer);
     void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };

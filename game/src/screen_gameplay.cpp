@@ -192,7 +192,7 @@ void ScreenGameplay::draw() {
     FrameTime::ref()->update();
     EventConsumer::ref()->reset();
 
-    hud.update_controls();
+    hud.update_controls(render_camera, brush_renderer);
     brush_renderer.update();
     render_camera.update();
 
