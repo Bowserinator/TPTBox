@@ -5,6 +5,7 @@
 
 #include "src/render/camera/camera.h"
 #include "src/render/Particles.h"
+#include "src/render/Renderer.h"
 #include "src/simulation/Simulation.h"
 
 #include "src/interface/gui/HUD.h"
@@ -26,6 +27,7 @@ static RenderCamera render_camera;
 static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
+static Renderer renderer;
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -97,7 +99,7 @@ void ScreenGameplay::init() {
 //     delete[] x;
 //     delete[] r;
 
-    
+    renderer.init();    
 
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position
@@ -140,7 +142,7 @@ void ScreenGameplay::init() {
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 20; y++) {
+    for (int y = 1; y < 2; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y + 1, z, PT_WATR);
     }
@@ -199,6 +201,7 @@ void ScreenGameplay::draw() {
     ClearBackground(BLACK);
 
     BeginMode3D(render_camera.camera);
+    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
         
     //rlEnableWireMode();
@@ -206,7 +209,9 @@ void ScreenGameplay::draw() {
     unsigned char red = 255;
     auto t = GetTime();
     
-    DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
+    // DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
+    renderer.draw(&sim, &render_camera);
+    brush_renderer.draw();
     drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
 
@@ -226,7 +231,6 @@ void ScreenGameplay::draw() {
     // }
 
 
-    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
     // RaycastOutput out;
     // const float S = 90.0f * std::sin(test) + 30.0f;
@@ -237,9 +241,11 @@ void ScreenGameplay::draw() {
 
 
 
-   // rlDisableWireMode();
-    brush_renderer.draw();
+    // rlDisableWireMode();
+
     EndMode3D();
+
+
 
     hud.draw(HUDData {
         .fps = (float)fps,

@@ -1,5 +1,6 @@
 #include "NavCube.h"
 #include "../../render/camera/camera.h"
+#include "../../render/constants.h"
 #include "../../simulation/SimulationDef.h"
 #include "../../util/util.h"
 #include "../FontCache.h"
@@ -13,15 +14,6 @@ constexpr int CUBE_FACE_IMG_SIZE = 200;
 constexpr int CUBE_FACE_FONT_SIZE = 26;
 constexpr Vector2 NAVCUBE_POS{ 15, 70 };
 constexpr float CUBE_TEXTURE_DOWNSCALE = 0.5f;
-
-enum CUBE_FACES {
-    FRONT = 0,
-    BACK = 1,
-    LEFT = 2,
-    RIGHT = 3,
-    TOP = 4,
-    BOTTOM = 5
-};
 
 // Make sure to call this after OpenGL context has been initialized!
 RenderTexture2D generateCubeFaceTexture(const char * faceName) {

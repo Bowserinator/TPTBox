@@ -1,6 +1,15 @@
 #ifndef RENDER_CONSTANTS_H
 #define RENDER_CONSTANTS_H
 
+enum CUBE_FACES {
+    FRONT = 0,
+    BACK = 1,
+    LEFT = 2,
+    RIGHT = 3,
+    TOP = 4,
+    BOTTOM = 5
+};
+
 // Math
 constexpr float DIS_UNIT_CUBE_CENTER_TO_CORNER = 0.8660254038f;
 

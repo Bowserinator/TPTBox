@@ -86,15 +86,15 @@ public:
     // Use these methods to move / rotate camera as it properly
     // updates the frustum cache
     void pitch(float angle, bool lockView = true, bool rotateAroundTarget = true, bool rotateUp = false) {
-        _viewProjMatrixUpdated = false;
+        invalidateCache();
         CameraPitch(&camera, angle, lockView, rotateAroundTarget, rotateUp);
     }
     void yaw(float angle, bool rotateAroundTarget = true) {
-        _viewProjMatrixUpdated = false;
+        invalidateCache();
         CameraYaw(&camera, angle, rotateAroundTarget);
     }
     void roll(float angle) {
-        _viewProjMatrixUpdated = false;
+        invalidateCache();
         CameraRoll(&camera, angle);
     }
 
@@ -117,6 +117,10 @@ private:
 
     void generateFrustum();
     void updateViewProjMatrix();
+    void invalidateCache() {
+        _viewProjMatrixUpdated = false;
+        _hash++;
+    }
 
     void updateControlsFirstPerson(const float delta);
     void updateControls3DEditor(const float delta);

@@ -91,7 +91,7 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
         }
 
         SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
-        _viewProjMatrixUpdated = false;
+        invalidateCache();
     }
 }
 
@@ -128,7 +128,7 @@ void RenderCamera::updateControlsShared(const float delta) {
         camera.target += posDelta;
 
         if (mouseDelta.x || mouseDelta.y)
-            _viewProjMatrixUpdated = false;
+            invalidateCache();
     }
 
     // Keyboard camera rotation
@@ -171,7 +171,7 @@ void RenderCamera::updateLerp() {
         camera.up.x = Lerp(camera.up.x, _lerpUp.x, LERP_SPEED);
         camera.up.y = Lerp(camera.up.y, _lerpUp.y, LERP_SPEED);
         camera.up.z = Lerp(camera.up.z, _lerpUp.z, LERP_SPEED);
-        _viewProjMatrixUpdated = false;
+        invalidateCache();
 
         if (_lerpSteps > MAX_LERP_STEPS || (
                 util::vec3_similar(camera.position, _lerpPos, MAX_ERR) &&
@@ -212,11 +212,10 @@ void RenderCamera::updateViewProjMatrix() {
     const Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD, aspectRatio, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     const Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
     viewProjMatrix = MatrixMultiply(matView, matProj);
-    _hash++;
 }
 
 void RenderCamera::moveUp(float distance) {
-    _viewProjMatrixUpdated = false;
+    invalidateCache();
     Vector3 up = GetCameraUp(&camera);
     up = Vector3Scale(up, distance);
 
@@ -228,7 +227,7 @@ void RenderCamera::moveUp(float distance) {
 }
 
 void RenderCamera::moveForward(float distance, bool moveInWorldPlane = true) {
-    _viewProjMatrixUpdated = false;
+    invalidateCache();
     Vector3 forward = GetCameraForward(&camera);
     if (moveInWorldPlane) {
         forward.y = 0;
@@ -244,7 +243,7 @@ void RenderCamera::moveForward(float distance, bool moveInWorldPlane = true) {
 }
 
 void RenderCamera::moveRight(float distance, bool moveInWorldPlane = true) {
-    _viewProjMatrixUpdated = false;
+    invalidateCache();
     Vector3 right = GetCameraRight(&camera);
 
     if (moveInWorldPlane) {
@@ -262,7 +261,7 @@ void RenderCamera::moveRight(float distance, bool moveInWorldPlane = true) {
 
 void RenderCamera::moveToTarget(float amt) {
     if (amt == 0.0f) return;
-    _viewProjMatrixUpdated = false;
+    invalidateCache();
 
     float distance = Vector3Distance(camera.position, camera.target);
     distance += amt;
