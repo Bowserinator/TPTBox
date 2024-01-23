@@ -14,7 +14,7 @@ void Renderer::init() {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     char * data_arr = new char[ZRES * YRES * XRES];
-    // memset(data_arr, 0xFF, sizeof(char) * XRES * YRES * ZRES / 2);
+    memset(data_arr, 0x0, sizeof(char) * XRES * YRES * ZRES);
     for (int z = 1; z < ZRES - 1; z++) {
         for (int y = 1; y < YRES - 1; y++) {
             for (int x = 1; x < XRES - 1 ; x++) {

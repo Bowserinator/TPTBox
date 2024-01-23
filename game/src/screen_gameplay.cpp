@@ -129,16 +129,16 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    for (int x = 1; x < 10; x++) 
-    for (int z = 1; z < 10; z++)
-    for (int y = 51; y < 52; y++) {
-        int i = sim.create_part(x, y, z, 5);
-        const float F = 5.4f;
-        sim.parts[i].vz = 1.0f;
-        //sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
-        //sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
-        //sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
-    }
+    // for (int x = 1; x < 10; x++) 
+    // for (int z = 1; z < 10; z++)
+    // for (int y = 51; y < 52; y++) {
+    //     int i = sim.create_part(x, y, z, 5);
+    //     const float F = 5.4f;
+    //     sim.parts[i].vz = 1.0f;
+    //     //sim.parts[i].vx = F * ((rand() % 100) / 100.0f - 0.5f);
+    //     //sim.parts[i].vy = F * ((rand() % 100) / 100.0f - 0.5f);
+    //     //sim.parts[i].vz = F * ((rand() % 100) / 100.0f - 0.5f);
+    // }
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
@@ -248,7 +248,7 @@ void ScreenGameplay::draw() {
 
 
     hud.draw(HUDData {
-        .fps = (float)fps,
+        .fps = (float)GetFPS(), // fps
         .sim_fps = (float)(1.0f / simTime),
         .brush_renderer = &brush_renderer
     });

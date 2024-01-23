@@ -18,34 +18,31 @@ const float FOV = 45; // FOV in degrees
 
 const int MAX_RAY_STEPS = 712;
 const bool DEBUG_CASTS = false;
+const float SIMBOX_CAST_PAD = 0.99999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 
 bool isInSim(vec3 c) {
-    if (c.x < 0 || c.y < 0 || c.z < 0) return false;
-    if (c.x > simRes.x || c.y > simRes.y || c.z > simRes.z) return false;
-    return true;
+    return all(greaterThanEqual(c, vec3(0.0))) && all(lessThan(c, simRes));
 }
 
 bool getVoxel(vec3 c) {
-    // If statements are required to prevent incorrect projections near sim bound faces
-    if (c.x < 1 || c.y < 1 || c.z < 1) return false;
-    if (c.x >= simRes.x - 1 || c.y >= simRes.y - 1 || c.z >= simRes.z - 1) return false;
+    c = c + vec3(0.5);
 
-	return texture(colors, vec3(
-            (c.x + 0.5) / simRes.x,
-            (c.y + 0.5) / simRes.y, 
-            (c.z + 0.5) / simRes.z)
-        ).r > 0.0;
+    // If statements are required to prevent incorrect projections near sim bound faces
+    // if (c.x < 1 || c.y < 1 || c.z < 1) return false;
+    // if (c.x >= simRes.x - 1 || c.y >= simRes.y - 1 || c.z >= simRes.z - 1) return false;
+
+	return texture(colors, vec3(c / simRes)).r > 0.0;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
 vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
-    vec3 v = 1.0 / rayDir;
-    float xmin = (0.0      - rayPos.x) * v.x; // 0.0 = XMIN
-    float xmax = (simRes.x - rayPos.x) * v.x; // XRES = XMAX
-    float ymin = (0.0      - rayPos.y) * v.y; // YMIN
-    float ymax = (simRes.y - rayPos.y) * v.y; // YMAX
-    float zmin = (0.0      - rayPos.z) * v.z; // ZMIN
-    float zmax = (simRes.z - rayPos.z) * v.z; // ZMAX
+    vec3 v = vec3(1.0) / rayDir;
+    float xmin = (SIMBOX_CAST_PAD     - rayPos.x)        * v.x; // 0.0 = XMIN
+    float xmax = (simRes.x - rayPos.x - SIMBOX_CAST_PAD) * v.x; // XRES = XMAX
+    float ymin = (SIMBOX_CAST_PAD     - rayPos.y)        * v.y; // YMIN
+    float ymax = (simRes.y - rayPos.y - SIMBOX_CAST_PAD) * v.y; // YMAX
+    float zmin = (SIMBOX_CAST_PAD     - rayPos.z)        * v.z; // ZMIN
+    float zmax = (simRes.z - rayPos.z - SIMBOX_CAST_PAD) * v.z; // ZMAX
     float a = max(max(min(xmin, xmax), min(ymin, ymax)), min(zmin, zmax));
     float b = min(min(max(xmin, xmax), max(ymin, ymax)), max(zmin, zmax));
 
@@ -59,19 +56,17 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
 
 // Modified from https://www.shadertoy.com/view/4dX3zl
 void main() {
-    FragColor.a = 1.0;
-
     // Normalized to 0, 0 = center, scale -1 to 1
     vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
-	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * uv1 * resolution.x / resolution.y + screenPos.y * uv2);
+	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * resolution.x / resolution.y * uv1 + screenPos.y * uv2);
 
     vec3 rayPos = cameraPos;
-    vec3 mapPos = vec3(floor(rayPos + 0.5));
+    vec3 mapPos = vec3(floor(rayPos + 0.0));
 
     // If not in sim bounding box project to nearest face on ray bounding box
     if (!isInSim(mapPos)) {
         rayPos = rayCollideSim(rayPos, rayDir);
-        mapPos = vec3(floor(rayPos + 0.5));
+        mapPos = vec3(floor(rayPos + 0.0));
     }
 
 	vec3 deltaDist = abs(vec3(1.0) / rayDir);
@@ -81,11 +76,11 @@ void main() {
 	bvec3 mask;
     int steps = 0;
 	for (steps = 0; steps < MAX_RAY_STEPS; steps++) {
-		if (getVoxel(mapPos)) break;
         if (!isInSim(mapPos)) {
             if (!DEBUG_CASTS) steps = MAX_RAY_STEPS;
             break;
         }
+		if (getVoxel(mapPos)) break;
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         
@@ -101,7 +96,7 @@ void main() {
 
 	vec3 color;
     if (DEBUG_CASTS)
-        color = vec3(float(steps) / float(MAX_RAY_STEPS));
+        color = 200 * vec3(float(steps) / float(MAX_RAY_STEPS));
     else {
         if (mask.x)
             color = vec3(0.5);
@@ -111,4 +106,5 @@ void main() {
             color = vec3(0.75);
     }
     FragColor.rgb = color;
+    FragColor.a = 1.0;
 }
