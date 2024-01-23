@@ -63,7 +63,9 @@ inline Vector2 operator/(Vector2 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
 }
-
+inline Vector2 operator-(Vector2 in) {
+    return -1.0f * in;
+}
 
 
 // Vector3 operator overload
@@ -125,6 +127,9 @@ inline Vector3 &operator/=(Vector3 &lhs, const float rhs) {
 inline Vector3 operator/(Vector3 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
+}
+inline Vector3 operator-(Vector3 in) {
+    return -1.0f * in;
 }
 
 
@@ -191,6 +196,9 @@ inline Vector4 &operator/=(Vector4 &lhs, const float rhs) {
 inline Vector4 operator/(Vector4 lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
+}
+inline Vector4 operator-(Vector4 in) {
+    return -1.0f * in;
 }
 
 
@@ -263,6 +271,9 @@ template <class T> inline Vector3T<T> &operator/=(Vector3T<T> &lhs, const float 
 template <class T> inline Vector3T<T> operator/(Vector3T<T> lhs, const float rhs) {
     lhs /= rhs;
     return lhs;
+}
+template <class T> inline Vector3T<T> operator-(Vector3T<T> in) {
+    return -1.0f * in;
 }
 
 #endif

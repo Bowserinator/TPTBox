@@ -18,7 +18,7 @@ const float FOV = 45; // FOV in degrees
 
 const int MAX_RAY_STEPS = 712;
 const bool DEBUG_CASTS = false;
-const float SIMBOX_CAST_PAD = 0.99999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
+const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 
 bool isInSim(vec3 c) {
     return all(greaterThanEqual(c, vec3(0.0))) && all(lessThan(c, simRes));
@@ -58,7 +58,7 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
 void main() {
     // Normalized to 0, 0 = center, scale -1 to 1
     vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
-	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * resolution.x / resolution.y * uv1 + screenPos.y * uv2);
+	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * uv1 + screenPos.y * uv2);
 
     vec3 rayPos = cameraPos;
     vec3 mapPos = vec3(floor(rayPos + 0.0));
@@ -91,8 +91,10 @@ void main() {
 	}
 
     if (!DEBUG_CASTS)
-        if (steps == MAX_RAY_STEPS)
-            discard;
+        if (steps == MAX_RAY_STEPS) {
+            FragColor = vec4(0.0);
+            return;
+        }
 
 	vec3 color;
     if (DEBUG_CASTS)
