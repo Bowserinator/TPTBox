@@ -13,7 +13,11 @@ uniform vec3 simRes;      // Vec3 of XRES, YRES, ZRES
 
 out vec4 FragColor;
 
-const int MAX_RAY_STEPS = 512;
+const float DEG2RAD = 3.141592 / 180.0;
+const float FOV = 45; // FOV in degrees
+
+const int MAX_RAY_STEPS = 712;
+const bool DEBUG_CASTS = false;
 
 bool isInSim(vec3 c) {
     if (c.x < 0 || c.y < 0 || c.z < 0) return false;
@@ -22,11 +26,11 @@ bool isInSim(vec3 c) {
 }
 
 bool getVoxel(vec3 c) {
+    // If statements are required to prevent incorrect projections near sim bound faces
     if (c.x < 1 || c.y < 1 || c.z < 1) return false;
     if (c.x >= simRes.x - 1 || c.y >= simRes.y - 1 || c.z >= simRes.z - 1) return false;
 
-	return isInSim(c) && 
-        texture(colors, vec3(
+	return texture(colors, vec3(
             (c.x + 0.5) / simRes.x,
             (c.y + 0.5) / simRes.y, 
             (c.z + 0.5) / simRes.z)
@@ -36,12 +40,12 @@ bool getVoxel(vec3 c) {
 // Collide ray with sim bounding cube, rayDir should be normalized
 vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     vec3 v = 1.0 / rayDir;
-    float xmin = (1.0            - rayPos.x) * v.x; // 1.0 = XMIN
-    float xmax = (simRes.x - 1.0 - rayPos.x) * v.x; // XRES = XMAX
-    float ymin = (1.0            - rayPos.y) * v.y; // YMIN
-    float ymax = (simRes.y - 1.0 - rayPos.y) * v.y; // YMAX
-    float zmin = (1.0            - rayPos.z) * v.z; // ZMIN
-    float zmax = (simRes.z - 1.0 - rayPos.z) * v.z; // ZMAX
+    float xmin = (0.0      - rayPos.x) * v.x; // 0.0 = XMIN
+    float xmax = (simRes.x - rayPos.x) * v.x; // XRES = XMAX
+    float ymin = (0.0      - rayPos.y) * v.y; // YMIN
+    float ymax = (simRes.y - rayPos.y) * v.y; // YMAX
+    float zmin = (0.0      - rayPos.z) * v.z; // ZMIN
+    float zmax = (simRes.z - rayPos.z) * v.z; // ZMAX
     float a = max(max(min(xmin, xmax), min(ymin, ymax)), min(zmin, zmax));
     float b = min(min(max(xmin, xmax), max(ymin, ymax)), max(zmin, zmax));
 
@@ -59,20 +63,18 @@ void main() {
 
     // Normalized to 0, 0 = center, scale -1 to 1
     vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
-	vec3 U = uv1;
-	vec3 V = uv2 * resolution.y / resolution.x;
-	vec3 rayDir = cameraDir + 0.8 * (screenPos.x * U + screenPos.y * V);
+	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * uv1 * resolution.x / resolution.y + screenPos.y * uv2);
 
     vec3 rayPos = cameraPos;
-    vec3 mapPos = vec3(floor(rayPos + 0.));
+    vec3 mapPos = vec3(floor(rayPos + 0.5));
 
     // If not in sim bounding box project to nearest face on ray bounding box
     if (!isInSim(mapPos)) {
-        rayPos = rayCollideSim(mapPos, rayDir);
-        mapPos = vec3(floor(rayPos + 0.));
+        rayPos = rayCollideSim(rayPos, rayDir);
+        mapPos = vec3(floor(rayPos + 0.5));
     }
 
-	vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
+	vec3 deltaDist = abs(vec3(1.0) / rayDir);
 	vec3 rayStep   = vec3(sign(rayDir));
 	vec3 sideDist  = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
 
@@ -81,7 +83,7 @@ void main() {
 	for (steps = 0; steps < MAX_RAY_STEPS; steps++) {
 		if (getVoxel(mapPos)) break;
         if (!isInSim(mapPos)) {
-            steps = MAX_RAY_STEPS;
+            if (!DEBUG_CASTS) steps = MAX_RAY_STEPS;
             break;
         }
 
@@ -93,16 +95,20 @@ void main() {
         mapPos += vec3(mask) * rayStep;
 	}
 
-    if (steps == MAX_RAY_STEPS)
-        discard;
+    if (!DEBUG_CASTS)
+        if (steps == MAX_RAY_STEPS)
+            discard;
 
 	vec3 color;
-	if (mask.x)
-		color = vec3(0.5);
-	if (mask.y)
-		color = vec3(1.0);
-	if (mask.z)
-		color = vec3(0.75);
-    // color = vec3(float(steps) / float(MAX_RAY_STEPS));
+    if (DEBUG_CASTS)
+        color = vec3(float(steps) / float(MAX_RAY_STEPS));
+    else {
+        if (mask.x)
+            color = vec3(0.5);
+        if (mask.y)
+            color = vec3(1.0);
+        if (mask.z)
+            color = vec3(0.75);
+    }
     FragColor.rgb = color;
 }

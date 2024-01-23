@@ -15,16 +15,33 @@ void Renderer::init() {
 
     char * data_arr = new char[ZRES * YRES * XRES];
     // memset(data_arr, 0xFF, sizeof(char) * XRES * YRES * ZRES / 2);
-    for (int z = 0; z < ZRES; z++) {
-        for (int y = 0; y < YRES; y++) {
-            for (int x = 0; x < XRES ; x++) {
+    for (int z = 1; z < ZRES - 1; z++) {
+        for (int y = 1; y < YRES - 1; y++) {
+            for (int x = 1; x < XRES - 1 ; x++) {
                 int i = x + y * XRES + z * YRES * XRES;
 
-                if ((x/2 + y/2 + z/2) % 2 == 0)
-                    continue;
+                if (x < 2 || x > XRES - 3 || y > YRES - 3 || y < 2 || z < 2)
+                    data_arr[i] = 255;
+
+                continue;
+
+                // float s = 1/10.0;
+                // float x2 = (x - XRES / 2.0) * s;
+                // float y2 = (y - YRES / 2.0) * s;
+                // float z2 = (z - ZRES / 2.0) * s;
+                // float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
+                // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
+
+                // if (r > 0)
+                //     continue;
+                // if (std::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 60)
+                //     continue;
+
+                // if ((x/2 + y/2 + z/2) % 2 == 0)
+                //     continue;
                 // if (y % 4 != 0)
-                //    continue;
-                // if (util::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 30.0f)
+                //     continue;
+                // if (util::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 60.0f)
                 //     continue;
                 data_arr[i] = 255;
             }
