@@ -16,7 +16,8 @@ out vec4 FragColor;
 const float DEG2RAD = 3.141592 / 180.0;
 const float FOV = 45; // FOV in degrees
 
-const float ALPHA_THRESH = 0.96; // Above this alpha a ray is considered "stopped"
+const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray steps begins to fade to black
+const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered "stopped"
 const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
 
 const int MAX_RAY_STEPS = 256 * 3;
@@ -39,9 +40,8 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     float a = max(max(min(xmin, xmax), min(ymin, ymax)), min(zmin, zmax));
     float b = min(min(max(xmin, xmax), max(ymin, ymax)), max(zmin, zmax));
 
-    // if ((b < 0) || (a > b)) // Collision missed, should not be possible
-    //     return false;
-
+    // We do not need to check whether we missed since whatever result
+    // will be out of the simulation and the loop will immedately terminate
     vec3 collisionPoint = rayPos + rayDir * a;
     return collisionPoint;
 }
@@ -67,6 +67,7 @@ void main() {
 	vec3 sideDist  = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
 
 	bvec3 mask;
+    vec3 maskv;
     int steps = 0;
 
     vec4 forward_color = vec4(0.0); // Starts empty, can accumulate transparency
@@ -87,32 +88,39 @@ void main() {
                 break;
         }
 
+        // Reflection
+        bool should_reflect = voxel_color.a < 0.1 && voxel_color.a > 0.0; // TODO texture
+
+        if (should_reflect) {
+            // Undo previous move
+            mapPos -= maskv * rayStep;
+            sideDist -= maskv * deltaDist;
+
+            vec3 normal = maskv * -rayStep;
+            rayDir = reflect(rayStep, normal);
+            rayStep = vec3(sign(rayDir));
+        }
+
         // Refraction
-        // float index_of_refraction = voxel_color.a < 0.5 ? 1.00001 : 1.0; // TODO use a texture to get
+        // float index_of_refraction = voxel_color.a < 0.5 ? 0.5 : AIR_INDEX_REFRACTION; // TODO use a texture to get
         // if (voxel_color.a == 0.0)
         //     index_of_refraction = AIR_INDEX_REFRACTION;
 
-        // // TODO: still kinda broken
-        // // the reflection normal dir must be negative for some reason but that's wrong
-        // // since it becomes a mirror
-        // if (prev_index_of_refraction != index_of_refraction) {
-        //     vec3 normalSigns = -vec3(sign(rayDir));
-        //     if (index_of_refraction > prev_index_of_refraction)
-        //         normalSigns *= -1;
-
-        //     rayDir = refract(rayDir, vec3(mask) * normalSigns, index_of_refraction / prev_index_of_refraction);
+        // if (abs(index_of_refraction - prev_index_of_refraction) > 0.001) {
+        //     vec3 normal = maskv * -rayStep;
+        //     rayDir = refract(-rayStep, normal, index_of_refraction / prev_index_of_refraction);
         //     rayStep = vec3(sign(rayDir));
-        //     deltaDist = abs(vec3(1.0) / rayDir);
+        //     prev_index_of_refraction = index_of_refraction;
         // }
-        // prev_index_of_refraction = index_of_refraction;
 
         // DDA
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+        maskv = vec3(mask);
         
         // All components of mask are false except for the corresponding largest component
         // of sideDist, which is the axis along which the ray should be incremented.			
-        sideDist += vec3(mask) * deltaDist;
-        mapPos += vec3(mask) * rayStep;
+        sideDist += maskv * deltaDist;
+        mapPos += maskv * rayStep;
 	}
 
     if (!DEBUG_CASTS)
@@ -133,6 +141,8 @@ void main() {
             mul = 1.0;
         if (mask.z)
             mul = 0.75;
+        if (steps > FOG_START_PERCENT * MAX_RAY_STEPS)
+            mul *= 1.0 - (steps - MAX_RAY_STEPS * FOG_START_PERCENT) / (MAX_RAY_STEPS * (1 - FOG_START_PERCENT));
         mul *= forward_color.a;
 
         FragColor.a = 1.0;

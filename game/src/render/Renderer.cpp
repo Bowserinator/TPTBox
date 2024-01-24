@@ -21,9 +21,14 @@ void Renderer::init() {
             for (int x = 1; x < XRES - 1 ; x++) {
                 int i = x + y * XRES + z * YRES * XRES;
 
-                // if (x < 2 || x > XRES - 3 || y > YRES - 3 || y < 2 || z < 2)
-                //     data_arr[i] = 255;
-                // continue;
+                if (y > YRES - 3 || z < 2)
+                    data_arr[i] = 0x0FFFFFFF;
+                if (x < 2)
+                    data_arr[i] = 0x0F0000FF;
+                if (y < 2)
+                    data_arr[i] = 0x0F00FF00;
+                if (x > XRES - 3)
+                    data_arr[i] = 0x0F00FF00;
 
                 float s = 1/15.0;
                 float x2 = (x - XRES / 2.0) * s;
@@ -32,17 +37,24 @@ void Renderer::init() {
                 float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
                // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
 
-                if (r < 0) {
-                    data_arr[i] = 0xFF000000; // ABGR
-                    unsigned char r2 = x % 256;
-                    unsigned char g = y % 256;
-                    unsigned char b = z % 256;
-                    data_arr[i] += r2 + 256 * g + 256 * 256 * b;
+                // if (r < 0) {
+                //     data_arr[i] = 0xFF000000; // ABGR
+                //     unsigned char r2 = x % 256;
+                //     unsigned char g = y % 256;
+                //     unsigned char b = z % 256;
+                //     data_arr[i] += r2 + 256 * g + 256 * 256 * b;
+                // }
+                // if (std::hypot(x - XRES * 0.25, y - YRES / 2.0, z - ZRES / 2.0) < 40) {
+                if (fabs(x - (float)XRES / 4) < 2 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+                    data_arr[i] = 0x22FF0000; // ABGR
                 }
-                // if (std::hypot(x - XRES / 2.0, y - YRES / 2.0, z - ZRES / 2.0) < 30) {
-                if (fabs(x - (float)XRES / 2) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                    data_arr[i] = 0x01FFFFFF; // ABGR
+                if (fabs(x - (float)XRES / 4 - 6) < 2 && fabs(y - (float)YRES / 2) < 10 && fabs(z - ZRES / 2.0 ) < 10) {
+                    data_arr[i] = 0x22FF0000; // ABGR
                 }
+                if (fabs(x - 3 * (float)XRES / 4) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+                    data_arr[i] = 0xFFFF0000; // ABGR
+                }
+
 
                 // if ((x/2 + y/2 + z/2) % 2 == 0)
                 //     continue;
@@ -92,66 +104,14 @@ void Renderer::draw(Simulation * sim, RenderCamera * cam) {
     util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
     util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
 
-    bool inside = cam->camera.position.x > 0 && cam->camera.position.x <= XRES &&
-                  cam->camera.position.z > 0 && cam->camera.position.z <= ZRES &&
-                  cam->camera.position.y > 0 && cam->camera.position.y <= YRES;
-
-    if (inside) { // Inside cube, draw fullscreen triangle
-        Vector3 cent = cam->camera.position + look_ray; // Center pos of triangle
-        DrawTriangle3D(
-            cent - 2.0f * uv1 + uv2,
-            cent + uv1 - 2.0 * uv2,
-            cent + uv1 + uv2,
-            WHITE
-        );
-    } else { // Outside cube, draw visible cube faces (outer)
-    #pragma region cube
-        rlBegin(RL_QUADS);
-            // Back
-            if (Vector3DotProduct(Vector3{ XRES / 2.0f, YRES / 2.0f, 0.0 } - cam->camera.position, Vector3{ 0.0f, 0.0f, -1.0f }) < 0) {
-                rlVertex3f(0.0f, 0.0f, 0.0f);
-                rlVertex3f(0.0f, YRES, 0.0f);
-                rlVertex3f(XRES, YRES, 0.0f);
-                rlVertex3f(XRES, 0.0f, 0.0f);
-            }
-            // Front
-            if (Vector3DotProduct(Vector3{ XRES / 2.0f, YRES / 2.0f, (float)ZRES } - cam->camera.position, Vector3{ 0.0f, 0.0f, 1.0f }) < 0) {
-                rlVertex3f(0.0f, 0.0f, ZRES);
-                rlVertex3f(XRES, 0.0f, ZRES);
-                rlVertex3f(XRES, YRES, ZRES);
-                rlVertex3f(0.0f, YRES, ZRES);
-            }
-            // Bottom
-            if (Vector3DotProduct(Vector3{ XRES / 2.0f, 0.0f, ZRES / 2.0f } - cam->camera.position, Vector3{ 0.0f, -1.0f, 0.0f }) < 0) {
-                rlVertex3f(0.0f, 0.0f, 0.0f);
-                rlVertex3f(XRES, 0.0f, 0.0f);
-                rlVertex3f(XRES, 0.0f, ZRES);
-                rlVertex3f(0.0f, 0.0f, ZRES);
-            }
-            // Top
-            if (Vector3DotProduct(Vector3{ XRES / 2.0f, (float)YRES, ZRES / 2.0f } - cam->camera.position, Vector3{ 0.0f, 1.0f, 0.0f }) < 0) {
-                rlVertex3f(XRES, YRES, 0.0f);
-                rlVertex3f(0.0f, YRES, 0.0f);
-                rlVertex3f(0.0f, YRES, ZRES);
-                rlVertex3f(XRES, YRES, ZRES);
-            }
-            // Left
-            if (Vector3DotProduct(Vector3{ 0.0f, YRES / 2.0f, ZRES / 2.0f } - cam->camera.position, Vector3{ -1.0f, 0.0f, 0.0f }) < 0) {
-                rlVertex3f(0.0f, 0.0f, 0.0f);
-                rlVertex3f(0.0f, 0.0f, ZRES);
-                rlVertex3f(0.0f, YRES, ZRES);
-                rlVertex3f(0.0f, YRES, 0.0f);
-            }
-            // Right
-            if (Vector3DotProduct(Vector3{ (float)XRES, YRES / 2.0f, ZRES / 2.0f } - cam->camera.position, Vector3{ 1.0f, 0.0f, 0.0f }) < 0) {
-                rlVertex3f(XRES, 0.0f, 0.0f);
-                rlVertex3f(XRES, YRES, 0.0f);
-                rlVertex3f(XRES, YRES, ZRES);
-                rlVertex3f(XRES, 0.0f, ZRES);
-            }
-        rlEnd();
-    #pragma endregion cube
-    }
+    // Draw fullscreen triangle, the overdraw has 0 effect on performance
+    Vector3 cent = cam->camera.position + look_ray; // Center pos of triangle
+    DrawTriangle3D(
+        cent - 2.0f * uv1 + uv2,
+        cent + uv1 - 2.0 * uv2,
+        cent + uv1 + uv2,
+        WHITE
+    );
     
     EndShaderMode();
 }
