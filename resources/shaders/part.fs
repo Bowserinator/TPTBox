@@ -16,22 +16,15 @@ out vec4 FragColor;
 const float DEG2RAD = 3.141592 / 180.0;
 const float FOV = 45; // FOV in degrees
 
-const int MAX_RAY_STEPS = 712;
+const float ALPHA_THRESH = 0.96; // Above this alpha a ray is considered "stopped"
+const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
+
+const int MAX_RAY_STEPS = 256 * 3;
 const bool DEBUG_CASTS = false;
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 
 bool isInSim(vec3 c) {
     return all(greaterThanEqual(c, vec3(0.0))) && all(lessThan(c, simRes));
-}
-
-bool getVoxel(vec3 c) {
-    c = c + vec3(0.5);
-
-    // If statements are required to prevent incorrect projections near sim bound faces
-    // if (c.x < 1 || c.y < 1 || c.z < 1) return false;
-    // if (c.x >= simRes.x - 1 || c.y >= simRes.y - 1 || c.z >= simRes.z - 1) return false;
-
-	return texture(colors, vec3(c / simRes)).r > 0.0;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
@@ -75,13 +68,45 @@ void main() {
 
 	bvec3 mask;
     int steps = 0;
-	for (steps = 0; steps < MAX_RAY_STEPS; steps++) {
-        if (!isInSim(mapPos)) {
-            if (!DEBUG_CASTS) steps = MAX_RAY_STEPS;
-            break;
-        }
-		if (getVoxel(mapPos)) break;
 
+    vec4 forward_color = vec4(0.0); // Starts empty, can accumulate transparency
+    vec4 voxel_color;
+    float prev_index_of_refraction = AIR_INDEX_REFRACTION;
+
+	for (steps = 0; steps < MAX_RAY_STEPS; steps++) {
+        if (!isInSim(mapPos))
+            break;
+        
+        voxel_color = texture(colors, vec3((mapPos + vec3(0.5)) / simRes));
+		if (voxel_color.a > 0.0) {
+            float forward_alpha_inv = 1.0 - forward_color.a;
+            forward_color.rgb += voxel_color.rgb * voxel_color.a * forward_alpha_inv;
+            forward_color.a = 1.0 - forward_alpha_inv * (1.0 - voxel_color.a);
+
+            if (forward_color.a > ALPHA_THRESH)
+                break;
+        }
+
+        // Refraction
+        // float index_of_refraction = voxel_color.a < 0.5 ? 1.00001 : 1.0; // TODO use a texture to get
+        // if (voxel_color.a == 0.0)
+        //     index_of_refraction = AIR_INDEX_REFRACTION;
+
+        // // TODO: still kinda broken
+        // // the reflection normal dir must be negative for some reason but that's wrong
+        // // since it becomes a mirror
+        // if (prev_index_of_refraction != index_of_refraction) {
+        //     vec3 normalSigns = -vec3(sign(rayDir));
+        //     if (index_of_refraction > prev_index_of_refraction)
+        //         normalSigns *= -1;
+
+        //     rayDir = refract(rayDir, vec3(mask) * normalSigns, index_of_refraction / prev_index_of_refraction);
+        //     rayStep = vec3(sign(rayDir));
+        //     deltaDist = abs(vec3(1.0) / rayDir);
+        // }
+        // prev_index_of_refraction = index_of_refraction;
+
+        // DDA
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         
         // All components of mask are false except for the corresponding largest component
@@ -91,22 +116,26 @@ void main() {
 	}
 
     if (!DEBUG_CASTS)
-        if (steps == MAX_RAY_STEPS) {
+        if (forward_color.a == 0.0) {
             FragColor = vec4(0.0);
             return;
         }
 
-	vec3 color;
-    if (DEBUG_CASTS)
-        color = 200 * vec3(float(steps) / float(MAX_RAY_STEPS));
-    else {
-        if (mask.x)
-            color = vec3(0.5);
-        if (mask.y)
-            color = vec3(1.0);
-        if (mask.z)
-            color = vec3(0.75);
+    if (DEBUG_CASTS) {
+        FragColor = vec4(float(steps) / float(MAX_RAY_STEPS));
+        FragColor.a = 1.0;
     }
-    FragColor.rgb = color;
-    FragColor.a = 1.0;
+    else {
+        float mul = 0.0;
+        if (mask.x)
+            mul = 0.5;
+        if (mask.y)
+            mul = 1.0;
+        if (mask.z)
+            mul = 0.75;
+        mul *= forward_color.a;
+
+        FragColor.a = 1.0;
+        FragColor.rgb = mul * forward_color.rgb;
+    }
 }
