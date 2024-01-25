@@ -150,14 +150,15 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
 
     // Step to take per direction (+-1)
-    const float dx = (ray.x >= 0) * 2 - 1;
-    const float dy = (ray.y >= 0) * 2 - 1;
-    const float dz = (ray.z >= 0) * 2 - 1;
+    const float dx = (ray.x >= 0) ? 1 : -1;
+    const float dy = (ray.y >= 0) ? 1 : -1;
+    const float dz = (ray.z >= 0) ? 1 : -1;
 
     const Vector3 next_voxel_boundary{ in.x + dx, in.y + dy, in.z + dz };
 
     // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
     // the value of t at which the ray crosses the first vertical voxel boundary
+    // TODO: isnt ext_voxel_boundary.x - in.x always just dx? since we never start inside a voxel
     float tMaxX = (ray.x != 0) ? (next_voxel_boundary.x - in.x) / ray.x : std::numeric_limits<float>::max();
     float tMaxY = (ray.y != 0) ? (next_voxel_boundary.y - in.y) / ray.y : std::numeric_limits<float>::max();
     float tMaxZ = (ray.z != 0) ? (next_voxel_boundary.z - in.z) / ray.z : std::numeric_limits<float>::max();
@@ -170,10 +171,9 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     const float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
     const float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
 
-    bool neg_ray = false;
-    if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; neg_ray = true; }
-    if (ray.y < 0 && current_voxel.y != last_voxel.y) { diff.y--; neg_ray = true; }
-    if (ray.z < 0 && current_voxel.z != last_voxel.z) { diff.z--; neg_ray = true; }
+    if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; }
+    if (ray.y < 0 && current_voxel.y != last_voxel.y) { diff.y--; }
+    if (ray.z < 0 && current_voxel.z != last_voxel.z) { diff.z--; }
 
     // Get which "faces" to bounce off of
     // prev is now, final is the voxel we will collide with if we continue
