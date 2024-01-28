@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "../simulation/Simulation.h"
+#include "../simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
 #include "../util/util.h"
@@ -11,30 +12,26 @@
 
 constexpr int maxlod = 6;
 
+void Renderer::create_texture_data_arrays() {
+    color_data = new uint32_t[ZRES * YRES * XRES];
+    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
+
+    lod_data = new uint8_t*[LOD_LEVELS];
+    for (int i = 1; i <= LOD_LEVELS; i++) {
+        // TODO: precompute sizes
+        int scale = 1 << i;
+        int level_size = (ZRES / scale + 1) * (YRES / scale + 1) * (XRES / scale + 1);
+
+        uint8_t * lod_arr = new uint8_t[level_size];
+        memset(lod_arr, 0x00, sizeof(uint8_t) * level_size);
+        lod_data[i - 1] = lod_arr;
+    }
+}
+
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
 
-    using T = unsigned int;
-    T * data_arr = new T[ ZRES * YRES * XRES];
-    memset(data_arr, 0x0, sizeof(T) * XRES * YRES * ZRES);
-
-    uint8_t ** data_lod = new uint8_t*[maxlod];
-    for (int i = 1; i <= maxlod; i++) {
-        int A = 1 << i;
-        int s = (ZRES / A + 1) * (YRES / A + 1) * (XRES / A + 1);
-        uint8_t * lod4_arr = new uint8_t[s];
-        memset(lod4_arr, 0x00, sizeof(uint8_t) * s);
-        data_lod[i - 1] = lod4_arr;
-    }
-
-    // int s = (ZRES / A + 1) * (YRES / A + 1) * (XRES / A + 1);
-    // uint8_t * lod4_arr = new uint8_t[s];
-    // memset(lod4_arr, 0x00, sizeof(uint8_t) * s);
-
-    // s = (ZRES / B + 1) * (YRES / B + 1) * (XRES / B + 1);
-    // uint8_t * lod16_arr = new uint8_t[s];
-    // memset(lod16_arr, 0x00, sizeof(uint8_t) * s);
-
+    create_texture_data_arrays();
 
     for (int z = 1; z < ZRES - 1; z++) {
         for (int y = 1; y < YRES - 1; y++) {
@@ -42,18 +39,18 @@ void Renderer::init() {
                 int i = x + y * XRES + z * YRES * XRES;
 
                 if (y > YRES - 3 || z < 2)
-                    data_arr[i] = 0x0FFFFFFF;
+                    color_data[i] = 0x3FFFFFFF;
                 if (x < 4 && x > 2)
-                    data_arr[i] = 0x0F0000FF;
+                    color_data[i] = 0x3F0000FF;
                 if (y < 3)
-                    data_arr[i] = 0x0F00FF00;
+                    color_data[i] = 0x3F00FF00;
                 if (x > XRES - 3)
-                    data_arr[i] = 0xFF00FF00;
+                    color_data[i] = 0xFF00FF00;
 
                 if (x == XRES / 2 && y == YRES / 2 && z == ZRES / 2)
-                    data_arr[i] = 0xFF0000FF;
+                    color_data[i] = 0xFF0000FF;
                 if (x == XRES / 2 - 1 && y == YRES / 2 && z == ZRES / 2)
-                    data_arr[i] = 0xFFFF00FF;
+                    color_data[i] = 0xFFFF00FF;
 
                 float s = 1/10.0;
                 float x2 = (x - XRES / 2.0) * s;
@@ -62,28 +59,32 @@ void Renderer::init() {
                 float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
                 // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
 
-                if (r < 0) {
-                    data_arr[i] = 0xFF000000; // ABGR
-                    unsigned char r2 = x % 256;
-                    unsigned char g = y % 256;
-                    unsigned char b = z % 256;
-                    data_arr[i] += r2 + 256 * g + 256 * 256 * b;
+                if (fabs(x - (float)XRES / 2) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+                    color_data[i] = 0xDDFF0000; // ABGR
                 }
+
+                // if (r < 0) {
+                //     color_data[i] = 0xFF000000; // ABGR
+                //     unsigned char r2 = x % 256;
+                //     unsigned char g = y % 256;
+                //     unsigned char b = z % 256;
+                //     color_data[i] += r2 + 256 * g + 256 * 256 * b;
+                // }
             //     // if (std::hypot(x - XRES * 0.25, y - YRES / 2.0, z - ZRES / 2.0) < 40) {
                 // if (fabs(x - (float)XRES / 4) < 2 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                //     data_arr[i] = 0x22FF0000; // ABGR
+                //     color_data[i] = 0x22FF0000; // ABGR
                 // }
                 // if (fabs(x - (float)XRES / 4 - 6) < 2 && fabs(y - (float)YRES / 2) < 10 && fabs(z - ZRES / 2.0 ) < 10) {
-                //     data_arr[i] = 0x22FF0000; // ABGR
+                //     color_data[i] = 0x22FF0000; // ABGR
                 // }
                 // if (fabs(x - 3 * (float)XRES / 4) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                //     data_arr[i] = 0xFFFF0000; // ABGR
+                //     color_data[i] = 0xFFFF0000; // ABGR
                 // }
                 // if (fabs(x - 3 * (float)XRES / 4) < 19 && fabs(y - (float)YRES / 2) < 19 && fabs(z - ZRES / 2.0) < 19) {
-                //     data_arr[i] = 0xFFFFFF00; // ABGR
+                //     color_data[i] = 0xFFFFFF00; // ABGR
                 // }
                 // if (fabs(x - 3 * (float)XRES / 4) < 18 && fabs(y - (float)YRES / 2) < 18 && fabs(z - ZRES / 2.0) < 18) {
-                //     data_arr[i] = 0xFFFFFFFF; // ABGR
+                //     color_data[i] = 0xFFFFFFFF; // ABGR
                 // }
 
 
@@ -102,17 +103,17 @@ void Renderer::init() {
         for (int x = 1; x < XRES - 1 ; x++) {
             int i = x + y * XRES + z * YRES * XRES;
 
-            for (int i2 = 1; i2 <= maxlod; i2++) {
+            for (int i2 = 1; i2 <= LOD_LEVELS; i2++) {
                 int A = 1  << i2;
                 int newi = (x / A) + (y / A) * (XRES / A + 1) + (z / A) * ((YRES / A + 1) * (XRES / A + 1));
-                data_lod[i2 - 1][newi] = (data_arr[i] & 0xFF000000) ? 255 : data_lod[i2 - 1][newi];
+                lod_data[i2 - 1][newi] = (color_data[i] & 0xFF000000) ? 255 : lod_data[i2 - 1][newi];
             }
 
             // int i2 = (x / A) + (y / A) * (XRES / A + 1) + (z / A) * ((YRES / A + 1) * (XRES / A + 1));
             // int i3 = (x / B) + (y / B) * (XRES / B + 1) + (z / B) * ((YRES / B + 1) * (XRES / B + 1));
 
-            // lod4_arr[i2]  = (data_arr[i] & 0xFF000000) ? 255 : lod4_arr[i2];
-            // lod16_arr[i3] = (data_arr[i] & 0xFF000000) ? 255 : lod16_arr[i3];
+            // lod4_arr[i2]  = (color_data[i] & 0xFF000000) ? 255 : lod4_arr[i2];
+            // lod16_arr[i3] = (color_data[i] & 0xFF000000) ? 255 : lod16_arr[i3];
         }
     }
     }
@@ -123,15 +124,15 @@ void Renderer::init() {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, XRES, YRES, ZRES, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_arr);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, XRES, YRES, ZRES, 0, GL_RGBA, GL_UNSIGNED_BYTE, color_data);
 
-    for (int i = 0; i < maxlod; i++) {
+    for (int i = 0; i < LOD_LEVELS; i++) {
         int A = 1 << (i + 1);
         glGenTextures(1, &lod[i]);
         glBindTexture(GL_TEXTURE_3D, lod[i]);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XRES / A + 1, YRES / A + 1, ZRES / A + 1, 0, GL_RED, GL_UNSIGNED_BYTE, data_lod[i]);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XRES / A + 1, YRES / A + 1, ZRES / A + 1, 0, GL_RED, GL_UNSIGNED_BYTE, lod_data[i]);
     }
 
     // glGenTextures(1, &lod16);
@@ -139,12 +140,6 @@ void Renderer::init() {
     // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XRES / B + 1, YRES / B + 1, ZRES / B + 1, 0, GL_RED, GL_UNSIGNED_BYTE, lod16_arr);
-
-
-    delete[] data_arr;
-    for (int i = 0; i < maxlod; i++)
-        delete[] data_lod[i];
-    delete[] data_lod;
 
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
     part_shader_camera_pos_loc  = GetShaderLocation(part_shader, "cameraPos");
@@ -154,7 +149,52 @@ void Renderer::init() {
     part_shader_uv2_loc =  GetShaderLocation(part_shader, "uv2");
 }
 
+
+
+
+void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
+    // TODO: about 9 FPS without memset, only update regions that change
+    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
+    for (int i = 1; i <= LOD_LEVELS; i++) {
+        int scale = 1 << i;
+        int level_size = (ZRES / scale + 1) * (YRES / scale + 1) * (XRES / scale + 1);
+        memset(lod_data[i - 1], 0x00, sizeof(uint8_t) * level_size);
+    }
+
+    #pragma parallel for
+    for (int i = 0; i < sim->maxId; i++) {
+        const auto &part = sim->parts[i];
+        if (!part.type) continue;
+
+        // if (cam->sphereOutsideFrustum(part.rx, part.ry, part.rz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
+        //     continue;
+
+        int j = part.rx + part.ry * XRES + part.rz * YRES * XRES;
+        color_data[j] = GetElements()[part.type].Color.as_ABGR();
+
+        // TODO: atomic modification atomic bit flags
+        for (int i2 = 1; i2 <= LOD_LEVELS; i2++) {
+            int A = 1  << i2;
+            int newi = (part.rx / A) + (part.ry / A) * (XRES / A + 1) + (part.rz / A) * ((YRES / A + 1) * (XRES / A + 1));
+            lod_data[i2 - 1][newi] = (color_data[j] & 0xFF000000) ? 255 : lod_data[i2 - 1][newi];
+        }
+    }
+
+    glBindTexture(GL_TEXTURE_3D, color_tex);
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, XRES, YRES, ZRES, GL_RGBA, GL_UNSIGNED_BYTE, color_data);
+
+    for (int i = 0; i < maxlod; i++) {
+        int A = 1 << (i + 1);
+        glBindTexture(GL_TEXTURE_3D, lod[i]);
+        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, XRES / A + 1, YRES / A + 1, ZRES / A + 1, GL_RED, GL_UNSIGNED_BYTE, lod_data[i]);
+    }
+}
+
+
+
 void Renderer::draw(Simulation * sim, RenderCamera * cam) {
+    // update_texture(sim, cam);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, color_tex);
 

@@ -31,8 +31,11 @@ public:
         b *= amt;
     }
 
-    int32_t as_int() const {
+    uint32_t as_int() const {
         return (r << 24) | (g << 16) | (b << 8) | a;
+    }
+    uint32_t as_ABGR() const {
+        return (a << 24) | (b << 16) | (g << 8) | r;
     }
 };
 

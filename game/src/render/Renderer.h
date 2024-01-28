@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+constexpr int LOD_LEVELS = 6;
+
 class Simulation;
 class RenderCamera;
 
@@ -21,10 +23,16 @@ public:
     }
 
     void init(); // Call after openGL context has been initialized
+    void update_texture(Simulation * sim, RenderCamera * cam);
     void draw(Simulation * sim, RenderCamera * cam);
 private:
-    GLuint color_tex; // 6 mipmap reductions
-    unsigned int lod[6];
+    void create_texture_data_arrays();
+
+    GLuint color_tex;
+    unsigned int lod[LOD_LEVELS];
+
+    uint32_t * color_data;
+    uint8_t ** lod_data;
 
     Shader part_shader;
     int part_shader_res_loc,

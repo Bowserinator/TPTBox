@@ -26,8 +26,11 @@ const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray step
 const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered "stopped"
 const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
 
-const int MAX_RAY_STEPS = 256 * 2;
 const bool DEBUG_CASTS = false;
+const bool DEBUG_NORMALS = false;
+
+const vec3 FACE_COLORS = vec3(0.7, 1.0, 0.85);
+const int MAX_RAY_STEPS = 256 * 2;
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const int NUM_LEVELS = 6;
 
@@ -52,20 +55,16 @@ float min3(vec3 v) { return min(min(v.x,v.y), v.z); }
 float max3(vec3 v) { return max(max(v.x,v.y), v.z); }
 
 bool isInSim(vec3 c) {
-    return all(greaterThanEqual(c, vec3(0.0))) && all(lessThan(c, simRes));
+    return clamp(c, vec3(0.0), simRes - vec3(SIMBOX_CAST_PAD)) == c;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
 vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     vec3 v = vec3(1.0) / rayDir;
-    float xmin = (SIMBOX_CAST_PAD     - rayPos.x)        * v.x; // 0.0 = XMIN
-    float xmax = (simRes.x - rayPos.x - SIMBOX_CAST_PAD) * v.x; // XRES = XMAX
-    float ymin = (SIMBOX_CAST_PAD     - rayPos.y)        * v.y; // YMIN
-    float ymax = (simRes.y - rayPos.y - SIMBOX_CAST_PAD) * v.y; // YMAX
-    float zmin = (SIMBOX_CAST_PAD     - rayPos.z)        * v.z; // ZMIN
-    float zmax = (simRes.z - rayPos.z - SIMBOX_CAST_PAD) * v.z; // ZMAX
-    float a = max(max(min(xmin, xmax), min(ymin, ymax)), min(zmin, zmax));
-    float b = min(min(max(xmin, xmax), max(ymin, ymax)), max(zmin, zmax));
+    vec3 boundMin = (vec3(SIMBOX_CAST_PAD) - rayPos) * v;
+    vec3 boundMax = (simRes - vec3(SIMBOX_CAST_PAD) - rayPos) * v;
+    float a = max3(min(boundMin, boundMax));
+    float b = min3(max(boundMin, boundMax));
 
     // We do not need to check whether we missed since whatever result
     // will be out of the simulation and the loop will immedately terminate
@@ -103,7 +102,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
     ivec3 voxelPos = ivec3(pos) >> level;
     int prevIdx = -1;
     int initialSteps = data.steps;
-
+    vec4 prevVoxelColor = vec4(0.0);
     float prevIndexOfRefraction = data.prevIndexOfRefraction;
 
     for (int iter = initialSteps; iter < MAX_RAY_STEPS; iter++, data.steps = iter) {
@@ -122,14 +121,12 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
                 vec4 voxelColor = texelFetch(colors, voxelPos, 0);
-                // if (voxelColor.a < 1.0) { // TODO
-                //     //vec3 tDelta2 = abs(vec3((voxelPos + ivec3(dirSignBits)) << level) - pos) * idir;
-                //     //voxelColor.a *= max(min3(tDelta2), 0.);
-                // }
-
-                float forwardAlphaInv = 1.0 - data.color.a;
-                data.color.rgb += voxelColor.rgb * voxelColor.a * forwardAlphaInv;
-                data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
+                if (prevVoxelColor != voxelColor) {
+                    float forwardAlphaInv = 1.0 - data.color.a;
+                    data.color.rgb += voxelColor.rgb * FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv;
+                    data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
+                }
+                prevVoxelColor = voxelColor;
 
                 // Color is "solid enough", return
                 if (data.color.a > ALPHA_THRESH) {
@@ -139,7 +136,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 float indexOfRefraction = voxelColor.a < 1.0 ? 1.5 : AIR_INDEX_REFRACTION; // TODO use a texture to get
                 bool shouldReflect = false && data.counts.x < MAX_REFLECT_COUNT; // TODO
-                bool shouldRefract = prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
+                bool shouldRefract = false && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
 
                 if (shouldReflect || shouldRefract) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
@@ -221,7 +218,6 @@ void main() {
         ivec2(0)   // counts
     );
 
-    vec4 color = vec4(0.0);
     ivec4 res = ivec4(0);
     do {
         res = raymarch(rayPos, rayDir, data);
@@ -231,22 +227,18 @@ void main() {
 
     // display number of steps
     if (DEBUG_CASTS)
-        FragColor = 10.0 * vec4(data.steps)/ MAX_RAY_STEPS;
+        FragColor = 4.0 * vec4(data.steps) / MAX_RAY_STEPS;
+    else if (DEBUG_NORMALS) {
+        FragColor = vec4(0.0);
+        if (res.w >= 0)
+            FragColor[res.w % 3] = 1.0;
+        if (res.w > 3)
+            FragColor.rgb = vec3(1.0) - FragColor.rgb;
+        FragColor.a = sign(data.color.a);
+    }
     else {
-        // display normals
-        vec4 col = vec4(0);
-        if(res.w != -1) col[res.w % 3] = 1.;
-
-        float mul = 1.0;
-        if (res.w % 3 == 0)
-            mul = 0.7;
-        if (res.w % 3 == 1)
-            mul = 1.0;
-        if (res.w % 3 == 2)
-            mul = 0.85;
-        mul *= data.color.a;
-
+        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
         FragColor.rgb = data.color.rgb * mul;
-        FragColor.a = 1.0;
+        FragColor.a = sign(data.color.a);
     }
 }
