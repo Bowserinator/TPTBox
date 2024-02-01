@@ -87,21 +87,33 @@ void Renderer::init() {
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
 
     ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
-
-    unsigned int s = (37449) * (4 * 4 * 4); // size of lod each chunk * num chunks TODO
-    ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) * (s), NULL, RL_DYNAMIC_COPY);
+    ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
+        NULL, RL_DYNAMIC_COPY);
 }
 
 
 void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
     // Update SSBO values here
-    rlUpdateShaderBuffer(ssbo_colors, sim->color_data, XRES * YRES * ZRES * sizeof(uint32_t), 0);
 
-    // uint8_t * test = new uint8_t[37449 * 64];
+    for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
+        if (sim->color_data_modified[i]) {
+            rlUpdateShaderBuffer(ssbo_colors,
+                &sim->color_data[i * COLOR_DATA_CHUNK_SIZE],
+                COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t),
+                i * COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t));
+            sim->color_data_modified[i] = false;
+        }
+    }
 
-    for (int i = 0; i < sim->octree_blocks.size(); i++) {
-        rlUpdateShaderBuffer(ssbo_lod, sim->octree_blocks[i].data, sizeof(uint8_t) * 37449, i * sizeof(uint8_t) * 37449);
-       //  memcpy(test + i * 37449, sim->octree_blocks[i].data, 37499);
+    // uint8_t * test = new uint8_t[OctreeBlockMetadata::size * 64];
+
+    for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
+        if (sim->octree_blocks[i].modified) {
+            rlUpdateShaderBuffer(ssbo_lod, sim->octree_blocks[i].data,
+                sizeof(uint8_t) * OctreeBlockMetadata::size, i * sizeof(uint8_t) * OctreeBlockMetadata::size);
+            sim->octree_blocks[i].modified = false;
+        }
+       //  memcpy(test + i * OctreeBlockMetadata::size, sim->octree_blocks[i].data, 37499);
     }
 
 
@@ -123,13 +135,12 @@ void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
     //         unsigned int bit_idx = morton & 7;
     //         unsigned int offset = 1;
     //         morton >>= 3;
-    //         // morton = 0; // TODO: ??? nani the fuck
 
-    //         if (test[chunk_offset * 37449 + offset + morton] & (1 << bit_idx) != 0) {
+    //         if (test[chunk_offset * OctreeBlockMetadata::size + offset + morton] & (1 << bit_idx) != 0) {
     //             DrawCubeWires(Vector3{x2 + 8, y2 + 8, z2 + 8}, 16, 16, 16, Color{255, 0, 0, 250});
     //         }
 
-    //         // if (test[chunk_offset * 37449] != 0) {
+    //         // if (test[chunk_offset * OctreeBlockMetadata::size] != 0) {
     //         //     DrawCubeWires(Vector3{x2 + 32, y2 + 32, z2 + 32}, 64, 64, 64, Color{255, 0, 0, 250});
     //         // }
     //     }

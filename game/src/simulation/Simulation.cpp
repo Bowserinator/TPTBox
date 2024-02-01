@@ -24,8 +24,8 @@ Simulation::Simulation():
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
-    color_data = new uint32_t[ZRES * YRES * XRES];
-    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
+    memset(&color_data[0], 0x0, sizeof(uint32_t) * color_data.size());
+    color_data_modified = std::vector<bool>(COLOR_DATA_CHUNK_COUNT, false);
 
     pfree = 1;
     maxId = 0;
@@ -48,10 +48,7 @@ Simulation::Simulation():
     _init_can_move();
 }
 
-
-Simulation::~Simulation() {
-    delete[] color_data;
-}
+Simulation::~Simulation() {}
 
 
 void Simulation::_init_can_move() {
@@ -288,10 +285,16 @@ BitOctreeBlock& Simulation::_octree_at(const coord_t x, const coord_t y, const c
 }
 
 void Simulation::_block_insert(const coord_t x, const coord_t y, const coord_t z) {
-    // Dim is always a power of 2 so this is just % OCTREE_BLOCK_DIM
-    _octree_at(x, y, z).insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+    color_data_modified[FLAT_IDX(x, y, z) / COLOR_DATA_CHUNK_SIZE] = true;
+    auto &tree = _octree_at(x, y, z);
+    tree.modified = true;
+    // Dim is always a power of 2 so the & is just % OCTREE_BLOCK_DIM
+    tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
 }
 
 void Simulation::_block_remove(const coord_t x, const coord_t y, const coord_t z) {
-    _octree_at(x, y, z).remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+    color_data_modified[FLAT_IDX(x, y, z) / COLOR_DATA_CHUNK_SIZE] = true;
+    auto &tree = _octree_at(x, y, z);
+    tree.modified = true;
+    tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
 }

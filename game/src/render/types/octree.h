@@ -4,6 +4,21 @@
 #include "stdint.h"
 #include "../../simulation/SimulationDef.h"
 
+#include <array>
+
+namespace OctreeBlockMetadata {
+    constexpr auto layer_offsets{[]() constexpr {
+        std::array<unsigned int, OCTREE_BLOCK_DEPTH> result{};
+        result[0] = 0;
+        for (std::size_t layer = 1; layer < OCTREE_BLOCK_DEPTH; layer++)
+            result[layer] = result[layer - 1] + (1 << (3 * layer - 3));
+        return result;
+    }() };
+
+    constexpr unsigned int size = layer_offsets[OCTREE_BLOCK_DEPTH - 1] + (1 << (3 * OCTREE_BLOCK_DEPTH - 3));
+}
+
+
 class BitOctreeBlock {
 public:
     BitOctreeBlock();
@@ -42,9 +57,8 @@ public:
     // layer_offsets[layer] + (morton_code(x, y, z) >> (3 * (depth - layer)))
     // and the corresponding bit for it is the last 3 bits of morton_code(x, y, z) >> (3 * (depth - layer - 1))
     uint8_t * data;
-private:
-    unsigned int size;
-    unsigned int layer_offsets[OCTREE_BLOCK_DEPTH];
+
+    bool modified = false;
 };
 
 #endif

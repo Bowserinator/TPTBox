@@ -26,7 +26,7 @@ private:
         part_shader_camera_pos_loc,
         part_shader_camera_dir_loc;
 
-    int ssbo_colors, ssbo_lod; // TODO abstract to compute shader
+    int ssbo_colors, ssbo_lod;
 };
 
 #endif

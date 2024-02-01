@@ -35,7 +35,10 @@ public:
     
     uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
-    uint32_t * color_data;
+
+    // Graphics bookkeeping
+    std::array<uint32_t, XRES * YRES * ZRES> color_data;
+    std::vector<bool> color_data_modified;
     std::array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
 
     unsigned int sim_thread_count;
