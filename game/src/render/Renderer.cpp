@@ -3,207 +3,149 @@
 #include "../simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
-#include "../util/util.h"
+#include "../util/math.h"
 #include "../util/graphics.h"
 
 #include "rlgl.h"
 #include "stdint.h"
 #include <cstring>
 
-constexpr int maxlod = 6;
-
-void Renderer::create_texture_data_arrays() {
-    color_data = new uint32_t[ZRES * YRES * XRES];
-    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
-
-    lod_data = new uint8_t*[LOD_LEVELS];
-    for (int i = 1; i <= LOD_LEVELS; i++) {
-        // TODO: precompute sizes
-        int scale = 1 << i;
-        int level_size = (ZRES / scale + 1) * (YRES / scale + 1) * (XRES / scale + 1);
-
-        uint8_t * lod_arr = new uint8_t[level_size];
-        memset(lod_arr, 0x00, sizeof(uint8_t) * level_size);
-        lod_data[i - 1] = lod_arr;
-    }
-}
-
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
 
-    create_texture_data_arrays();
+    // for (int z = 1; z < ZRES - 1; z++) {
+    //     for (int y = 1; y < YRES - 1; y++) {
+    //         for (int x = 1; x < XRES - 1 ; x++) {
+    //             int i = x + y * XRES + z * YRES * XRES;
 
-    for (int z = 1; z < ZRES - 1; z++) {
-        for (int y = 1; y < YRES - 1; y++) {
-            for (int x = 1; x < XRES - 1 ; x++) {
-                int i = x + y * XRES + z * YRES * XRES;
+    //             if (y > YRES - 3 || z < 2)
+    //                 color_data[i] = 0x3FFFFFFF;
+    //             if (x < 4 && x > 2)
+    //                 color_data[i] = 0x3F0000FF;
+    //             if (y < 3)
+    //                 color_data[i] = 0x3F00FF00;
+    //             if (x > XRES - 3)
+    //                 color_data[i] = 0xFF00FF00;
 
-                if (y > YRES - 3 || z < 2)
-                    color_data[i] = 0x3FFFFFFF;
-                if (x < 4 && x > 2)
-                    color_data[i] = 0x3F0000FF;
-                if (y < 3)
-                    color_data[i] = 0x3F00FF00;
-                if (x > XRES - 3)
-                    color_data[i] = 0xFF00FF00;
+    //             if (x == XRES / 2 && y == YRES / 2 && z == ZRES / 2)
+    //                 color_data[i] = 0xFF0000FF;
+    //             if (x == XRES / 2 - 1 && y == YRES / 2 && z == ZRES / 2)
+    //                 color_data[i] = 0xFFFF00FF;
 
-                if (x == XRES / 2 && y == YRES / 2 && z == ZRES / 2)
-                    color_data[i] = 0xFF0000FF;
-                if (x == XRES / 2 - 1 && y == YRES / 2 && z == ZRES / 2)
-                    color_data[i] = 0xFFFF00FF;
+    //             float s = 1/10.0;
+    //             float x2 = (x - XRES / 2.0) * s;
+    //             float y2 = (y - YRES / 2.0) * s;
+    //             float z2 = (z - ZRES / 2.0) * s;
+    //             float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
+    //             // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
 
-                float s = 1/10.0;
-                float x2 = (x - XRES / 2.0) * s;
-                float y2 = (y - YRES / 2.0) * s;
-                float z2 = (z - ZRES / 2.0) * s;
-                float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
-                // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
+    //             if (fabs(x - (float)XRES / 2) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+    //                 color_data[i] = 0xDDFF0000; // ABGR
+    //             }
 
-                if (fabs(x - (float)XRES / 2) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                    color_data[i] = 0xDDFF0000; // ABGR
-                }
-
-                // if (r < 0) {
-                //     color_data[i] = 0xFF000000; // ABGR
-                //     unsigned char r2 = x % 256;
-                //     unsigned char g = y % 256;
-                //     unsigned char b = z % 256;
-                //     color_data[i] += r2 + 256 * g + 256 * 256 * b;
-                // }
-            //     // if (std::hypot(x - XRES * 0.25, y - YRES / 2.0, z - ZRES / 2.0) < 40) {
-                // if (fabs(x - (float)XRES / 4) < 2 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                //     color_data[i] = 0x22FF0000; // ABGR
-                // }
-                // if (fabs(x - (float)XRES / 4 - 6) < 2 && fabs(y - (float)YRES / 2) < 10 && fabs(z - ZRES / 2.0 ) < 10) {
-                //     color_data[i] = 0x22FF0000; // ABGR
-                // }
-                // if (fabs(x - 3 * (float)XRES / 4) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-                //     color_data[i] = 0xFFFF0000; // ABGR
-                // }
-                // if (fabs(x - 3 * (float)XRES / 4) < 19 && fabs(y - (float)YRES / 2) < 19 && fabs(z - ZRES / 2.0) < 19) {
-                //     color_data[i] = 0xFFFFFF00; // ABGR
-                // }
-                // if (fabs(x - 3 * (float)XRES / 4) < 18 && fabs(y - (float)YRES / 2) < 18 && fabs(z - ZRES / 2.0) < 18) {
-                //     color_data[i] = 0xFFFFFFFF; // ABGR
-                // }
+    //             // if (r < 0) {
+    //             //     color_data[i] = 0xFF000000; // ABGR
+    //             //     unsigned char r2 = x % 256;
+    //             //     unsigned char g = y % 256;
+    //             //     unsigned char b = z % 256;
+    //             //     color_data[i] += r2 + 256 * g + 256 * 256 * b;
+    //             // }
+    //         //     // if (std::hypot(x - XRES * 0.25, y - YRES / 2.0, z - ZRES / 2.0) < 40) {
+    //             // if (fabs(x - (float)XRES / 4) < 2 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+    //             //     color_data[i] = 0x22FF0000; // ABGR
+    //             // }
+    //             // if (fabs(x - (float)XRES / 4 - 6) < 2 && fabs(y - (float)YRES / 2) < 10 && fabs(z - ZRES / 2.0 ) < 10) {
+    //             //     color_data[i] = 0x22FF0000; // ABGR
+    //             // }
+    //             // if (fabs(x - 3 * (float)XRES / 4) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
+    //             //     color_data[i] = 0xFFFF0000; // ABGR
+    //             // }
+    //             // if (fabs(x - 3 * (float)XRES / 4) < 19 && fabs(y - (float)YRES / 2) < 19 && fabs(z - ZRES / 2.0) < 19) {
+    //             //     color_data[i] = 0xFFFFFF00; // ABGR
+    //             // }
+    //             // if (fabs(x - 3 * (float)XRES / 4) < 18 && fabs(y - (float)YRES / 2) < 18 && fabs(z - ZRES / 2.0) < 18) {
+    //             //     color_data[i] = 0xFFFFFFFF; // ABGR
+    //             // }
 
 
-                // if ((x/2 + y/2 + z/2) % 2 == 0)
-                //     continue;
-                // if (y % 4 != 0)
-                //     continue;
-                // if (util::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 60.0f)
-                //     continue;
-            }
-        }
-    }
+    //             // if ((x/2 + y/2 + z/2) % 2 == 0)
+    //             //     continue;
+    //             // if (y % 4 != 0)
+    //             //     continue;
+    //             // if (util::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 60.0f)
+    //             //     continue;
+    //         }
+    //     }
+    // }
 
-    for (int z = 1; z < ZRES - 1; z++) {
-    for (int y = 1; y < YRES - 1; y++) {
-        for (int x = 1; x < XRES - 1 ; x++) {
-            int i = x + y * XRES + z * YRES * XRES;
-
-            for (int i2 = 1; i2 <= LOD_LEVELS; i2++) {
-                int A = 1  << i2;
-                int newi = (x / A) + (y / A) * (XRES / A + 1) + (z / A) * ((YRES / A + 1) * (XRES / A + 1));
-                lod_data[i2 - 1][newi] = (color_data[i] & 0xFF000000) ? 255 : lod_data[i2 - 1][newi];
-            }
-
-            // int i2 = (x / A) + (y / A) * (XRES / A + 1) + (z / A) * ((YRES / A + 1) * (XRES / A + 1));
-            // int i3 = (x / B) + (y / B) * (XRES / B + 1) + (z / B) * ((YRES / B + 1) * (XRES / B + 1));
-
-            // lod4_arr[i2]  = (color_data[i] & 0xFF000000) ? 255 : lod4_arr[i2];
-            // lod16_arr[i3] = (color_data[i] & 0xFF000000) ? 255 : lod16_arr[i3];
-        }
-    }
-    }
-
-    // TODO: GL_RGBA
-    glGenTextures(1, &color_tex);
-    glBindTexture(GL_TEXTURE_3D, color_tex);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, XRES, YRES, ZRES, 0, GL_RGBA, GL_UNSIGNED_BYTE, color_data);
-
-    for (int i = 0; i < LOD_LEVELS; i++) {
-        int A = 1 << (i + 1);
-        glGenTextures(1, &lod[i]);
-        glBindTexture(GL_TEXTURE_3D, lod[i]);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XRES / A + 1, YRES / A + 1, ZRES / A + 1, 0, GL_RED, GL_UNSIGNED_BYTE, lod_data[i]);
-    }
-
-    // glGenTextures(1, &lod16);
-    // glBindTexture(GL_TEXTURE_3D, lod16);
-    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XRES / B + 1, YRES / B + 1, ZRES / B + 1, 0, GL_RED, GL_UNSIGNED_BYTE, lod16_arr);
-
+ 
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
-    part_shader_camera_pos_loc  = GetShaderLocation(part_shader, "cameraPos");
+    part_shader_camera_pos_loc = GetShaderLocation(part_shader, "cameraPos");
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
     part_shader_sim_res_loc = GetShaderLocation(part_shader, "simRes");
-    part_shader_uv1_loc =  GetShaderLocation(part_shader, "uv1");
-    part_shader_uv2_loc =  GetShaderLocation(part_shader, "uv2");
+    part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
+    part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
+
+    ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
+
+    unsigned int s = (37449) * (4 * 4 * 4); // size of lod each chunk * num chunks TODO
+    ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) * (s), NULL, RL_DYNAMIC_COPY);
 }
 
 
-
-
 void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
-    // TODO: about 9 FPS without memset, only update regions that change
-    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
-    for (int i = 1; i <= LOD_LEVELS; i++) {
-        int scale = 1 << i;
-        int level_size = (ZRES / scale + 1) * (YRES / scale + 1) * (XRES / scale + 1);
-        memset(lod_data[i - 1], 0x00, sizeof(uint8_t) * level_size);
+    // Update SSBO values here
+    rlUpdateShaderBuffer(ssbo_colors, sim->color_data, XRES * YRES * ZRES * sizeof(uint32_t), 0);
+
+    // uint8_t * test = new uint8_t[37449 * 64];
+
+    for (int i = 0; i < sim->octree_blocks.size(); i++) {
+        rlUpdateShaderBuffer(ssbo_lod, sim->octree_blocks[i].data, sizeof(uint8_t) * 37449, i * sizeof(uint8_t) * 37449);
+       //  memcpy(test + i * 37449, sim->octree_blocks[i].data, 37499);
     }
 
-    #pragma parallel for
-    for (int i = 0; i < sim->maxId; i++) {
-        const auto &part = sim->parts[i];
-        if (!part.type) continue;
 
-        // if (cam->sphereOutsideFrustum(part.rx, part.ry, part.rz, DIS_UNIT_CUBE_CENTER_TO_CORNER))
-        //     continue;
+    
+    // for (int z = 0; z < 16; z++) {
+    // for (int y = 0; y < 16; y++) {
+    // for (int x = 0; x < 16; x++) {
 
-        int j = part.rx + part.ry * XRES + part.rz * YRES * XRES;
-        color_data[j] = GetElements()[part.type].Color.as_ABGR();
+    //         int level = 4;
+    //         int x2 = x << (level); // say level = 6
+    //         int y2 = y << (level);
+    //         int z2 = z << (level);
+    //         // TODO: compile these constants into shaders
+    //         int chunk_offset = (x2 / 64) + (y2 / 64) * 4 + (z2 / 64) * 4 * 4;
 
-        // TODO: atomic modification atomic bit flags
-        for (int i2 = 1; i2 <= LOD_LEVELS; i2++) {
-            int A = 1  << i2;
-            int newi = (part.rx / A) + (part.ry / A) * (XRES / A + 1) + (part.rz / A) * ((YRES / A + 1) * (XRES / A + 1));
-            lod_data[i2 - 1][newi] = (color_data[j] & 0xFF000000) ? 255 : lod_data[i2 - 1][newi];
-        }
-    }
+    //         // std::cout << chunk_offset << " HUNK OFFSET\n";
 
-    glBindTexture(GL_TEXTURE_3D, color_tex);
-    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, XRES, YRES, ZRES, GL_RGBA, GL_UNSIGNED_BYTE, color_data);
+    //         unsigned int morton = morton_decode2(x2 % 64, y2 % 64, z2 % 64) >> (3 * (level ));
+    //         unsigned int bit_idx = morton & 7;
+    //         unsigned int offset = 1;
+    //         morton >>= 3;
+    //         // morton = 0; // TODO: ??? nani the fuck
 
-    for (int i = 0; i < maxlod; i++) {
-        int A = 1 << (i + 1);
-        glBindTexture(GL_TEXTURE_3D, lod[i]);
-        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, XRES / A + 1, YRES / A + 1, ZRES / A + 1, GL_RED, GL_UNSIGNED_BYTE, lod_data[i]);
-    }
+    //         if (test[chunk_offset * 37449 + offset + morton] & (1 << bit_idx) != 0) {
+    //             DrawCubeWires(Vector3{x2 + 8, y2 + 8, z2 + 8}, 16, 16, 16, Color{255, 0, 0, 250});
+    //         }
+
+    //         // if (test[chunk_offset * 37449] != 0) {
+    //         //     DrawCubeWires(Vector3{x2 + 32, y2 + 32, z2 + 32}, 64, 64, 64, Color{255, 0, 0, 250});
+    //         // }
+    //     }
+    // }
+    // }
+    // delete[] test;
 }
 
 
 
 void Renderer::draw(Simulation * sim, RenderCamera * cam) {
-    // update_texture(sim, cam);
+    update_texture(sim, cam);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, color_tex);
-
-    for (int i = 0; i < maxlod; i++) {
-        glActiveTexture(GL_TEXTURE0 + (i + 1));
-        glBindTexture(GL_TEXTURE_3D, lod[i]);
-    }
-
-
+    // Bind SSBOs to render shader
+    rlBindShaderBuffer(ssbo_colors, 0);
+    rlBindShaderBuffer(ssbo_lod, 1);
     BeginShaderMode(part_shader);
 
     // Inverse camera rotation matrix

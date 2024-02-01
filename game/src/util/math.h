@@ -1,5 +1,5 @@
-#ifndef UTIL_UTIL_H
-#define UTIL_UTIL_H
+#ifndef UTIL_MATH_H
+#define UTIL_MATH_H
 
 #include <cmath>
 #include "raymath.h"

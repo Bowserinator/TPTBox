@@ -1,12 +1,14 @@
 #version 430
 
-layout (binding = 0) uniform sampler3D colors;
-layout (binding = 1) uniform sampler3D lod_2;
-layout (binding = 2) uniform sampler3D lod_4;
-layout (binding = 3) uniform sampler3D lod_8;
-layout (binding = 4) uniform sampler3D lod_16;
-layout (binding = 5) uniform sampler3D lod_32;
-layout (binding = 6) uniform sampler3D lod_64;
+#define LOD_LEVELS 6 // Should match value in Renderer and frag shader TODO uniform for this
+
+layout(std430, binding = 0) readonly restrict buffer Colors {
+    uint colors[];
+};
+layout(std430, binding = 1) readonly restrict buffer colorLod {
+    uint colors_lod[];
+};
+
 
 uniform vec2 resolution;  // Viewport res
 uniform mat4 mvp;         // Transform matrix
@@ -66,28 +68,74 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     float a = max3(min(boundMin, boundMax));
     float b = min3(max(boundMin, boundMax));
 
-    // We do not need to check whether we missed since whatever result
-    // will be out of the simulation and the loop will immedately terminate
+    if (b < 0 || a > b) // Failed to hit box, needs to check when very close to sim edge
+        return vec3(-1);
+
     vec3 collisionPoint = rayPos + rayDir * a;
     return collisionPoint;
+}
+
+vec4 getColorAt(ivec3 pos) {
+    uint tmp = colors[uint(pos.x + simRes.x * pos.y + (simRes.x * simRes.y) * pos.z)];
+    vec4 color = vec4(tmp & 0xFF, (tmp >> 8) & 0xFF, (tmp >> 16) & 0xFF, tmp >> 24) / 255.0;
+    return color;
+}
+
+// Note: here level is different from colors_lod
+// level 0 is the 1x1x1 voxel layer, level 6 is the 64x64x64 cube layer
+uint morton_decode(int x, int y, int z) {
+    // 3,3,3 = 63, 1,2,3 = 29
+    // TODO: faster
+    int j = 0;
+    uint out2 = 0;
+    for (int i = 0; i < 8; i++) {
+        if ((z & 1) != 0) out2 |= (1 << j);
+        j++;
+        if ((y & 1) != 0) out2 |= (1 << j);
+        j++;
+        if ((x & 1) != 0) out2 |= (1 << j);
+        j++;
+
+        x >>= 1;
+        y >>= 1;
+        z >>= 1;
+    }
+    return out2;
+}
+
+uint get_byte(uint pos) {
+    uint data = colors_lod[pos / 4];
+    uint remainder = pos & 3; // % 4
+    data >>= 8 * (remainder);
+    data = data & 0xFF;
+    return data;
 }
 
 bool sampleVoxels(ivec3 pos, int level) {
     if (level >= NUM_LEVELS) return true;
     if (level == 0)
-        return texelFetch(colors, ivec3(pos), 0).a != 0.0;
+        return (colors[uint(pos.x + simRes.x * pos.y + (simRes.x * simRes.y) * pos.z)]) != 0;
 
-    if (level == 1)
-        return texelFetch(lod_2, ivec3(pos), 0).r != 0.0;
-    if (level == 2)
-        return texelFetch(lod_4, ivec3(pos), 0).r != 0.0;
-    if (level == 3)
-        return texelFetch(lod_8, ivec3(pos), 0).r != 0.0;
-    if (level == 4)
-        return texelFetch(lod_16, ivec3(pos), 0).r != 0.0;
+    int offset = 0;
+
+    ivec3 pos2 = pos << (level);
+    // TODO: compile these constants into shaders
+    // ie 4 = ceil(XRES / (1 << NUM_LEVELS))
+    int chunk_offset = (pos2.x >> 6) + (pos2.y >> NUM_LEVELS) * 4 + (pos2.z >> NUM_LEVELS) * 4 * 4;
+
     if (level == 5)
-        return texelFetch(lod_32, ivec3(pos), 0).r != 0.0;
-    return texelFetch(lod_64, ivec3(pos), 0).r != 0.0;
+        offset = 0;
+    else if (level == 4)
+        offset = 1;
+    else if (level == 3)
+        offset = 1 + 8;
+    else if (level == 2)
+        offset = 1 + 8 + 64;
+    else if (level == 1)
+        offset = 1 + 8 + 64 + 64 * 8;
+
+    uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> (3 * level + 3);
+    return get_byte(chunk_offset * 37449 + offset + morton) != 0; //  & (1 << bit_idx)
 }
 
 // result.xyz = block pos
@@ -120,10 +168,10 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
-                vec4 voxelColor = texelFetch(colors, voxelPos, 0);
+                vec4 voxelColor = getColorAt(voxelPos);
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
-                    data.color.rgb += voxelColor.rgb * FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv;
+                    data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv);
                     data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
                 }
                 prevVoxelColor = voxelColor;
@@ -141,13 +189,13 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                 if (shouldReflect || shouldRefract) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
                     vec3 normal = vec3(0.0);
-                    normal[prevIdx] = 1.0 * rayStep[prevIdx];
+                    normal[prevIdx] = rayStep[prevIdx];
 
                     data.shouldContinue = true;
 
                     // Refraction
                     if (shouldRefract) {
-                        data.outRay = refract(dir, -normal, 1.0 / (indexOfRefraction / prevIndexOfRefraction));
+                        data.outRay = refract(dir, -normal, prevIndexOfRefraction / indexOfRefraction);
                         data.counts.y++;
 
                         if (dot(data.outRay, data.outRay) > 0.0) {
@@ -207,6 +255,11 @@ void main() {
     // If not in sim bounding box project to nearest face on ray bounding box
     if (!isInSim(ivec3(rayPos)))
         rayPos = rayCollideSim(rayPos, rayDir);
+    // Outside of box early termination
+    if (rayPos.x < 0) {
+        FragColor = vec4(0.0);
+        return;
+    }
 
     RayCastData data = RayCastData(
         true,      // shouldContinue
@@ -225,20 +278,19 @@ void main() {
         rayPos = data.outPos;
     } while (data.shouldContinue);
 
-    // display number of steps
     if (DEBUG_CASTS)
-        FragColor = 4.0 * vec4(data.steps) / MAX_RAY_STEPS;
+        FragColor = 8.0 * vec4(data.steps) / MAX_RAY_STEPS;
     else if (DEBUG_NORMALS) {
         FragColor = vec4(0.0);
         if (res.w >= 0)
             FragColor[res.w % 3] = 1.0;
         if (res.w > 3)
             FragColor.rgb = vec3(1.0) - FragColor.rgb;
-        FragColor.a = sign(data.color.a);
+        FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
     }
     else {
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
         FragColor.rgb = data.color.rgb * mul;
-        FragColor.a = sign(data.color.a);
+        FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
     }
 }

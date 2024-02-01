@@ -3,7 +3,7 @@
 #include "../../render/camera/camera.h"
 #include "../EventConsumer.h"
 #include "../FrameTimeAvg.h"
-#include "../../util/util.h"
+#include "../../util/math.h"
 
 void BrushRenderer::draw() {
     if (x < 0 || y < 0 || z < 0) return;

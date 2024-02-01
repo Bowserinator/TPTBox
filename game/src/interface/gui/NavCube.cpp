@@ -2,7 +2,7 @@
 #include "../../render/camera/camera.h"
 #include "../../render/constants.h"
 #include "../../simulation/SimulationDef.h"
-#include "../../util/util.h"
+#include "../../util/math.h"
 #include "../FontCache.h"
 #include "../EventConsumer.h"
 

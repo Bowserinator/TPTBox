@@ -5,7 +5,7 @@
 #include "../constants.h"
 #include "../../interface/EventConsumer.h"
 #include "../../interface/FrameTimeAvg.h"
-#include "../../util/util.h"
+#include "../../util/math.h"
 
 constexpr bool moveInWorldPlane = true;
 constexpr bool rotateAroundTarget = true;

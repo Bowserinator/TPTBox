@@ -2,7 +2,7 @@
 #include "ElementClasses.h"
 #include "ElementDefs.h"
 #include "../util/vector_op.h"
-#include "../util/util.h"
+#include "../util/math.h"
 
 #include <omp.h>
 #include <algorithm>
@@ -11,6 +11,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <cstring>
 
 Simulation::Simulation():
     paused(false),
@@ -22,6 +23,9 @@ Simulation::Simulation():
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
+
+    color_data = new uint32_t[ZRES * YRES * XRES];
+    memset(color_data, 0x0, sizeof(uint32_t) * XRES * YRES * ZRES);
 
     pfree = 1;
     maxId = 0;
@@ -44,6 +48,12 @@ Simulation::Simulation():
     _init_can_move();
 }
 
+
+Simulation::~Simulation() {
+    delete[] color_data;
+}
+
+
 void Simulation::_init_can_move() {
     ElementType movingType, destinationType;
     const auto &elements = GetElements();
@@ -58,6 +68,7 @@ void Simulation::_init_can_move() {
 			if (elements[movingType].Weight > elements[destinationType].Weight)
 				can_move[movingType][destinationType] = PartSwapBehavior::SWAP;
 
+            // All energy particles can occupy same space
             if (elements[movingType].State == ElementState::TYPE_ENERGY && elements[destinationType].State == ElementState::TYPE_ENERGY)
                 can_move[movingType][destinationType] = PartSwapBehavior::OCCUPY_SAME;
         }
@@ -103,6 +114,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vz = 0.0f;
 
     part_map[z][y][x] = PMAP(type, pfree);
+    color_data[FLAT_IDX(x, y, z)] = GetElements()[type].Color.as_ABGR();
+    _block_insert(x, y, z);
+
     maxId = std::max(maxId, pfree + 1);
     pfree = next_pfree;
     return old_pfree;
@@ -127,6 +141,8 @@ void Simulation::kill_part(const part_id i) {
     if (i == maxId && i > 0)
         maxId--;
 
+    color_data[FLAT_IDX(x, y, z)] = 0x0;
+    _block_remove(x, y, z);
     part.id = -pfree;
     pfree = i;
 }
@@ -251,10 +267,31 @@ void Simulation::recalc_free_particles() {
         max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
 
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
-        if (!map[z][y][x])
+        if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
+            color_data[FLAT_IDX(x, y, z)] = GetElements()[part.type].Color.as_ABGR();
+            _block_insert(x, y, z);
+        }
 
         update_part(i, false);
     }
     maxId = newMaxId + 1;
+}
+
+
+// Octree updates
+// ------------------------
+BitOctreeBlock& Simulation::_octree_at(const coord_t x, const coord_t y, const coord_t z) {
+    return octree_blocks[
+        (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
+        (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
+}
+
+void Simulation::_block_insert(const coord_t x, const coord_t y, const coord_t z) {
+    // Dim is always a power of 2 so this is just % OCTREE_BLOCK_DIM
+    _octree_at(x, y, z).insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+}
+
+void Simulation::_block_remove(const coord_t x, const coord_t y, const coord_t z) {
+    _octree_at(x, y, z).remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
 }

@@ -2,7 +2,7 @@
 #include "ElementClasses.h"
 #include "ElementDefs.h"
 #include "../util/vector_op.h"
-#include "../util/util.h"
+#include "../util/math.h"
 
 #include "raylib.h"
 #include "raymath.h"
@@ -212,6 +212,11 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         case PartSwapBehavior::OCCUPY_SAME:
             part_map[oldz][oldy][oldx] = 0;
             part_map[z][y][x] = old_pmap_val;
+
+            color_data[FLAT_IDX(oldx, oldy, oldz)] = 0x0;
+            color_data[FLAT_IDX(x, y, z)] = GetElements()[parts[idx].type].Color.as_ABGR();
+            _block_insert(x, y, z);
+            _block_remove(oldx, oldy, oldz);
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -236,6 +241,16 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
  */
 void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
+    if (parts[id1].type == PT_NONE) {
+        _block_remove(x2, y2, z2);
+        _block_insert(x1, y1, z1);
+    }
+
+    std::swap(
+        color_data[FLAT_IDX(x1, y1, z1)],
+        color_data[FLAT_IDX(x2, y2, z2)]
+    );
+
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);
     std::swap(parts[id1].z, parts[id2].z);
@@ -244,7 +259,7 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     std::swap(parts[id1].ry, parts[id2].ry);
     std::swap(parts[id1].rz, parts[id2].rz);
 
-    auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY]; 
+    auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY];
     auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
 
     if (!part1_is_e && !part2_is_e)

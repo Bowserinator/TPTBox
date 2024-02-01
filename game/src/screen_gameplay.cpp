@@ -4,9 +4,9 @@
 #include "rlgl.h"
 
 #include "src/render/camera/camera.h"
-#include "src/render/Particles.h"
 #include "src/render/Renderer.h"
 #include "src/simulation/Simulation.h"
+#include "src/simulation/ElementClasses.h"
 
 #include "src/interface/gui/HUD.h"
 #include "src/interface/brush/Brush.h"
@@ -14,7 +14,6 @@
 #include "src/interface/FrameTimeAvg.h"
 
 #include <algorithm>
-
 
 #if defined(PLATFORM_DESKTOP)
 #define GLSL_VERSION 330
@@ -35,69 +34,8 @@ static double fps = 1.0f;
 
 static int currentElementId = 1;
 
-static float test = 0.0f; // TODO
-
-
-#include "util/compute_shader.h"
 
 void ScreenGameplay::init() {
-//     char program[] =  R"###(
-// #version 430 compatibility
-
-// layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-// // layout(std430, binding=4) buffer readonly InBuff {
-// //     float in_data[];
-// // };
-// // layout(std430, binding=5) buffer writeonly OutBuff {
-// //     float out_data[];
-// // };
-// layout(r32f, binding = 0) uniform image3D in_data;
-// layout(r32f, binding = 1) uniform image3D out_data;
-
-// void main() {
-//     ivec3 pos = ivec3(gl_GlobalInvocationID.xyz);
-//     // const uint i = pos.x
-//     //     + gl_NumWorkGroups.x * pos.y
-//     //     + (gl_NumWorkGroups.x * gl_NumWorkGroups.y) * pos.z;
-//     // const uint maxi = gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_NumWorkGroups.z;
-
-//     // float left = (i > 0) ? in_data[i - 1] : 0.0f;
-//     // float right = i < maxi - 1 ? in_data[i + 1] : 0.0f;
-//     // out_data[i] = (left + in_data[i] + right) / 3.0f;
-// }
-// )###";
-//     const int R = 200;
-//     ComputeShader3D<float> s(program, ComputeShaderInput {
-//         .sizex = R,
-//         .sizey = R,
-//         .sizez = R,
-//         .flat_size = R * R* R,
-//         .bind_idx1 = 4,
-//         .bind_idx2 = 5
-//     });
-//     float * x = new float[R * R* R];
-//     for (int i = 0; i < R * R* R; i++)
-//         x[i] = i % 2;
-
-//     float * r = new float[R * R* R];
-
-//     int times = 10;
-//     auto t = GetTime();
-//     for (int j = 0; j < times; j++) {
-//         // s.set_buff1(x);      // 0.67 us
-//         s.use_and_dispatch(); // Time to dispatch and wait: 12 us
-//         s.wait();
-
-//         s.write_buff2_to(r); // 170 ms
-//     }
-
-//     std::cout << (GetTime() - t) / times << " TIME\n";
-
-//     // for (auto &y : r)
-//     //     std::cout << y << " ";
-//     // std::cout << "\n";
-//     delete[] x;
-//     delete[] r;
 
     renderer.init();    
 
@@ -115,9 +53,6 @@ void ScreenGameplay::init() {
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
-
-    Image checked = GenImageChecked(2, 2, 1, 1, RED, GREEN);
-    UnloadImage(checked);
 
     // Create staircase
     // for (int x = 0; x < XRES; x++) 
@@ -144,7 +79,7 @@ void ScreenGameplay::init() {
     for (int z = 1; z < ZRES - 1; z++)
     for (int y = 1; y < 2; y++) {
         // sim.create_part(x, y, z, PT_DUST);
-        sim.create_part(x, y + 1, z, PT_WATR);
+        sim.create_part(x, y, z, PT_WATR);
     }
 
     // for (int x = 1; x < XRES - 1; x++) 
@@ -210,8 +145,8 @@ void ScreenGameplay::draw() {
     auto t = GetTime();
     
     // DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
-    renderer.draw(&sim, &render_camera);
     brush_renderer.draw();
+    renderer.draw(&sim, &render_camera);
     drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
 

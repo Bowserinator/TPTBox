@@ -7,8 +7,9 @@
 #include "Air.h"
 
 #include "../util/rand.h"
-#include "../util/util.h"
+#include "../util/math.h"
 #include "../util/vector_op.h"
+#include "../render/types/octree.h"
 #include <vector>
 
 enum class GravityMode {
@@ -34,6 +35,8 @@ public:
     
     uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
+    uint32_t * color_data;
+    std::array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
@@ -44,6 +47,7 @@ public:
 
 
     Simulation();
+    ~Simulation();
 
     void cycle_gravity_mode();
     void set_paused(const bool paused) { this->paused = paused; };
@@ -71,7 +75,6 @@ public:
 
     PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
 
-
     static const char * getGravityModeName(const GravityMode mode) {
         switch (mode) {
             case GravityMode::VERTICAL:
@@ -86,6 +89,10 @@ public:
 private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
+
+    BitOctreeBlock& _octree_at(const coord_t x, const coord_t y, const coord_t z);
+    void _block_insert(const coord_t x, const coord_t y, const coord_t z);
+    void _block_remove(const coord_t x, const coord_t y, const coord_t z);
 };
 
 

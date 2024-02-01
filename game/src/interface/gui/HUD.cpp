@@ -6,7 +6,7 @@
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ElementClasses.h"
 #include "../../util/str_format.h"
-#include "../../util/util.h"
+#include "../../util/math.h"
 #include "../FontCache.h"
 #include "../brush/Brush.h"
 
@@ -144,8 +144,8 @@ void HUD::draw(const HUDData &data) {
 
     // Additional lines if currently hovering an element
     if (idx) {
-        const char * dcolor = sim->parts[idx].dcolor.as_int() ?
-            TextFormat("#%08X", sim->parts[idx].dcolor.as_int()) : "0";
+        const char * dcolor = sim->parts[idx].dcolor.as_RGBA() ?
+            TextFormat("#%08X", sim->parts[idx].dcolor.as_RGBA()) : "0";
         drawTextRAlign(TextFormat("Temp: %.2f C  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
                 sim->parts[idx].temp,
                 sim->parts[idx].life,
