@@ -9,7 +9,6 @@ layout(std430, binding = 1) readonly restrict buffer colorLod {
     uint colors_lod[];
 };
 
-
 uniform vec2 resolution;  // Viewport res
 uniform mat4 mvp;         // Transform matrix
 uniform vec3 cameraPos;   // Camera position in world space
@@ -112,7 +111,7 @@ uint get_byte(uint pos) {
 }
 
 bool sampleVoxels(ivec3 pos, int level) {
-    if (level >= NUM_LEVELS) return true;
+    if (level > NUM_LEVELS) return true;
     if (level == 0)
         return (colors[uint(pos.x + simRes.x * pos.y + (simRes.x * simRes.y) * pos.z)]) != 0;
 
@@ -123,19 +122,28 @@ bool sampleVoxels(ivec3 pos, int level) {
     // ie 4 = ceil(XRES / (1 << NUM_LEVELS))
     int chunk_offset = (pos2.x >> 6) + (pos2.y >> NUM_LEVELS) * 4 + (pos2.z >> NUM_LEVELS) * 4 * 4;
 
-    if (level == 5)
+    if (level == 6)
         offset = 0;
-    else if (level == 4)
+    else if (level == 5)
         offset = 1;
-    else if (level == 3)
+    else if (level == 4)
         offset = 1 + 8;
-    else if (level == 2)
+    else if (level == 3)
         offset = 1 + 8 + 64;
-    else if (level == 1)
+    else if (level == 2) {
         offset = 1 + 8 + 64 + 64 * 8;
+    }
+    else if (level == 1) {
+       //  offset = 4681;
 
-    uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> (3 * level + 3);
-    return get_byte(chunk_offset * 37449 + offset + morton) != 0; //  & (1 << bit_idx)
+        uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> 3;
+        uint bit_idx = morton & 7;
+        morton >>= 3;
+        return (get_byte(chunk_offset * 4681 + 1 + 8 + 64 + 64 * 8 + morton) & (1 << bit_idx)) != 0;
+    }
+
+    uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> (3 * level);
+    return get_byte(chunk_offset * 4681 + offset + morton) != 0;
 }
 
 // result.xyz = block pos

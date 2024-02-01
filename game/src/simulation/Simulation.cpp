@@ -111,8 +111,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vz = 0.0f;
 
     part_map[z][y][x] = PMAP(type, pfree);
-    color_data[FLAT_IDX(x, y, z)] = GetElements()[type].Color.as_ABGR();
-    _block_insert(x, y, z);
+    _set_color_data_at(x, y, z, GetElements()[type].Color.as_ABGR());
 
     maxId = std::max(maxId, pfree + 1);
     pfree = next_pfree;
@@ -138,8 +137,7 @@ void Simulation::kill_part(const part_id i) {
     if (i == maxId && i > 0)
         maxId--;
 
-    color_data[FLAT_IDX(x, y, z)] = 0x0;
-    _block_remove(x, y, z);
+    _set_color_data_at(x, y, z, 0x0);
     part.id = -pfree;
     pfree = i;
 }
@@ -266,8 +264,7 @@ void Simulation::recalc_free_particles() {
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
-            color_data[FLAT_IDX(x, y, z)] = GetElements()[part.type].Color.as_ABGR();
-            _block_insert(x, y, z);
+            _set_color_data_at(x, y, z, GetElements()[part.type].Color.as_ABGR());
         }
 
         update_part(i, false);
@@ -278,23 +275,18 @@ void Simulation::recalc_free_particles() {
 
 // Octree updates
 // ------------------------
-BitOctreeBlock& Simulation::_octree_at(const coord_t x, const coord_t y, const coord_t z) {
-    return octree_blocks[
+void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, uint32_t new_color) {
+    auto &tree = octree_blocks[
         (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
         (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
-}
 
-void Simulation::_block_insert(const coord_t x, const coord_t y, const coord_t z) {
-    color_data_modified[FLAT_IDX(x, y, z) / COLOR_DATA_CHUNK_SIZE] = true;
-    auto &tree = _octree_at(x, y, z);
+    unsigned int idx = FLAT_IDX(x, y, z);
+    color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = true;
+    color_data[idx] = new_color;
     tree.modified = true;
-    // Dim is always a power of 2 so the & is just % OCTREE_BLOCK_DIM
-    tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
-}
 
-void Simulation::_block_remove(const coord_t x, const coord_t y, const coord_t z) {
-    color_data_modified[FLAT_IDX(x, y, z) / COLOR_DATA_CHUNK_SIZE] = true;
-    auto &tree = _octree_at(x, y, z);
-    tree.modified = true;
-    tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+    if (new_color)
+        tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+    else
+        tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
 }

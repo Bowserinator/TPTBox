@@ -92,10 +92,7 @@ public:
 private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
-
-    BitOctreeBlock& _octree_at(const coord_t x, const coord_t y, const coord_t z);
-    void _block_insert(const coord_t x, const coord_t y, const coord_t z);
-    void _block_remove(const coord_t x, const coord_t y, const coord_t z);
+    void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, uint32_t new_color);
 };
 
 

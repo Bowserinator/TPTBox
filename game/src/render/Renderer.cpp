@@ -109,8 +109,12 @@ void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
 
     for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
         if (sim->octree_blocks[i].modified) {
+            // We do not upload the whole octree here, we upload all layers except
+            // the last layer, since the last layer only stores info about the 1x1x1 voxel
+            // data which we already have in the form of color_data
             rlUpdateShaderBuffer(ssbo_lod, sim->octree_blocks[i].data,
-                sizeof(uint8_t) * OctreeBlockMetadata::size, i * sizeof(uint8_t) * OctreeBlockMetadata::size);
+                sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1],
+                i * sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]);
             sim->octree_blocks[i].modified = false;
         }
        //  memcpy(test + i * OctreeBlockMetadata::size, sim->octree_blocks[i].data, 37499);
