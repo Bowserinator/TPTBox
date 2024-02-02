@@ -1,12 +1,27 @@
 #version 430
 
-#define LOD_LEVELS 6 // Should match value in Renderer and frag shader TODO uniform for this
-
 layout(std430, binding = 0) readonly restrict buffer Colors {
     uint colors[];
 };
 layout(std430, binding = 1) readonly restrict buffer colorLod {
-    uint colors_lod[];
+    uint colorsLod[];
+};
+
+layout(binding = 2) readonly restrict uniform Constants {
+    vec3 SIMRES;          // Vec3 of XRES, YRES, ZRES
+    int MAX_RAY_STEPS;
+    int NUM_LEVELS;       // Each octree goes up to blocks of side length 2^NUM_LENGTH
+    float FOV_DIV2;       // (FOV in radians) / 2
+    bool DEBUG_CASTS;     // Render number of steps each ray took
+    bool DEBUG_NORMALS;   // Render colors for normals of faces
+    uint layerOffsets[6]; // Pre-computed layer offsets
+    int MOD_MASK;         // x % 2^(NUM_LEVELS) = x & MOD_MASK, MOD_MASK = (1 << NUM_LEVELS) - 1
+    int X_BLOCKS;         // Octree block dims for octree
+    int Y_BLOCKS;
+
+    uint MORTON_X_SHIFTS[256];
+    uint MORTON_Y_SHIFTS[256];
+    uint MORTON_Z_SHIFTS[256];
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -16,24 +31,14 @@ uniform vec3 cameraDir;   // Camera look dir (normalized)
 
 uniform vec3 uv1;         // "Up" direction on screen vector mapped to world space
 uniform vec3 uv2;         // "Right" direction on screen vector mapped to world space
-uniform vec3 simRes;      // Vec3 of XRES, YRES, ZRES
-
 out vec4 FragColor;
 
-const float DEG2RAD = 3.141592 / 180.0;
-const float FOV = 45; // FOV in degrees
-
+// Other constants
 const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray steps begins to fade to black
 const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered "stopped"
 const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
-
-const bool DEBUG_CASTS = false;
-const bool DEBUG_NORMALS = false;
-
 const vec3 FACE_COLORS = vec3(0.7, 1.0, 0.85);
-const int MAX_RAY_STEPS = 256 * 2;
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
-const int NUM_LEVELS = 6;
 
 const int MAX_REFRACT_COUNT = 4;
 const int MAX_REFLECT_COUNT = 10;
@@ -56,14 +61,14 @@ float min3(vec3 v) { return min(min(v.x,v.y), v.z); }
 float max3(vec3 v) { return max(max(v.x,v.y), v.z); }
 
 bool isInSim(vec3 c) {
-    return clamp(c, vec3(0.0), simRes - vec3(SIMBOX_CAST_PAD)) == c;
+    return clamp(c, vec3(0.0), SIMRES - vec3(SIMBOX_CAST_PAD)) == c;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
 vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     vec3 v = vec3(1.0) / rayDir;
     vec3 boundMin = (vec3(SIMBOX_CAST_PAD) - rayPos) * v;
-    vec3 boundMax = (simRes - vec3(SIMBOX_CAST_PAD) - rayPos) * v;
+    vec3 boundMax = (SIMRES - vec3(SIMBOX_CAST_PAD) - rayPos) * v;
     float a = max3(min(boundMin, boundMax));
     float b = min3(max(boundMin, boundMax));
 
@@ -74,76 +79,54 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     return collisionPoint;
 }
 
-vec4 getColorAt(ivec3 pos) {
-    uint tmp = colors[uint(pos.x + simRes.x * pos.y + (simRes.x * simRes.y) * pos.z)];
-    vec4 color = vec4(tmp & 0xFF, (tmp >> 8) & 0xFF, (tmp >> 16) & 0xFF, tmp >> 24) / 255.0;
-    return color;
+// ARGB int32 -> vec4 of RGBA
+vec4 toVec4Color(uint tmp) {
+    return vec4(tmp & 0xFF, (tmp >> 8) & 0xFF, (tmp >> 16) & 0xFF, tmp >> 24) / 255.0;
 }
 
-// Note: here level is different from colors_lod
-// level 0 is the 1x1x1 voxel layer, level 6 is the 64x64x64 cube layer
-uint morton_decode(int x, int y, int z) {
-    // 3,3,3 = 63, 1,2,3 = 29
-    // TODO: faster
-    int j = 0;
-    uint out2 = 0;
-    for (int i = 0; i < 8; i++) {
-        if ((z & 1) != 0) out2 |= (1 << j);
-        j++;
-        if ((y & 1) != 0) out2 |= (1 << j);
-        j++;
-        if ((x & 1) != 0) out2 |= (1 << j);
-        j++;
-
-        x >>= 1;
-        y >>= 1;
-        z >>= 1;
-    }
-    return out2;
+// Convert to morton code. WARNING: precondition x, y, z < 256
+uint mortonDecode(int x, int y, int z) {
+    return MORTON_X_SHIFTS[x] | MORTON_Y_SHIFTS[y] | MORTON_Z_SHIFTS[z];
 }
 
-uint get_byte(uint pos) {
-    uint data = colors_lod[pos / 4];
+// Since colorsLod was originally a uint8 array but is now uint32
+// we need to do some bit math to get the byte we want
+// pos = position in original colorsLod array on CPU
+uint getByteColorsLod(uint pos) {
+    uint data = colorsLod[pos >> 2]; // 4 bytes per uint32
     uint remainder = pos & 3; // % 4
-    data >>= 8 * (remainder);
+    data >>= (remainder << 3);
     data = data & 0xFF;
     return data;
 }
 
-bool sampleVoxels(ivec3 pos, int level) {
-    if (level > NUM_LEVELS) return true;
-    if (level == 0)
-        return (colors[uint(pos.x + simRes.x * pos.y + (simRes.x * simRes.y) * pos.z)]) != 0;
+// If level = 0 returns the color as ARGB uint
+// Else returns non-zero if chunk occupied, else 0
+uint sampleVoxels(ivec3 pos, int level) {
+    if (level > NUM_LEVELS)
+        return 1;
+    else if (level == 0)
+        return colors[uint(pos.x + SIMRES.x * pos.y + (SIMRES.x * SIMRES.y) * pos.z)];
 
-    int offset = 0;
+    ivec3 level0Pos = pos << level;
+    uint chunkOffset = (level0Pos.x >> NUM_LEVELS) + (level0Pos.y >> NUM_LEVELS) * X_BLOCKS
+        + (level0Pos.z >> NUM_LEVELS) * X_BLOCKS * Y_BLOCKS;
 
-    ivec3 pos2 = pos << (level);
-    // TODO: compile these constants into shaders
-    // ie 4 = ceil(XRES / (1 << NUM_LEVELS))
-    int chunk_offset = (pos2.x >> 6) + (pos2.y >> NUM_LEVELS) * 4 + (pos2.z >> NUM_LEVELS) * 4 * 4;
+    if (level == 1) {
+        // To check if last level (level 1) is occupied (level with the 2x2x2 chunks,
+        // which is one above level 0 (1x1x1 - aka particle resolution)
+        // we check the 2nd last level and then the corresponding bit for our level
 
-    if (level == 6)
-        offset = 0;
-    else if (level == 5)
-        offset = 1;
-    else if (level == 4)
-        offset = 1 + 8;
-    else if (level == 3)
-        offset = 1 + 8 + 64;
-    else if (level == 2) {
-        offset = 1 + 8 + 64 + 64 * 8;
-    }
-    else if (level == 1) {
-       //  offset = 4681;
-
-        uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> 3;
-        uint bit_idx = morton & 7;
+        uint morton = mortonDecode(level0Pos.x & MOD_MASK, level0Pos.y & MOD_MASK, level0Pos.z & MOD_MASK) >> 3;
+        uint bitIdx = morton & 7;
         morton >>= 3;
-        return (get_byte(chunk_offset * 4681 + 1 + 8 + 64 + 64 * 8 + morton) & (1 << bit_idx)) != 0;
+        return getByteColorsLod(chunkOffset * layerOffsets[NUM_LEVELS - 1] + layerOffsets[NUM_LEVELS - 2] + morton)
+            & (1 << bitIdx);
     }
 
-    uint morton = morton_decode(pos2.x & 63, pos2.y & 63, pos2.z & 63) >> (3 * level);
-    return get_byte(chunk_offset * 4681 + offset + morton) != 0;
+    uint offset = layerOffsets[6 - level]; // Since our level numbering here is reversed from CPU octree... yeah...
+    uint morton = mortonDecode(level0Pos.x & MOD_MASK, level0Pos.y & MOD_MASK, level0Pos.z & MOD_MASK) >> (3 * level);
+    return getByteColorsLod(chunkOffset * layerOffsets[NUM_LEVELS - 1] + offset + morton);
 }
 
 // result.xyz = block pos
@@ -156,10 +139,12 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
     int level = NUM_LEVELS - 1;
     ivec3 voxelPos = ivec3(pos) >> level;
-    int prevIdx = -1;
     int initialSteps = data.steps;
+
+    int prevIdx = -1;
     vec4 prevVoxelColor = vec4(0.0);
     float prevIndexOfRefraction = data.prevIndexOfRefraction;
+    uint tmpIntColor = 0;
 
     for (int iter = initialSteps; iter < MAX_RAY_STEPS; iter++, data.steps = iter) {
         if (!isInSim(voxelPos << level)) {
@@ -168,7 +153,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
         }
 
         // Go down a level
-        if (sampleVoxels(voxelPos, level)) {
+        if ((tmpIntColor = sampleVoxels(voxelPos, level)) != 0) {
             if (level == 0) { // Base case, traversing individual voxels
                 vec3 tDelta = (vec3(voxelPos + ivec3(not(dirSignBits))) - pos) * idir;
                 float minDis = min3(tDelta);
@@ -176,7 +161,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
-                vec4 voxelColor = getColorAt(voxelPos);
+                vec4 voxelColor = toVec4Color(tmpIntColor); // getColorAt(voxelPos);
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
                     data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv);
@@ -237,7 +222,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
         }
 
         // Go up a level
-        if (!sampleVoxels(voxelPos >> 1, level + 1)) {
+        if (sampleVoxels(voxelPos >> 1, level + 1) == 0) {
             level++;
             voxelPos >>= 1;
         }
@@ -257,7 +242,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 void main() {
     // Normalized to 0, 0 = center, scale -1 to 1
     vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
-	vec3 rayDir = cameraDir + tan(FOV / 2 * DEG2RAD) * (screenPos.x * uv1 + screenPos.y * uv2);
+	vec3 rayDir = cameraDir + tan(FOV_DIV2) * (screenPos.x * uv1 + screenPos.y * uv2);
     vec3 rayPos = cameraPos;
 
     // If not in sim bounding box project to nearest face on ray bounding box

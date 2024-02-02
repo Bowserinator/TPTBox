@@ -26,7 +26,7 @@ static RenderCamera render_camera;
 static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
-static Renderer renderer;
+static Renderer renderer(&sim, &render_camera);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -36,20 +36,17 @@ static int currentElementId = 1;
 
 
 void ScreenGameplay::init() {
-
-    renderer.init();    
-
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position
     render_camera.camera.target = Vector3{XRES / 2, YRES / 2, ZRES / 2};      // Camera looking at point
     render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
     render_camera.camera.fovy = 45.0f;
+    render_camera.setBounds(Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES }, Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
 
     hud.init();
     hud.setState(HUDState::DEBUG_MODE);
 
-
-    render_camera.setBounds(Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES }, Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
+    renderer.init();    
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
@@ -138,15 +135,11 @@ void ScreenGameplay::draw() {
     BeginMode3D(render_camera.camera);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
-        
-    //rlEnableWireMode();
-
-    unsigned char red = 255;
     auto t = GetTime();
     
     // DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
     brush_renderer.draw();
-    renderer.draw(&sim, &render_camera);
+    renderer.draw();
     drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
 
@@ -174,13 +167,7 @@ void ScreenGameplay::draw() {
     // test += 0.01f;
     // DrawCubeWires({ out.x, out.y, out.z }, 1, 1, 1, WHITE);
 
-
-
-    // rlDisableWireMode();
-
     EndMode3D();
-
-
 
     hud.draw(HUDData {
         .fps = (float)GetFPS(), // fps
@@ -201,5 +188,5 @@ void ScreenGameplay::draw() {
 }
 
 void ScreenGameplay::unload() {
-    // unloadMesh(&mesh);
+    
 };

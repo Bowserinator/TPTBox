@@ -24,6 +24,8 @@ constexpr uint16_t PT_NUM = 1 << (32 - PMAP_ID_BITS); // Max number of elements 
 
 constexpr uint16_t ELEMENT_COUNT = __GLOBAL_ELEMENT_COUNT;
 
+// Should be <= 256, larger values may break it especially for morton codes
+// in util and the part fragment shader
 constexpr unsigned int XRES = 200;
 constexpr unsigned int YRES = 200;
 constexpr unsigned int ZRES = 200;

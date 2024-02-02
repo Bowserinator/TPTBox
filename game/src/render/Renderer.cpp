@@ -3,12 +3,21 @@
 #include "../simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
+
 #include "../util/math.h"
 #include "../util/graphics.h"
+#include "../util/morton.h"
 
 #include "rlgl.h"
 #include "stdint.h"
 #include <cstring>
+
+Renderer::~Renderer() {
+    UnloadShader(part_shader);
+    glDeleteBuffers(1, &ssbo_colors);
+    glDeleteBuffers(1, &ssbo_lod);
+    glDeleteBuffers(1, &ubo_constants);
+}
 
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
@@ -78,23 +87,51 @@ void Renderer::init() {
     //     }
     // }
 
- 
+    
+    // Uniform values that may change per frame
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
     part_shader_camera_pos_loc = GetShaderLocation(part_shader, "cameraPos");
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
-    part_shader_sim_res_loc = GetShaderLocation(part_shader, "simRes");
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
 
+    // SSBOs for color & octree LOD data
     ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
     ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
         NULL, RL_DYNAMIC_COPY);
+
+    // Uniform constants
+    glGenBuffers(1, &ubo_constants);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_constants);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(FragShaderConstants), NULL, GL_STATIC_DRAW);
+
+    FragShaderConstants constants {
+        .SIM_RES{ (float)XRES, (float)YRES, (float)ZRES },
+        .MAX_RAY_STEPS = 256 * 2,
+        .NUM_LEVELS = OCTREE_BLOCK_DEPTH,
+        .FOV_DIV2 = cam->camera.fovy * DEG2RAD / 2.0f,
+        .DEBUG_CASTS = false,
+        .DEBUG_NORMALS = false,
+        .MOD_MASK = (1 << OCTREE_BLOCK_DEPTH) - 1,
+        .X_BLOCKS = X_BLOCKS,
+        .Y_BLOCKS = Y_BLOCKS
+    };
+
+#ifdef DEBUG
+    if (cam->camera.fovy == 0.0)
+        throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
+#endif
+
+    std::copy(&OctreeBlockMetadata::layer_offsets[0], &OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH], constants.LAYER_OFFSETS);
+    std::copy(&Morton::X_SHIFTS[0], &Morton::X_SHIFTS[256], constants.MORTON_X_SHIFTS);
+    std::copy(&Morton::Y_SHIFTS[0], &Morton::Y_SHIFTS[256], constants.MORTON_Y_SHIFTS);
+    std::copy(&Morton::Z_SHIFTS[0], &Morton::Z_SHIFTS[256], constants.MORTON_Z_SHIFTS);
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FragShaderConstants), &constants); 
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-
-void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
-    // Update SSBO values here
-
+void Renderer::update_colors_and_lod() {
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->color_data_modified[i]) {
             rlUpdateShaderBuffer(ssbo_colors,
@@ -155,12 +192,13 @@ void Renderer::update_texture(Simulation * sim, RenderCamera * cam) {
 
 
 
-void Renderer::draw(Simulation * sim, RenderCamera * cam) {
-    update_texture(sim, cam);
+void Renderer::draw() {
+    update_colors_and_lod();
 
-    // Bind SSBOs to render shader
     rlBindShaderBuffer(ssbo_colors, 0);
     rlBindShaderBuffer(ssbo_lod, 1);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_constants); 
+
     BeginShaderMode(part_shader);
 
     // Inverse camera rotation matrix
@@ -178,7 +216,6 @@ void Renderer::draw(Simulation * sim, RenderCamera * cam) {
 
     util::set_shader_value(part_shader, part_shader_res_loc, resolution);
     util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
-    util::set_shader_value(part_shader, part_shader_sim_res_loc, Vector3{ XRES, YRES, ZRES });
     util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
     util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
     util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);

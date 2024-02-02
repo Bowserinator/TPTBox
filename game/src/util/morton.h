@@ -25,7 +25,7 @@ namespace util {
      * @param z Z coordinate
      * @return uint32_t Morton code
      */
-    uint32_t morton_decode8(uint8_t x, uint8_t y, uint8_t z) {
+    inline uint32_t morton_decode8(uint8_t x, uint8_t y, uint8_t z) {
         return Morton::X_SHIFTS[x] | Morton::Y_SHIFTS[y] | Morton::Z_SHIFTS[z];
     }
 }
