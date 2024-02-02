@@ -22,72 +22,6 @@ Renderer::~Renderer() {
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
 
-    // for (int z = 1; z < ZRES - 1; z++) {
-    //     for (int y = 1; y < YRES - 1; y++) {
-    //         for (int x = 1; x < XRES - 1 ; x++) {
-    //             int i = x + y * XRES + z * YRES * XRES;
-
-    //             if (y > YRES - 3 || z < 2)
-    //                 color_data[i] = 0x3FFFFFFF;
-    //             if (x < 4 && x > 2)
-    //                 color_data[i] = 0x3F0000FF;
-    //             if (y < 3)
-    //                 color_data[i] = 0x3F00FF00;
-    //             if (x > XRES - 3)
-    //                 color_data[i] = 0xFF00FF00;
-
-    //             if (x == XRES / 2 && y == YRES / 2 && z == ZRES / 2)
-    //                 color_data[i] = 0xFF0000FF;
-    //             if (x == XRES / 2 - 1 && y == YRES / 2 && z == ZRES / 2)
-    //                 color_data[i] = 0xFFFF00FF;
-
-    //             float s = 1/10.0;
-    //             float x2 = (x - XRES / 2.0) * s;
-    //             float y2 = (y - YRES / 2.0) * s;
-    //             float z2 = (z - ZRES / 2.0) * s;
-    //             float r = 0.5 * (x2*x2*x2*x2 + y2*y2*y2*y2 + z2*z2*z2*z2) - 8 * (x2*x2+y2*y2+z2*z2) + 60;
-    //             // r = std::pow(4 - std::sqrt(x2*x2 + z2*z2), 2) + y2*y2 - 4;
-
-    //             if (fabs(x - (float)XRES / 2) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-    //                 color_data[i] = 0xDDFF0000; // ABGR
-    //             }
-
-    //             // if (r < 0) {
-    //             //     color_data[i] = 0xFF000000; // ABGR
-    //             //     unsigned char r2 = x % 256;
-    //             //     unsigned char g = y % 256;
-    //             //     unsigned char b = z % 256;
-    //             //     color_data[i] += r2 + 256 * g + 256 * 256 * b;
-    //             // }
-    //         //     // if (std::hypot(x - XRES * 0.25, y - YRES / 2.0, z - ZRES / 2.0) < 40) {
-    //             // if (fabs(x - (float)XRES / 4) < 2 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-    //             //     color_data[i] = 0x22FF0000; // ABGR
-    //             // }
-    //             // if (fabs(x - (float)XRES / 4 - 6) < 2 && fabs(y - (float)YRES / 2) < 10 && fabs(z - ZRES / 2.0 ) < 10) {
-    //             //     color_data[i] = 0x22FF0000; // ABGR
-    //             // }
-    //             // if (fabs(x - 3 * (float)XRES / 4) < 20 && fabs(y - (float)YRES / 2) < 20 && fabs(z - ZRES / 2.0) < 20) {
-    //             //     color_data[i] = 0xFFFF0000; // ABGR
-    //             // }
-    //             // if (fabs(x - 3 * (float)XRES / 4) < 19 && fabs(y - (float)YRES / 2) < 19 && fabs(z - ZRES / 2.0) < 19) {
-    //             //     color_data[i] = 0xFFFFFF00; // ABGR
-    //             // }
-    //             // if (fabs(x - 3 * (float)XRES / 4) < 18 && fabs(y - (float)YRES / 2) < 18 && fabs(z - ZRES / 2.0) < 18) {
-    //             //     color_data[i] = 0xFFFFFFFF; // ABGR
-    //             // }
-
-
-    //             // if ((x/2 + y/2 + z/2) % 2 == 0)
-    //             //     continue;
-    //             // if (y % 4 != 0)
-    //             //     continue;
-    //             // if (util::hypot(x - XRES / 2, y - YRES / 2, z - ZRES / 2) > 60.0f)
-    //             //     continue;
-    //         }
-    //     }
-    // }
-
-    
     // Uniform values that may change per frame
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
     part_shader_camera_pos_loc = GetShaderLocation(part_shader, "cameraPos");
@@ -142,8 +76,6 @@ void Renderer::update_colors_and_lod() {
         }
     }
 
-    // uint8_t * test = new uint8_t[OctreeBlockMetadata::size * 64];
-
     for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
         if (sim->octree_blocks[i].modified) {
             // We do not upload the whole octree here, we upload all layers except
@@ -154,46 +86,40 @@ void Renderer::update_colors_and_lod() {
                 i * sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]);
             sim->octree_blocks[i].modified = false;
         }
-       //  memcpy(test + i * OctreeBlockMetadata::size, sim->octree_blocks[i].data, 37499);
     }
-
-
-    
-    // for (int z = 0; z < 16; z++) {
-    // for (int y = 0; y < 16; y++) {
-    // for (int x = 0; x < 16; x++) {
-
-    //         int level = 4;
-    //         int x2 = x << (level); // say level = 6
-    //         int y2 = y << (level);
-    //         int z2 = z << (level);
-    //         // TODO: compile these constants into shaders
-    //         int chunk_offset = (x2 / 64) + (y2 / 64) * 4 + (z2 / 64) * 4 * 4;
-
-    //         // std::cout << chunk_offset << " HUNK OFFSET\n";
-
-    //         unsigned int morton = morton_decode2(x2 % 64, y2 % 64, z2 % 64) >> (3 * (level ));
-    //         unsigned int bit_idx = morton & 7;
-    //         unsigned int offset = 1;
-    //         morton >>= 3;
-
-    //         if (test[chunk_offset * OctreeBlockMetadata::size + offset + morton] & (1 << bit_idx) != 0) {
-    //             DrawCubeWires(Vector3{x2 + 8, y2 + 8, z2 + 8}, 16, 16, 16, Color{255, 0, 0, 250});
-    //         }
-
-    //         // if (test[chunk_offset * OctreeBlockMetadata::size] != 0) {
-    //         //     DrawCubeWires(Vector3{x2 + 32, y2 + 32, z2 + 32}, 64, 64, 64, Color{255, 0, 0, 250});
-    //         // }
-    //     }
-    // }
-    // }
-    // delete[] test;
 }
 
+void Renderer::draw_octree_debug() {
+    for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
+        if (!sim->octree_blocks[i].data[0]) continue;
+        int blockX = i % X_BLOCKS;
+        int blockY = (i / X_BLOCKS) % Y_BLOCKS;
+        int blockZ = (i / X_BLOCKS / Y_BLOCKS);
 
+        for (int layer = OCTREE_BLOCK_DEPTH - 3; layer <= OCTREE_BLOCK_DEPTH; layer++) {
+        for (int dz = 0; dz < (OCTREE_BLOCK_DIM >> layer); dz++) {
+        for (int dy = 0; dy < (OCTREE_BLOCK_DIM >> layer); dy++) {
+        for (int dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
+            unsigned int morton = util::morton_decode8(dx, dy, dz);
+
+            if (sim->octree_blocks[i].data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {
+                float trueX = static_cast<float>((dx << layer) + blockX * OCTREE_BLOCK_DIM);
+                float trueY = static_cast<float>((dy << layer) + blockY * OCTREE_BLOCK_DIM);
+                float trueZ = static_cast<float>((dz << layer) + blockZ * OCTREE_BLOCK_DIM);
+                int size = 1 << layer;
+
+                DrawCubeWires(
+                    Vector3{ trueX + size / 2, trueY + size / 2, trueZ + size / 2 },
+                    size, size, size, Color{255, 255, 255, 50}
+                );
+            }
+        }}}}
+    }
+}
 
 void Renderer::draw() {
     update_colors_and_lod();
+    // draw_octree_debug();
 
     rlBindShaderBuffer(ssbo_colors, 0);
     rlBindShaderBuffer(ssbo_lod, 1);

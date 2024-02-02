@@ -15,6 +15,7 @@ public:
     void init(); // Call after openGL context has been initialized
     void update_colors_and_lod();
     void draw();
+    void draw_octree_debug();
 private:
     Simulation * sim;
     RenderCamera * cam;
