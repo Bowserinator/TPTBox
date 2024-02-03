@@ -4,7 +4,7 @@
 #include <string>
 #include "stdint.h"
 
-#include "../util/color.h"
+#include "../util/types/color.h"
 #include "ElementDefs.h"
 
 class Element {

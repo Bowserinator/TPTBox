@@ -24,7 +24,9 @@ Simulation::Simulation():
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
-    memset(&color_data[0], 0x0, sizeof(uint32_t) * color_data.size());
+    color_data.fill(0);
+    // std::fill(&ao_blocks[0][0][0], &ao_blocks[AO_Z_BLOCKS][AO_Y_BLOCKS][AO_X_BLOCKS], 0);
+    ao_blocks.fill(0);
     color_data_modified = std::vector<bool>(COLOR_DATA_CHUNK_COUNT, false);
 
     pfree = 1;
@@ -150,8 +152,15 @@ void Simulation::update_zslice(const coord_t pz) {
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     for (coord_t py = min_y_per_zslice[pz - 1]; py < max_y_per_zslice[pz - 1]; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
-        if (pmap[pz][py][px])
+        if (pmap[pz][py][px]) {
+            // TODO
+            const unsigned int aoX = px / AO_BLOCK_SIZE;
+            const unsigned int aoY = py / AO_BLOCK_SIZE;
+            const unsigned int aoZ = pz / AO_BLOCK_SIZE;
+            ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]++;
+
             update_part(ID(pmap[pz][py][px]));
+        }
         if (photons[pz][py][px])
             update_part(ID(photons[pz][py][px]));
     }
@@ -216,6 +225,8 @@ void Simulation::update() {
     if (paused) return;
 
     // air.update(); // TODO
+
+    ao_blocks.fill(0); // TODO
 
     #pragma omp parallel num_threads(sim_thread_count)
     { 
@@ -285,8 +296,16 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
     color_data[idx] = new_color;
     tree.modified = true;
 
-    if (new_color)
+    // TODO
+    // const unsigned int aoX = x / AO_BLOCK_SIZE;
+    // const unsigned int aoY = y / AO_BLOCK_SIZE;
+    // const unsigned int aoZ = z / AO_BLOCK_SIZE;
+
+    if (new_color) {
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
-    else
+        //ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]++;
+    } else {
         tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+        //ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]--;
+    }
 }

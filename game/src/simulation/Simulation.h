@@ -3,10 +3,13 @@
 
 #include "Particle.h"
 #include "SimulationDef.h"
+#include "SimulationGraphics.h"
 #include "Raycast.h"
 #include "Air.h"
 
-#include "../util/rand.h"
+#include "../util/types/rand.h"
+#include "../util/types/heap_array.h"
+
 #include "../util/math.h"
 #include "../util/vector_op.h"
 #include "../render/types/octree.h"
@@ -37,9 +40,11 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     // Graphics bookkeeping
-    std::array<uint32_t, XRES * YRES * ZRES> color_data;
+    util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
     std::vector<bool> color_data_modified;
-    std::array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
+    util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
+    // unsigned int ao_blocks[AO_Z_BLOCKS][AO_Y_BLOCKS][AO_X_BLOCKS];
+    util::heap_array<unsigned int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;

@@ -10,7 +10,7 @@ class RenderCamera;
 
 class NavCube {
 public:
-    NavCube(RenderCamera * cam);
+    NavCube(RenderCamera * cam): cam(cam) {}
     ~NavCube() {
         UnloadRenderTexture(target);
         for (int i = 0; i < 6; i++)

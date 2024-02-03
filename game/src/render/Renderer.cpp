@@ -7,6 +7,7 @@
 #include "../util/math.h"
 #include "../util/graphics.h"
 #include "../util/morton.h"
+#include "../util/types/ubo.h"
 
 #include "rlgl.h"
 #include "stdint.h"
@@ -29,40 +30,54 @@ void Renderer::init() {
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
 
-    // SSBOs for color & octree LOD data
+    // SSBOs for color & octree LOD data & ambient occlusion
     ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
     ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
         NULL, RL_DYNAMIC_COPY);
+    ssbo_ao = rlLoadShaderBuffer(AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS * sizeof(unsigned int), NULL, RL_DYNAMIC_COPY);
 
     // Uniform constants
-    glGenBuffers(1, &ubo_constants);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_constants);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(FragShaderConstants), NULL, GL_STATIC_DRAW);
+    {
+    #ifdef DEBUG
+        if (cam->camera.fovy == 0.0)
+            throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
+    #endif
+        glGenBuffers(1, &ubo_constants);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo_constants);
+        UBOWriter constants_writer(part_shader.id, ubo_constants, "Constants");
+        glBufferData(GL_UNIFORM_BUFFER, constants_writer.size(), NULL, GL_STATIC_DRAW);
 
-    FragShaderConstants constants {
-        .SIM_RES{ (float)XRES, (float)YRES, (float)ZRES },
-        .MAX_RAY_STEPS = 256 * 2,
-        .NUM_LEVELS = OCTREE_BLOCK_DEPTH,
-        .FOV_DIV2 = cam->camera.fovy * DEG2RAD / 2.0f,
-        .DEBUG_CASTS = false,
-        .DEBUG_NORMALS = false,
-        .MOD_MASK = (1 << OCTREE_BLOCK_DEPTH) - 1,
-        .X_BLOCKS = X_BLOCKS,
-        .Y_BLOCKS = Y_BLOCKS
-    };
+        float SIMRES[] = { (float)XRES, (float)YRES, (float)ZRES };
+        int32_t OCTTREE_BLOCK_DIMS[3] = { X_BLOCKS, Y_BLOCKS, Z_BLOCKS };
+        int32_t AO_BLOCK_DIMS[3] = { AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS };
 
-#ifdef DEBUG
-    if (cam->camera.fovy == 0.0)
-        throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
-#endif
+        constants_writer.write_member("SIMRES", SIMRES);
+        constants_writer.write_member("NUM_LEVELS", OCTREE_BLOCK_DEPTH);
+        constants_writer.write_member("FOV_DIV2", cam->camera.fovy * DEG2RAD / 2.0f);
+        constants_writer.write_member("MOD_MASK", (1 << OCTREE_BLOCK_DEPTH) - 1);
+        constants_writer.write_member("AO_BLOCK_SIZE", AO_BLOCK_SIZE);
+        constants_writer.write_member("OCTTREE_BLOCK_DIMS", OCTTREE_BLOCK_DIMS);
+        constants_writer.write_member("AO_BLOCK_DIMS", AO_BLOCK_DIMS);
 
-    std::copy(&OctreeBlockMetadata::layer_offsets[0], &OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH], constants.LAYER_OFFSETS);
-    std::copy(&Morton::X_SHIFTS[0], &Morton::X_SHIFTS[256], constants.MORTON_X_SHIFTS);
-    std::copy(&Morton::Y_SHIFTS[0], &Morton::Y_SHIFTS[256], constants.MORTON_Y_SHIFTS);
-    std::copy(&Morton::Z_SHIFTS[0], &Morton::Z_SHIFTS[256], constants.MORTON_Z_SHIFTS);
+        constants_writer.write_member("LAYER_OFFSETS", &OctreeBlockMetadata::layer_offsets[0], OCTREE_BLOCK_DEPTH * sizeof(unsigned int));
+        constants_writer.write_member("MORTON_X_SHIFTS", Morton::X_SHIFTS);
+        constants_writer.write_member("MORTON_Y_SHIFTS", Morton::Y_SHIFTS);
+        constants_writer.write_member("MORTON_Z_SHIFTS", Morton::Z_SHIFTS);
+        constants_writer.upload();
+    }
 
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FragShaderConstants), &constants); 
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    // UBO: settings
+    {
+        glGenBuffers(1, &ubo_settings);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo_settings);
+        UBOWriter settings_writer(part_shader.id, ubo_settings, "Settings");
+        glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
+
+        settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
+        settings_writer.write_member("DEBUG_MODE", FragDebugMode::DEBUG_AO);
+        settings_writer.write_member("AO_STRENGTH", 0.6f);
+        settings_writer.upload();
+    }
 }
 
 void Renderer::update_colors_and_lod() {
@@ -87,6 +102,9 @@ void Renderer::update_colors_and_lod() {
             sim->octree_blocks[i].modified = false;
         }
     }
+
+    // TODO: also diff ambient occlusion blocks
+    rlUpdateShaderBuffer(ssbo_ao, sim->ao_blocks.data(), sizeof(unsigned int) * AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS, 0);
 }
 
 void Renderer::draw_octree_debug() {
@@ -123,7 +141,9 @@ void Renderer::draw() {
 
     rlBindShaderBuffer(ssbo_colors, 0);
     rlBindShaderBuffer(ssbo_lod, 1);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ubo_constants); 
+    rlBindShaderBuffer(ssbo_ao, 2);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 3, ubo_constants);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_settings);
 
     BeginShaderMode(part_shader);
 

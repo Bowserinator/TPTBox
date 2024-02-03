@@ -2,7 +2,6 @@
 #define SIMULATION_DEF_H
 
 #include "stdint.h"
-#include <cmath>
 
 using coord_t = uint32_t;
 using signed_coord_t = int32_t;
@@ -55,15 +54,5 @@ namespace PartErr {
     constexpr part_id ALREADY_OCCUPIED = -1;
     constexpr part_id PARTS_FULL = -3;
 };
-
-constexpr unsigned int OCTREE_BLOCK_DEPTH = 6;
-constexpr unsigned int OCTREE_BLOCK_DIM = 1 << OCTREE_BLOCK_DEPTH; // Sim split into blocks of this size, each of which is an octree
-constexpr unsigned int X_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(XRES) / OCTREE_BLOCK_DIM));
-constexpr unsigned int Y_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(YRES) / OCTREE_BLOCK_DIM));
-constexpr unsigned int Z_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(ZRES) / OCTREE_BLOCK_DIM));
-// Size (arr el. count) of contigious element chunks to upload and diff at a time for color_data
-constexpr unsigned int COLOR_DATA_CHUNK_SIZE = 16384; // Somewhat arbitrary
-constexpr unsigned int COLOR_DATA_CHUNK_COUNT = static_cast<unsigned int>(std::ceil(
-    (XRES * YRES * ZRES) / static_cast<float>(COLOR_DATA_CHUNK_SIZE)));
 
 #endif

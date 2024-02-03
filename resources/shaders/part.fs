@@ -6,22 +6,31 @@ layout(std430, binding = 0) readonly restrict buffer Colors {
 layout(std430, binding = 1) readonly restrict buffer colorLod {
     uint colorsLod[];
 };
+layout(std430, binding = 2) readonly restrict buffer ambientOcclusionBlocks {
+    uint aoBlocks[];
+};
 
-layout(binding = 2) readonly restrict uniform Constants {
-    vec3 SIMRES;          // Vec3 of XRES, YRES, ZRES
-    int MAX_RAY_STEPS;
-    int NUM_LEVELS;       // Each octree goes up to blocks of side length 2^NUM_LENGTH
-    float FOV_DIV2;       // (FOV in radians) / 2
-    bool DEBUG_CASTS;     // Render number of steps each ray took
-    bool DEBUG_NORMALS;   // Render colors for normals of faces
-    uint layerOffsets[6]; // Pre-computed layer offsets
-    int MOD_MASK;         // x % 2^(NUM_LEVELS) = x & MOD_MASK, MOD_MASK = (1 << NUM_LEVELS) - 1
-    int X_BLOCKS;         // Octree block dims for octree
-    int Y_BLOCKS;
+// We use vec4 instead of vec3s because vec3s have messy alignments
+layout(shared, binding = 3) uniform Constants {
+    vec3 SIMRES;           // Vec3 of XRES, YRES, ZRES
+    int NUM_LEVELS;        // Each octree goes up to blocks of side length 2^NUM_LENGTH
+    float FOV_DIV2;        // (FOV in radians) / 2
+
+    uint LAYER_OFFSETS[6]; // Pre-computed layer offsets
+    int MOD_MASK;          // x % 2^(NUM_LEVELS) = x & MOD_MASK, MOD_MASK = (1 << NUM_LEVELS) - 1
+    int AO_BLOCK_SIZE;     // Size of ambient occlusion blocks
+    ivec3 OCTTREE_BLOCK_DIMS;  // Vec3 of octree block counts (w unused)
+    ivec3 AO_BLOCK_DIMS;       // Vec3 of ao block counts (w unused)
 
     uint MORTON_X_SHIFTS[256];
     uint MORTON_Y_SHIFTS[256];
     uint MORTON_Z_SHIFTS[256];
+};
+
+layout(shared, binding = 4) uniform Settings {
+    int MAX_RAY_STEPS;
+    uint DEBUG_MODE;      // 0 = regular rendering, see Renderer.h for flags
+    float AO_STRENGTH;    // 0 = No AO effect, 1 = max AO effect
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -61,14 +70,14 @@ float min3(vec3 v) { return min(min(v.x,v.y), v.z); }
 float max3(vec3 v) { return max(max(v.x,v.y), v.z); }
 
 bool isInSim(vec3 c) {
-    return clamp(c, vec3(0.0), SIMRES - vec3(SIMBOX_CAST_PAD)) == c;
+    return clamp(c, vec3(0.0), SIMRES.xyz - vec3(SIMBOX_CAST_PAD)) == c;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
 vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
     vec3 v = vec3(1.0) / rayDir;
     vec3 boundMin = (vec3(SIMBOX_CAST_PAD) - rayPos) * v;
-    vec3 boundMax = (SIMRES - vec3(SIMBOX_CAST_PAD) - rayPos) * v;
+    vec3 boundMax = (SIMRES.xyz - vec3(SIMBOX_CAST_PAD) - rayPos) * v;
     float a = max3(min(boundMin, boundMax));
     float b = min3(max(boundMin, boundMax));
 
@@ -88,6 +97,49 @@ vec4 toVec4Color(uint tmp) {
 uint mortonDecode(int x, int y, int z) {
     return MORTON_X_SHIFTS[x] | MORTON_Y_SHIFTS[y] | MORTON_Z_SHIFTS[z];
 }
+
+float getAOAt(ivec3 aoBlockPos) {
+    int idx = int(aoBlockPos.x + aoBlockPos.y * AO_BLOCK_DIMS.x + aoBlockPos.z * AO_BLOCK_DIMS.x * AO_BLOCK_DIMS.y);
+    if (idx < 0 || idx >= AO_BLOCK_DIMS.x * AO_BLOCK_DIMS.y * AO_BLOCK_DIMS.z) return 0.0;
+    float ao = aoBlocks[idx] / float(AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE);
+    return clamp(ao, 0.0, 1.0);
+}
+
+float AO_estimate(ivec3 pos) {
+    // AO block samples are taken at their centers, so offset so we sample at corners
+    // TODO: do this with texture
+
+    ivec3 aoBlockPosBottom = (pos - ivec3(AO_BLOCK_SIZE >> 1)) / AO_BLOCK_SIZE;
+    vec3 posFraction = (vec3(pos) - vec3(AO_BLOCK_SIZE >> 1)) / float(AO_BLOCK_SIZE) - vec3(aoBlockPosBottom);
+    float aoTotal = 0.0;
+
+    float c00 = getAOAt(aoBlockPosBottom + ivec3(0, 0, 0)) * (1 - posFraction.x) + 
+                getAOAt(aoBlockPosBottom + ivec3(1, 0, 0)) * posFraction.x;
+    float c01 = getAOAt(aoBlockPosBottom + ivec3(0, 0, 1)) * (1 - posFraction.x) + 
+                getAOAt(aoBlockPosBottom + ivec3(1, 0, 1)) * posFraction.x;
+    float c10 = getAOAt(aoBlockPosBottom + ivec3(0, 1, 0)) * (1 - posFraction.x) + 
+                getAOAt(aoBlockPosBottom + ivec3(1, 1, 0)) * posFraction.x;
+    float c11 = getAOAt(aoBlockPosBottom + ivec3(0, 1, 1)) * (1 - posFraction.x) + 
+                getAOAt(aoBlockPosBottom + ivec3(1, 1, 1)) * posFraction.x;
+
+    float c0 = c00 * (1 - posFraction.y) + c10 * posFraction.y;
+    float c1 = c01 * (1 - posFraction.y) + c11 * posFraction.y;
+    float ao = (c0 * (1 - posFraction.z) + c1 * posFraction.z);
+    // ao = (
+    //     getAOAt(aoBlockPosBottom + ivec3(0, 0, 0))
+    //     + getAOAt(aoBlockPosBottom + ivec3(0, 0, 1))
+    //     + getAOAt(aoBlockPosBottom + ivec3(0, 1, 0))
+    //     + getAOAt(aoBlockPosBottom + ivec3(0, 1, 1))
+    //     + getAOAt(aoBlockPosBottom + ivec3(1, 0, 0))
+    //     + getAOAt(aoBlockPosBottom + ivec3(1, 0, 1))
+    //     + getAOAt(aoBlockPosBottom + ivec3(1, 1, 0))
+    //     + getAOAt(aoBlockPosBottom + ivec3(1, 1, 1))
+        
+    // ) / 8.0;
+    ao = clamp(ao * ao, 0.0, 1.0);
+    return 1.0 - AO_STRENGTH * ao;
+}
+
 
 // Since colorsLod was originally a uint8 array but is now uint32
 // we need to do some bit math to get the byte we want
@@ -109,8 +161,8 @@ uint sampleVoxels(ivec3 pos, int level) {
         return colors[uint(pos.x + SIMRES.x * pos.y + (SIMRES.x * SIMRES.y) * pos.z)];
 
     ivec3 level0Pos = pos << level;
-    uint chunkOffset = (level0Pos.x >> NUM_LEVELS) + (level0Pos.y >> NUM_LEVELS) * X_BLOCKS
-        + (level0Pos.z >> NUM_LEVELS) * X_BLOCKS * Y_BLOCKS;
+    uint chunkOffset = (level0Pos.x >> NUM_LEVELS) + (level0Pos.y >> NUM_LEVELS) * OCTTREE_BLOCK_DIMS.x
+        + (level0Pos.z >> NUM_LEVELS) * OCTTREE_BLOCK_DIMS.x * OCTTREE_BLOCK_DIMS.y;
 
     if (level == 1) {
         // To check if last level (level 1) is occupied (level with the 2x2x2 chunks,
@@ -120,13 +172,13 @@ uint sampleVoxels(ivec3 pos, int level) {
         uint morton = mortonDecode(level0Pos.x & MOD_MASK, level0Pos.y & MOD_MASK, level0Pos.z & MOD_MASK) >> 3;
         uint bitIdx = morton & 7;
         morton >>= 3;
-        return getByteColorsLod(chunkOffset * layerOffsets[NUM_LEVELS - 1] + layerOffsets[NUM_LEVELS - 2] + morton)
+        return getByteColorsLod(chunkOffset * LAYER_OFFSETS[NUM_LEVELS - 1] + LAYER_OFFSETS[NUM_LEVELS - 2] + morton)
             & (1 << bitIdx);
     }
 
-    uint offset = layerOffsets[6 - level]; // Since our level numbering here is reversed from CPU octree... yeah...
+    uint offset = LAYER_OFFSETS[6 - level]; // Since our level numbering here is reversed from CPU octree... yeah...
     uint morton = mortonDecode(level0Pos.x & MOD_MASK, level0Pos.y & MOD_MASK, level0Pos.z & MOD_MASK) >> (3 * level);
-    return getByteColorsLod(chunkOffset * layerOffsets[NUM_LEVELS - 1] + offset + morton);
+    return getByteColorsLod(chunkOffset * LAYER_OFFSETS[NUM_LEVELS - 1] + offset + morton);
 }
 
 // result.xyz = block pos
@@ -161,7 +213,8 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
-                vec4 voxelColor = toVec4Color(tmpIntColor); // getColorAt(voxelPos);
+                vec4 voxelColor = toVec4Color(tmpIntColor);
+
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
                     data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv);
@@ -271,19 +324,23 @@ void main() {
         rayPos = data.outPos;
     } while (data.shouldContinue);
 
-    if (DEBUG_CASTS)
-        FragColor = 8.0 * vec4(data.steps) / MAX_RAY_STEPS;
-    else if (DEBUG_NORMALS) {
-        FragColor = vec4(0.0);
-        if (res.w >= 0)
-            FragColor[res.w % 3] = 1.0;
-        if (res.w > 3)
-            FragColor.rgb = vec3(1.0) - FragColor.rgb;
+    if (DEBUG_MODE == 0) { // NODEBUG
+        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a * AO_estimate(res.xyz);;
+        FragColor.rgb = data.color.rgb * mul;
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
     }
-    else {
-        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
-        FragColor.rgb = data.color.rgb * mul;
+    else if (DEBUG_MODE == 1) { // DEBUG_STEPS
+        FragColor = 8.0 * vec4(data.steps) / MAX_RAY_STEPS;
+    }
+    else if (DEBUG_MODE == 2) { // DEBUG_NORMALS
+        FragColor = vec4(0.0);
+        if (res.w >= 0) FragColor[res.w % 3] = 1.0;
+        if (res.w > 3)  FragColor.rgb = vec3(1.0) - FragColor.rgb;
+        FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
+    }
+    else if (DEBUG_MODE == 3) { // DEBUG_AO
+        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * AO_estimate(res.xyz);
+        FragColor.rgb = vec3(mul);
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
     }
 }

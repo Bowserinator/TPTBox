@@ -2,7 +2,7 @@
 #define PARTICLE_H
 
 #include "SimulationDef.h"
-#include "../util/color.h"
+#include "../util/types/color.h"
 
 #include <bitset>
 

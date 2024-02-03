@@ -5,6 +5,8 @@
 #include "rlgl.h"
 #include <glad.h>
 
+#include "types/octree.h"
+
 class Simulation;
 class RenderCamera;
 class Renderer {
@@ -27,22 +29,13 @@ private:
         part_shader_camera_pos_loc,
         part_shader_camera_dir_loc;
 
-    unsigned int ssbo_colors, ssbo_lod, ubo_constants;
-    struct FragShaderConstants {
-        float SIM_RES[3];
-        int32_t MAX_RAY_STEPS;
-        int32_t NUM_LEVELS;
-        float FOV_DIV2;
-        uint32_t DEBUG_CASTS;
-        uint32_t DEBUG_NORMALS;
-        uint32_t LAYER_OFFSETS[6];
-        int32_t MOD_MASK;
-        int32_t X_BLOCKS;
-        int32_t Y_BLOCKS;
+    unsigned int ssbo_colors, ssbo_lod, ssbo_ao, ubo_constants, ubo_settings;
 
-        uint32_t MORTON_X_SHIFTS[256];
-        uint32_t MORTON_Y_SHIFTS[256];
-        uint32_t MORTON_Z_SHIFTS[256];
+    enum class FragDebugMode: uint32_t {
+        NODEBUG = 0,
+        DEBUG_STEPS = 1,
+        DEBUG_NORMALS = 2,
+        DEBUG_AO = 3
     };
 };
 

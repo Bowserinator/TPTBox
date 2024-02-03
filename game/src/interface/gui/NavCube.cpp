@@ -40,8 +40,6 @@ RenderTexture2D generateCubeFaceTexture(const char * faceName) {
     return tex;
 }
 
-NavCube::NavCube(RenderCamera * cam): cam(cam) {}
-
 void NavCube::init() {
     cam_hash = 99999;
 

@@ -45,7 +45,8 @@ private:
         return std::accumulate(sim_fps_avg, sim_fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
 public:
-    HUD(Simulation * sim, RenderCamera * cam);
+    HUD(Simulation * sim, RenderCamera * cam):
+        sim(sim), cube(cam), state(HUDState::NORMAL) {}
 
     void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
     void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;

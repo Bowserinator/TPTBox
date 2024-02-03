@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include "raymath.h"
-#include "rand.h"
+#include "types/rand.h"
 #include "vector_op.h"
 
 template <class T>

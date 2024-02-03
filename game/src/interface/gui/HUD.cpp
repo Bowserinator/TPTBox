@@ -20,9 +20,6 @@ constexpr int RHUD_X_OFFSET = 100;
 
 constexpr Color BLUE_TEXT{21, 145, 171, 255};
 
-HUD::HUD(Simulation * sim, RenderCamera * cam):
-    sim(sim), cube(cam), state(HUDState::NORMAL) {}
-
 void HUD::init() {
     std::fill(&fps_avg[0], &fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);
     std::fill(&sim_fps_avg[0], &sim_fps_avg[FPS_AVG_WINDOW_SIZE], 0.0f);

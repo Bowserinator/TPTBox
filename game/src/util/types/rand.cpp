@@ -5,8 +5,8 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "vector_op.h"
-#include "math.h"
+#include "../vector_op.h"
+#include "../math.h"
 #include "raymath.h"
 
 /* xoroshiro128+ by David Blackman and Sebastiano Vigna */

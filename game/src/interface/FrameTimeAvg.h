@@ -5,7 +5,7 @@
 #include "raylib.h"
 
 constexpr std::size_t DELTA_SAMPLES_FOR_AVG = 10;
-constexpr unsigned int TARGET_FPS = 60;
+constexpr unsigned int TARGET_FPS = 300;
 
 // For getting average time between frames for controls
 // and other animations (so they can be framerate-independent-ish)
