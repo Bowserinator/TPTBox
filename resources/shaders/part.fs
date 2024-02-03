@@ -6,9 +6,8 @@ layout(std430, binding = 0) readonly restrict buffer Colors {
 layout(std430, binding = 1) readonly restrict buffer colorLod {
     uint colorsLod[];
 };
-layout(std430, binding = 2) readonly restrict buffer ambientOcclusionBlocks {
-    uint aoBlocks[];
-};
+
+layout (binding = 2) uniform sampler3D aoBlocks;
 
 // We use vec4 instead of vec3s because vec3s have messy alignments
 layout(shared, binding = 3) uniform Constants {
@@ -98,48 +97,13 @@ uint mortonDecode(int x, int y, int z) {
     return MORTON_X_SHIFTS[x] | MORTON_Y_SHIFTS[y] | MORTON_Z_SHIFTS[z];
 }
 
-float getAOAt(ivec3 aoBlockPos) {
-    int idx = int(aoBlockPos.x + aoBlockPos.y * AO_BLOCK_DIMS.x + aoBlockPos.z * AO_BLOCK_DIMS.x * AO_BLOCK_DIMS.y);
-    if (idx < 0 || idx >= AO_BLOCK_DIMS.x * AO_BLOCK_DIMS.y * AO_BLOCK_DIMS.z) return 0.0;
-    float ao = aoBlocks[idx] / float(AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE);
-    return clamp(ao, 0.0, 1.0);
-}
-
+// Estimate AO at point, returns darkness multiplier
+// (ie 1 = no shadow, 0 = all shadow)
 float AO_estimate(ivec3 pos) {
-    // AO block samples are taken at their centers, so offset so we sample at corners
-    // TODO: do this with texture
-
-    ivec3 aoBlockPosBottom = (pos - ivec3(AO_BLOCK_SIZE >> 1)) / AO_BLOCK_SIZE;
-    vec3 posFraction = (vec3(pos) - vec3(AO_BLOCK_SIZE >> 1)) / float(AO_BLOCK_SIZE) - vec3(aoBlockPosBottom);
-    float aoTotal = 0.0;
-
-    float c00 = getAOAt(aoBlockPosBottom + ivec3(0, 0, 0)) * (1 - posFraction.x) + 
-                getAOAt(aoBlockPosBottom + ivec3(1, 0, 0)) * posFraction.x;
-    float c01 = getAOAt(aoBlockPosBottom + ivec3(0, 0, 1)) * (1 - posFraction.x) + 
-                getAOAt(aoBlockPosBottom + ivec3(1, 0, 1)) * posFraction.x;
-    float c10 = getAOAt(aoBlockPosBottom + ivec3(0, 1, 0)) * (1 - posFraction.x) + 
-                getAOAt(aoBlockPosBottom + ivec3(1, 1, 0)) * posFraction.x;
-    float c11 = getAOAt(aoBlockPosBottom + ivec3(0, 1, 1)) * (1 - posFraction.x) + 
-                getAOAt(aoBlockPosBottom + ivec3(1, 1, 1)) * posFraction.x;
-
-    float c0 = c00 * (1 - posFraction.y) + c10 * posFraction.y;
-    float c1 = c01 * (1 - posFraction.y) + c11 * posFraction.y;
-    float ao = (c0 * (1 - posFraction.z) + c1 * posFraction.z);
-    // ao = (
-    //     getAOAt(aoBlockPosBottom + ivec3(0, 0, 0))
-    //     + getAOAt(aoBlockPosBottom + ivec3(0, 0, 1))
-    //     + getAOAt(aoBlockPosBottom + ivec3(0, 1, 0))
-    //     + getAOAt(aoBlockPosBottom + ivec3(0, 1, 1))
-    //     + getAOAt(aoBlockPosBottom + ivec3(1, 0, 0))
-    //     + getAOAt(aoBlockPosBottom + ivec3(1, 0, 1))
-    //     + getAOAt(aoBlockPosBottom + ivec3(1, 1, 0))
-    //     + getAOAt(aoBlockPosBottom + ivec3(1, 1, 1))
-        
-    // ) / 8.0;
-    ao = clamp(ao * ao, 0.0, 1.0);
-    return 1.0 - AO_STRENGTH * ao;
+    vec3 aoPos = vec3(pos) / vec3(AO_BLOCK_DIMS) / float(AO_BLOCK_SIZE);
+    float ao = texture(aoBlocks, aoPos).r;
+    return 1.0 - AO_STRENGTH * ao * ao;
 }
-
 
 // Since colorsLod was originally a uint8 array but is now uint32
 // we need to do some bit math to get the byte we want

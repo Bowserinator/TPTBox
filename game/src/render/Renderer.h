@@ -29,7 +29,8 @@ private:
         part_shader_camera_pos_loc,
         part_shader_camera_dir_loc;
 
-    unsigned int ssbo_colors, ssbo_lod, ssbo_ao, ubo_constants, ubo_settings;
+    GLuint ao_tex;
+    unsigned int ssbo_colors, ssbo_lod, ubo_constants, ubo_settings;
 
     enum class FragDebugMode: uint32_t {
         NODEBUG = 0,

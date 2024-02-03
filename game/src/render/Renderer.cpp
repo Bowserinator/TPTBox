@@ -30,11 +30,17 @@ void Renderer::init() {
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
 
-    // SSBOs for color & octree LOD data & ambient occlusion
+    // SSBOs for color & octree LOD data
     ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
     ssbo_lod = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
         NULL, RL_DYNAMIC_COPY);
-    ssbo_ao = rlLoadShaderBuffer(AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS * sizeof(unsigned int), NULL, RL_DYNAMIC_COPY);
+
+    // Ambient occlusion texture, uses texture for free linear filtering
+    glGenTextures(1, &ao_tex);
+    glBindTexture(GL_TEXTURE_3D, ao_tex);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
     // Uniform constants
     {
@@ -74,7 +80,7 @@ void Renderer::init() {
         glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
 
         settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
-        settings_writer.write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
+        settings_writer.write_member("DEBUG_MODE", FragDebugMode::DEBUG_AO);
         settings_writer.write_member("AO_STRENGTH", 0.6f);
         settings_writer.upload();
     }
@@ -104,7 +110,14 @@ void Renderer::update_colors_and_lod() {
     }
 
     // TODO: also diff ambient occlusion blocks
-    rlUpdateShaderBuffer(ssbo_ao, sim->ao_blocks.data(), sizeof(unsigned int) * AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS, 0);
+    // and make this not horrible
+    glBindTexture(GL_TEXTURE_3D, ao_tex);
+    uint8_t * ao_data = new uint8_t[sim->ao_blocks.size()];
+    for (int i = 0; i < sim->ao_blocks.size(); i++)
+        ao_data[i] = static_cast<unsigned int>(255.0f / (AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE) * sim->ao_blocks[i]);
+
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
+    delete[] ao_data;
 }
 
 void Renderer::draw_octree_debug() {
@@ -141,7 +154,10 @@ void Renderer::draw() {
 
     rlBindShaderBuffer(ssbo_colors, 0);
     rlBindShaderBuffer(ssbo_lod, 1);
-    rlBindShaderBuffer(ssbo_ao, 2);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_3D, ao_tex);
+
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, ubo_constants);
     glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_settings);
 
