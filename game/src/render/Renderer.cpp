@@ -74,7 +74,7 @@ void Renderer::init() {
         glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
 
         settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
-        settings_writer.write_member("DEBUG_MODE", FragDebugMode::DEBUG_AO);
+        settings_writer.write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer.write_member("AO_STRENGTH", 0.6f);
         settings_writer.upload();
     }

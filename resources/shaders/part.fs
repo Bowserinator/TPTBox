@@ -304,6 +304,7 @@ void main() {
     // Outside of box early termination
     if (rayPos.x < 0) {
         FragColor = vec4(0.0);
+        gl_FragDepth = gl_FragCoord.z;
         return;
     }
 
@@ -323,6 +324,11 @@ void main() {
         rayDir = data.outRay;
         rayPos = data.outPos;
     } while (data.shouldContinue);
+
+    // https://stackoverflow.com/a/29397319/6079328
+    vec4 vClipCoord = mvp * vec4(res.xyz, 1.0);
+    float fNdcDepth = vClipCoord.z / vClipCoord.w;
+    gl_FragDepth = (fNdcDepth + 1.0) * 0.5;
 
     if (DEBUG_MODE == 0) { // NODEBUG
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a * AO_estimate(res.xyz);;
