@@ -25,7 +25,6 @@ Simulation::Simulation():
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
     color_data.fill(0);
-    // std::fill(&ao_blocks[0][0][0], &ao_blocks[AO_Z_BLOCKS][AO_Y_BLOCKS][AO_X_BLOCKS], 0);
     ao_blocks.fill(0);
     color_data_modified = std::vector<bool>(COLOR_DATA_CHUNK_COUNT, false);
 
@@ -111,6 +110,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vx = 0.0f;
     parts[pfree].vy = 0.0f;
     parts[pfree].vz = 0.0f;
+    ao_blocks[AO_FLAT_IDX(x, y, z)]++;
 
     part_map[z][y][x] = PMAP(type, pfree);
     _set_color_data_at(x, y, z, GetElements()[type].Color.as_ABGR());
@@ -140,6 +140,7 @@ void Simulation::kill_part(const part_id i) {
         maxId--;
 
     _set_color_data_at(x, y, z, 0x0);
+    ao_blocks[AO_FLAT_IDX(x, y, z)]--;
     part.id = -pfree;
     pfree = i;
 }
@@ -152,15 +153,8 @@ void Simulation::update_zslice(const coord_t pz) {
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     for (coord_t py = min_y_per_zslice[pz - 1]; py < max_y_per_zslice[pz - 1]; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
-        if (pmap[pz][py][px]) {
-            // TODO
-            const unsigned int aoX = px / AO_BLOCK_SIZE;
-            const unsigned int aoY = py / AO_BLOCK_SIZE;
-            const unsigned int aoZ = pz / AO_BLOCK_SIZE;
-            ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]++;
-
+        if (pmap[pz][py][px])
             update_part(ID(pmap[pz][py][px]));
-        }
         if (photons[pz][py][px])
             update_part(ID(photons[pz][py][px]));
     }
@@ -226,8 +220,6 @@ void Simulation::update() {
 
     // air.update(); // TODO
 
-    ao_blocks.fill(0); // TODO
-
     #pragma omp parallel num_threads(sim_thread_count)
     { 
         const int thread_count = omp_get_num_threads();
@@ -257,6 +249,7 @@ void Simulation::recalc_free_particles() {
     part_id newMaxId = 0;
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
+    ao_blocks.fill(0);
 
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
@@ -268,7 +261,12 @@ void Simulation::recalc_free_particles() {
         const coord_t x = part.rx;
         const coord_t y = part.ry;
         const coord_t z = part.rz;
-        
+
+        // Ambient occlusion rules
+        if (part.id == ID(pmap[z][y][x]))
+            ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+
+        // Pmap / other cache
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
         max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
 
@@ -296,16 +294,8 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
     color_data[idx] = new_color;
     tree.modified = true;
 
-    // TODO
-    // const unsigned int aoX = x / AO_BLOCK_SIZE;
-    // const unsigned int aoY = y / AO_BLOCK_SIZE;
-    // const unsigned int aoZ = z / AO_BLOCK_SIZE;
-
-    if (new_color) {
+    if (new_color)
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
-        //ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]++;
-    } else {
+    else
         tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
-        //ao_blocks[aoX + aoY * AO_X_BLOCKS + aoZ * AO_X_BLOCKS * AO_Y_BLOCKS]--;
-    }
 }

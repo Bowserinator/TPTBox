@@ -15,9 +15,12 @@ constexpr unsigned int COLOR_DATA_CHUNK_COUNT = static_cast<unsigned int>(std::c
     (XRES * YRES * ZRES) / static_cast<float>(COLOR_DATA_CHUNK_SIZE)));
 
 // Ambient occlusion counter block size
-constexpr unsigned int AO_BLOCK_SIZE = 8;
+constexpr unsigned int AO_BLOCK_SIZE = 12;
 constexpr unsigned int AO_X_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(XRES) / AO_BLOCK_SIZE));
 constexpr unsigned int AO_Y_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(YRES) / AO_BLOCK_SIZE));
 constexpr unsigned int AO_Z_BLOCKS = static_cast<unsigned int>(std::ceil(static_cast<float>(ZRES) / AO_BLOCK_SIZE));
 
+constexpr uint32_t AO_FLAT_IDX(coord_t x, coord_t y, coord_t z) {
+    return (x / AO_BLOCK_SIZE) + (y / AO_BLOCK_SIZE) * AO_X_BLOCKS + (z / AO_BLOCK_SIZE) * AO_X_BLOCKS * AO_Y_BLOCKS;
+}
 #endif

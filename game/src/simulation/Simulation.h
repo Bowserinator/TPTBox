@@ -43,8 +43,7 @@ public:
     util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
     std::vector<bool> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
-    // unsigned int ao_blocks[AO_Z_BLOCKS][AO_Y_BLOCKS][AO_X_BLOCKS];
-    util::heap_array<unsigned int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
+    util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;

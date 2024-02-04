@@ -11,7 +11,7 @@ class Simulation;
 class RenderCamera;
 class Renderer {
 public:
-    Renderer(Simulation * sim, RenderCamera * cam): sim(sim), cam(cam) {}
+    Renderer(Simulation * sim, RenderCamera * cam): sim(sim), cam(cam), ao_data(nullptr) {}
     ~Renderer();
 
     void init(); // Call after openGL context has been initialized
@@ -31,6 +31,7 @@ private:
 
     GLuint ao_tex;
     unsigned int ssbo_colors, ssbo_lod, ubo_constants, ubo_settings;
+    uint8_t * ao_data;
 
     enum class FragDebugMode: uint32_t {
         NODEBUG = 0,

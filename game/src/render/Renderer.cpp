@@ -20,10 +20,12 @@ Renderer::~Renderer() {
     glDeleteBuffers(1, &ubo_constants);
     glDeleteBuffers(1, &ubo_settings);
     glDeleteTextures(1, &ao_tex);
+    delete[] ao_data;
 }
 
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
+    ao_data = new uint8_t[sim->ao_blocks.size()];
 
     // Uniform values that may change per frame
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
@@ -117,15 +119,11 @@ void Renderer::update_colors_and_lod() {
         }
     }
 
-    // TODO: also diff ambient occlusion blocks
-    // and make this not horrible
     glBindTexture(GL_TEXTURE_3D, ao_tex);
-    uint8_t * ao_data = new uint8_t[sim->ao_blocks.size()];
+    constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
     for (int i = 0; i < sim->ao_blocks.size(); i++)
-        ao_data[i] = static_cast<unsigned int>(255.0f / (AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE) * sim->ao_blocks[i]);
-
+        ao_data[i] = 255 * sim->ao_blocks[i] / AO_VOLUME;
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
-    delete[] ao_data;
 }
 
 void Renderer::draw_octree_debug() {
