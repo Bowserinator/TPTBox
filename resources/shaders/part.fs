@@ -45,7 +45,7 @@ out vec4 FragColor;
 const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray steps begins to fade to black
 const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered "stopped"
 const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
-const vec3 FACE_COLORS = vec3(0.7, 1.0, 0.85);
+const vec3 FACE_COLORS = vec3(0.85, 1.0, 0.92);
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 
 const int MAX_REFRACT_COUNT = 4;
@@ -100,6 +100,8 @@ uint mortonDecode(int x, int y, int z) {
 // Estimate AO at point, returns darkness multiplier
 // (ie 1 = no shadow, 0 = all shadow)
 float AO_estimate(ivec3 pos) {
+    if (AO_STRENGTH == 0.0) return 1.0;
+
     vec3 aoPos = vec3(pos) / vec3(AO_BLOCK_DIMS) / float(AO_BLOCK_SIZE);
     float ao = texture(aoBlocks, aoPos).r;
     return 1.0 - AO_STRENGTH * ao * ao;
@@ -181,7 +183,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
-                    data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv);
+                    data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * AO_estimate(voxelPos);
                     data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
                 }
                 prevVoxelColor = voxelColor;
@@ -295,7 +297,7 @@ void main() {
     gl_FragDepth = (fNdcDepth + 1.0) * 0.5;
 
     if (DEBUG_MODE == 0) { // NODEBUG
-        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a * AO_estimate(res.xyz);;
+        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
         FragColor.rgb = data.color.rgb * mul;
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
     }

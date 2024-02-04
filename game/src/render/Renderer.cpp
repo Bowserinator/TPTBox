@@ -18,6 +18,8 @@ Renderer::~Renderer() {
     glDeleteBuffers(1, &ssbo_colors);
     glDeleteBuffers(1, &ssbo_lod);
     glDeleteBuffers(1, &ubo_constants);
+    glDeleteBuffers(1, &ubo_settings);
+    glDeleteTextures(1, &ao_tex);
 }
 
 void Renderer::init() {
@@ -80,7 +82,7 @@ void Renderer::init() {
         glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
 
         settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
-        settings_writer.write_member("DEBUG_MODE", FragDebugMode::DEBUG_AO);
+        settings_writer.write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer.write_member("AO_STRENGTH", 0.6f);
         settings_writer.upload();
     }
@@ -89,9 +91,15 @@ void Renderer::init() {
 void Renderer::update_colors_and_lod() {
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->color_data_modified[i]) {
+            // Since the chunks might overestimate actual color count
+            // on last one take # of colors - last chunk boundary
+            const auto chunk_len = (i == COLOR_DATA_CHUNK_COUNT - 1) ?
+                    sim->color_data.size() - i * COLOR_DATA_CHUNK_SIZE :
+                    COLOR_DATA_CHUNK_SIZE;
+    
             rlUpdateShaderBuffer(ssbo_colors,
                 &sim->color_data[i * COLOR_DATA_CHUNK_SIZE],
-                COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t),
+                chunk_len* sizeof(uint32_t),
                 i * COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t));
             sim->color_data_modified[i] = false;
         }

@@ -3,7 +3,7 @@
 void Element::Element_WATR() {
     Name = "WATR";
     State = ElementState::TYPE_LIQUID;
-    Color = 0x0000FFFF;
+    Color = 0x2030D0FF;
     Weight = 10;
 
     Advection = 0.2f;
