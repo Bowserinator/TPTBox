@@ -264,8 +264,7 @@ void RenderCamera::moveToTarget(float amt) {
     invalidateCache();
 
     float distance = Vector3Distance(camera.position, camera.target);
-    distance += amt;
-    if (distance <= 0) distance = 0.001f;
+    distance = std::max(0.1f, distance + amt);
 
     Vector3 forward = GetCameraForward(&camera);
     Vector3 targetPos = camera.target + forward * -distance;

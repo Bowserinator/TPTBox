@@ -110,7 +110,10 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vx = 0.0f;
     parts[pfree].vy = 0.0f;
     parts[pfree].vz = 0.0f;
-    ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+    if (paused) {
+        ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+        parts_count++;
+    }
 
     part_map[z][y][x] = PMAP(type, pfree);
     _set_color_data_at(x, y, z, GetElements()[type].Color.as_ABGR());
@@ -140,7 +143,10 @@ void Simulation::kill_part(const part_id i) {
         maxId--;
 
     _set_color_data_at(x, y, z, 0x0);
-    ao_blocks[AO_FLAT_IDX(x, y, z)]--;
+    if (paused) {
+        ao_blocks[AO_FLAT_IDX(x, y, z)]--;
+        parts_count--;
+    }
     part.id = -pfree;
     pfree = i;
 }
