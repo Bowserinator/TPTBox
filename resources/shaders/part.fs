@@ -8,9 +8,10 @@ layout(std430, binding = 1) readonly restrict buffer colorLod {
 };
 
 layout (binding = 2) uniform sampler3D aoBlocks;
+layout (binding = 3) uniform sampler2D shadowMap;
 
 // We use vec4 instead of vec3s because vec3s have messy alignments
-layout(shared, binding = 3) uniform Constants {
+layout(shared, binding = 4) uniform Constants {
     vec3 SIMRES;           // Vec3 of XRES, YRES, ZRES
     int NUM_LEVELS;        // Each octree goes up to blocks of side length 2^NUM_LENGTH
     float FOV_DIV2;        // (FOV in radians) / 2
@@ -26,11 +27,13 @@ layout(shared, binding = 3) uniform Constants {
     uint MORTON_Z_SHIFTS[256];
 };
 
-layout(shared, binding = 4) uniform Settings {
+layout(shared, binding = 5) uniform Settings {
     int MAX_RAY_STEPS;
     uint DEBUG_MODE;       // 0 = regular rendering, see Renderer.h for flags
     float AO_STRENGTH;     // 0 = No AO effect, 1 = max AO effect
-    vec3 BACKGROUND_COLOR; // RGBA normalized 0-1
+    vec3 BACKGROUND_COLOR; // RGB normalized 0-1
+    float SHADOW_STRENGTH; // 0 = no shadow, 1 = max strength
+    vec3 SHADOW_COLOR;     // RGB normalized 0-1
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -306,8 +309,13 @@ void main() {
     gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
     if (DEBUG_MODE == 0) { // NODEBUG
+        float shadowZ = SHADOW_STRENGTH > 0.0 ? 255.0 * texelFetch(shadowMap, res.xy + ivec2(SIMRES.z - res.z), 0).r : 0.0;
+        float shadowMul = (SHADOW_STRENGTH > 0.0 && res.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
-        FragColor.rgb = data.color.rgb * mul + BACKGROUND_COLOR.rgb * (1 - mul);
+
+        FragColor.rgb = data.color.rgb * mul * shadowMul
+            + SHADOW_COLOR * mul * (1 - shadowMul)
+            + BACKGROUND_COLOR.rgb * (1 - mul);
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
 
         if (data.color.r > data.color.g) {// TODO

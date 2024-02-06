@@ -44,6 +44,7 @@ public:
     util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
     util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
+    uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
@@ -97,6 +98,7 @@ private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
     void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, uint32_t new_color);
+    void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
 };
 
 

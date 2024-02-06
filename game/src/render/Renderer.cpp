@@ -22,6 +22,7 @@ Renderer::~Renderer() {
     glDeleteBuffers(1, &ubo_constants);
     glDeleteBuffers(1, &ubo_settings);
     glDeleteTextures(BUFFER_COUNT, ao_tex);
+    glDeleteTextures(BUFFER_COUNT, shadow_tex);
     delete[] ao_data;
 }
 
@@ -67,6 +68,15 @@ void Renderer::init() {
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
     }
 
+    // Shadow texture
+    glGenTextures(BUFFER_COUNT, shadow_tex);
+    for (auto i = 0; i < BUFFER_COUNT; i++) {
+        glBindTexture(GL_TEXTURE_2D, shadow_tex[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, SHADOW_MAP_X, SHADOW_MAP_Y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+    }
+
     // Uniform constants
     {
     #ifdef DEBUG
@@ -105,10 +115,13 @@ void Renderer::init() {
         glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
 
         float BG_COLOR[] = { BACKGROUND_COLOR.r / 255.0f, BACKGROUND_COLOR.g / 255.0f, BACKGROUND_COLOR.b / 255.0f };
+        float SH_COLOR[] = { SHADOW_COLOR.r / 255.0f, SHADOW_COLOR.g / 255.0f, SHADOW_COLOR.b / 255.0f };
         settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
         settings_writer.write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer.write_member("AO_STRENGTH", 0.6f);
         settings_writer.write_member("BACKGROUND_COLOR", BG_COLOR);
+        settings_writer.write_member("SHADOW_STRENGTH", 0.35f);
+        settings_writer.write_member("SHADOW_COLOR", SH_COLOR);
         settings_writer.upload();
     }
 }
@@ -150,6 +163,9 @@ void Renderer::update_colors_and_lod() {
     for (int i = 0; i < sim->ao_blocks.size(); i++)
         ao_data[i] = 255 * sim->ao_blocks[i] / AO_VOLUME;
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
+
+    glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->shadow_map);
 }
 
 void Renderer::draw_octree_debug() {
@@ -190,8 +206,11 @@ void Renderer::draw() {
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, ubo_constants);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_settings);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_constants);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_settings);
 
 
 #pragma region uniforms

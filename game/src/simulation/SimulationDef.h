@@ -30,6 +30,10 @@ constexpr unsigned int YRES = 200;
 constexpr unsigned int ZRES = 200;
 constexpr unsigned int NPARTS = XRES * YRES * ZRES;
 
+constexpr unsigned int SHADOW_MAP_SCALE = 1; // Mostly unused, needs to be set in shader as well
+constexpr unsigned int SHADOW_MAP_X = (XRES + ZRES) / SHADOW_MAP_SCALE;
+constexpr unsigned int SHADOW_MAP_Y = (YRES + ZRES) / SHADOW_MAP_SCALE;
+
 constexpr float MAX_VELOCITY = 50.0f;
 
 constexpr bool BOUNDS_CHECK(coord_t x, coord_t y, coord_t z) {

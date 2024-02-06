@@ -27,6 +27,7 @@ Simulation::Simulation():
     color_data.fill(0);
     ao_blocks.fill(0);
     color_data_modified.fill(0);
+    std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
 
     pfree = 1;
     maxId = 0;
@@ -112,6 +113,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vz = 0.0f;
     if (paused) {
         ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+        _update_shadow_map(x, y, z);
         parts_count++;
     }
 
@@ -255,6 +257,7 @@ void Simulation::recalc_free_particles() {
     part_id newMaxId = 0;
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
+    std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
     ao_blocks.fill(0);
 
     for (part_id i = 0; i <= maxId; i++) {
@@ -268,9 +271,11 @@ void Simulation::recalc_free_particles() {
         const coord_t y = part.ry;
         const coord_t z = part.rz;
 
-        // Ambient occlusion rules
-        if (part.id == ID(pmap[z][y][x]))
+        // Ambient occlusion and shadow rules
+        if (part.id == ID(pmap[z][y][x])) {
             ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+            _update_shadow_map(x, y, z);
+        }
 
         // Pmap / other cache
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
@@ -304,4 +309,10 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
     else
         tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+}
+
+void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coord_t z) {
+    unsigned int proj_x = (static_cast<unsigned int>(x) + (ZRES - z)) / SHADOW_MAP_SCALE;
+    unsigned int proj_y = (static_cast<unsigned int>(y) + (ZRES - z)) / SHADOW_MAP_SCALE;
+    shadow_map[proj_y][proj_x] = std::max(shadow_map[proj_y][proj_x], static_cast<uint8_t>(z));
 }

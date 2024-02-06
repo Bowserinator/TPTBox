@@ -11,6 +11,8 @@
 constexpr float DOWNSCALE_RATIO = 1.5f;
 constexpr unsigned int BUFFER_COUNT = 2; // Prefer to be a power of 2, must be < 8 because modified bitset is 1 byte
 constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
+constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
+
 
 class Simulation;
 class RenderCamera;
@@ -39,7 +41,7 @@ private:
         post_shader_depth_texture_loc,
         post_shader_res_loc;
 
-    GLuint ao_tex[BUFFER_COUNT];
+    GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     unsigned int ssbo_colors[BUFFER_COUNT], ssbo_lod[BUFFER_COUNT];
     unsigned int ubo_constants, ubo_settings;
     uint8_t * ao_data;
