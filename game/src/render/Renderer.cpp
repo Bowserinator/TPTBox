@@ -24,8 +24,17 @@ Renderer::~Renderer() {
 }
 
 void Renderer::init() {
-    part_shader = LoadShader("resources/shaders/part.vs", "resources/shaders/part.fs");
+    part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
+    post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
+
     ao_data = new uint8_t[sim->ao_blocks.size()];
+    base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+
+    rlEnableShader(part_shader.id);
+        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
+        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragGlowOnly"), 1);
+        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragBlurOnly"), 2);
+    rlDisableShader();
 
     // Uniform values that may change per frame
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
@@ -33,6 +42,12 @@ void Renderer::init() {
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
+
+    post_shader_base_texture_loc = GetShaderLocation(post_shader, "baseTexture");
+    post_shader_glow_texture_loc = GetShaderLocation(post_shader, "glowTexture");
+    post_shader_blur_texture_loc = GetShaderLocation(post_shader, "blurTexture");
+    post_shader_depth_texture_loc = GetShaderLocation(post_shader, "depthTexture");
+    post_shader_res_loc = GetShaderLocation(post_shader, "resolution");
 
     // SSBOs for color & octree LOD data
     ssbo_colors = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
@@ -163,18 +178,19 @@ void Renderer::draw() {
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_3D, ao_tex);
-
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, ubo_constants);
     glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_settings);
 
-    BeginShaderMode(part_shader);
 
+#pragma region uniforms
+    const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
+    const Vector2 virtual_resolution{ (float)GetScreenWidth() / DOWNSCALE_RATIO, (float)GetScreenHeight() / DOWNSCALE_RATIO };
+    
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
     util::reduce_to_rotation(transform_mat);
     const auto transform_matT = MatrixTranspose(transform_mat);
 
-    const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
     const float aspect_ratio = resolution.x / resolution.y;
     const auto look_ray = Vector3Normalize(cam->camera.target - cam->camera.position);
 
@@ -182,20 +198,56 @@ void Renderer::draw() {
     const Vector3 uv1 = Vector3Transform(Vector3{1.0, 0.0, 0.0} * aspect_ratio, transform_matT);
     const Vector3 uv2 = Vector3Transform(Vector3{0.0, 1.0, 0.0}, transform_matT);
 
-    util::set_shader_value(part_shader, part_shader_res_loc, resolution);
-    util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
-    util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
-    util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
-    util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+    // Fullscreen triangle vertices
+    const Vector3 cent = cam->camera.position + look_ray; // Center pos of triangle
+    const Vector3 fullt1 = cent - 2.0f * uv1 + uv2;
+    const Vector3 fullt2 = cent + uv1 - 2.0 * uv2;
+    const Vector3 fullt3 = cent + uv1 + uv2;
+#pragma endregion uniforms
 
-    // Draw fullscreen triangle, the overdraw has 0 effect on performance
-    Vector3 cent = cam->camera.position + look_ray; // Center pos of triangle
-    DrawTriangle3D(
-        cent - 2.0f * uv1 + uv2,
-        cent + uv1 - 2.0 * uv2,
-        cent + uv1 + uv2,
-        WHITE
-    );
-    
+
+    // First render everything to FBO
+    // which contains multiple textures for glow, blur, base, depth, etc...
+    rlEnableFramebuffer(base_tex.frameBuffer);
+    rlClearScreenBuffers();
+    rlDisableColorBlend();
+
+    BeginMode3D(cam->camera);
+    BeginShaderMode(part_shader);
+
+        ClearBackground(Color{0, 0, 0, 0}); // Semi-transparent background
+
+        util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
+        util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
+        util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
+        util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
+        util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+
+        // Draw fullscreen triangle, the overdraw has 0 effect on performance
+        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
+
     EndShaderMode();
+    EndMode3D();
+
+    rlDisableFramebuffer();
+    rlEnableColorBlend();
+
+    // Render the above textures with a post-processing shader for compositing
+    BeginMode3D(cam->camera);
+    rlDisableColorBlend();
+    BeginShaderMode(post_shader);
+
+        rlEnableShader(post_shader.id);
+        rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
+        rlSetUniformSampler(post_shader_glow_texture_loc, base_tex.glowOnlyTexture);
+        rlSetUniformSampler(post_shader_blur_texture_loc, base_tex.blurOnlyTexture);
+        rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
+        util::set_shader_value(post_shader, post_shader_res_loc, resolution);
+
+        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+    EndShaderMode();
+    rlEnableColorBlend();
+    EndMode3D();
 }

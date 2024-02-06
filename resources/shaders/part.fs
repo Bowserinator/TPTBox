@@ -39,7 +39,10 @@ uniform vec3 cameraDir;   // Camera look dir (normalized)
 
 uniform vec3 uv1;         // "Up" direction on screen vector mapped to world space
 uniform vec3 uv2;         // "Right" direction on screen vector mapped to world space
-out vec4 FragColor;
+
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 FragGlowOnly;
+layout (location = 2) out vec4 FragBlurOnly;
 
 // Other constants
 const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray steps begins to fade to black
@@ -47,6 +50,7 @@ const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered 
 const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
 const vec3 FACE_COLORS = vec3(0.85, 1.0, 0.92);
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
+const float DEPTH_FAR_AWAY = 10000.0;
 
 const int MAX_REFRACT_COUNT = 4;
 const int MAX_REFLECT_COUNT = 10;
@@ -259,6 +263,9 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
 
 void main() {
+    FragGlowOnly = vec4(0.0);
+    FragBlurOnly = vec4(0.0);
+
     // Normalized to 0, 0 = center, scale -1 to 1
     vec2 screenPos = (gl_FragCoord.xy / resolution.xy) * 2.0 - 1.0;
 	vec3 rayDir = cameraDir + tan(FOV_DIV2) * (screenPos.x * uv1 + screenPos.y * uv2);
@@ -270,7 +277,7 @@ void main() {
     // Outside of box early termination
     if (rayPos.x < 0) {
         FragColor = vec4(0.0);
-        gl_FragDepth = gl_FragCoord.z;
+        gl_FragDepth = DEPTH_FAR_AWAY;
         return;
     }
 
@@ -294,12 +301,20 @@ void main() {
     // https://stackoverflow.com/a/29397319/6079328
     vec4 vClipCoord = mvp * vec4(res.xyz, 1.0);
     float fNdcDepth = vClipCoord.z / vClipCoord.w;
-    gl_FragDepth = (fNdcDepth + 1.0) * 0.5;
+    gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
     if (DEBUG_MODE == 0) { // NODEBUG
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
         FragColor.rgb = data.color.rgb * mul;
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
+
+        if (data.color.r > data.color.g) {// TODO
+            FragGlowOnly = FragColor;
+        }
+        if (data.color.b > data.color.r && data.color.r < data.color.g) {
+            FragBlurOnly = FragColor;
+            FragColor = vec4(0.0);
+        }
     }
     else if (DEBUG_MODE == 1) { // DEBUG_STEPS
         FragColor = 8.0 * vec4(data.steps) / MAX_RAY_STEPS;

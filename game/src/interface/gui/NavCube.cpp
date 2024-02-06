@@ -3,6 +3,7 @@
 #include "../../render/constants.h"
 #include "../../simulation/SimulationDef.h"
 #include "../../util/math.h"
+#include "../../util/graphics.h"
 #include "../FontCache.h"
 #include "../EventConsumer.h"
 
@@ -276,13 +277,10 @@ void NavCube::update() {
 
 
 void NavCube::draw() {
-    const Rectangle source{ 0.0f, 0.0f, (float)target.texture.width, -(float)target.texture.height };
-    const Rectangle dest{
-        NAVCUBE_POS.x, NAVCUBE_POS.y,
+    util::draw_render_texture(target, NAVCUBE_POS, Vector2{
         (float)target.texture.width * CUBE_TEXTURE_DOWNSCALE,
         (float)target.texture.height * CUBE_TEXTURE_DOWNSCALE
-    };
-    DrawTexturePro(target.texture, source, dest, Vector2{ 0.0f, 0.0f }, 0.0f, WHITE);
+    });
 }
 
 
