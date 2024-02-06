@@ -28,6 +28,7 @@ void main() {
     }
     glowColor /= 121;
 
+
     vec4 blurColor = vec4(0.0);
     for (int dx = -2; dx <= 2; dx++)
     for (int dy = -2; dy <= 2; dy++) {
@@ -35,5 +36,6 @@ void main() {
     }
     blurColor /= 25;
 
-    FragColor = orgColor + blurColor + glowColor;
+    vec4 outColor = orgColor + blurColor + glowColor;
+    FragColor = outColor;
 }

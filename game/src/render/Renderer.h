@@ -8,7 +8,8 @@
 #include "types/multitexture.h"
 #include "types/octree.h"
 
-constexpr float DOWNSCALE_RATIO = 2.0f;
+constexpr float DOWNSCALE_RATIO = 1.5f;
+constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
 
 class Simulation;
 class RenderCamera;

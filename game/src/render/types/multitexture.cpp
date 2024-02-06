@@ -8,15 +8,18 @@ MultiTexture::MultiTexture(const unsigned int screenWidth, const unsigned int sc
         glowOnlyTexture(0), blurOnlyTexture(0), depthTexture(0) {
     frameBuffer = rlLoadFramebuffer(screenWidth, screenHeight);
 
+#ifdef DEBUG
     if (!frameBuffer)
         throw std::runtime_error("Failed to create framebuffer");
-    
+#endif
+
     rlEnableFramebuffer(frameBuffer);
 
     // Color renders, RGBA
-    colorTexture    = rlLoadTexture(NULL, screenWidth, screenHeight, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
-    glowOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
-    blurOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
+    const auto format = RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    colorTexture    = rlLoadTexture(NULL, screenWidth, screenHeight, format, 1);
+    glowOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, format, 1);
+    blurOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, format, 1);
 
     rlActiveDrawBuffers(3);
     rlFramebufferAttach(frameBuffer, colorTexture, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
@@ -29,8 +32,10 @@ MultiTexture::MultiTexture(const unsigned int screenWidth, const unsigned int sc
     // Make sure our framebuffer is complete.
     // NOTE: rlFramebufferComplete() automatically unbinds the framebuffer, so we don't have
     // to rlDisableFramebuffer() here.
+#ifdef DEBUG
     if (!rlFramebufferComplete(frameBuffer))
         throw std::runtime_error("Framebuffer is not complete");
+#endif
 }
 
 MultiTexture::~MultiTexture() {

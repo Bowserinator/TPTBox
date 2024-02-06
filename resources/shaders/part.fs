@@ -28,8 +28,9 @@ layout(shared, binding = 3) uniform Constants {
 
 layout(shared, binding = 4) uniform Settings {
     int MAX_RAY_STEPS;
-    uint DEBUG_MODE;      // 0 = regular rendering, see Renderer.h for flags
-    float AO_STRENGTH;    // 0 = No AO effect, 1 = max AO effect
+    uint DEBUG_MODE;       // 0 = regular rendering, see Renderer.h for flags
+    float AO_STRENGTH;     // 0 = No AO effect, 1 = max AO effect
+    vec3 BACKGROUND_COLOR; // RGBA normalized 0-1
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -187,7 +188,8 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
-                    data.color.rgb += voxelColor.rgb * (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * AO_estimate(voxelPos);
+                    data.color.rgb += voxelColor.rgb *
+                        (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * AO_estimate(voxelPos);
                     data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
                 }
                 prevVoxelColor = voxelColor;
@@ -276,7 +278,7 @@ void main() {
         rayPos = rayCollideSim(rayPos, rayDir);
     // Outside of box early termination
     if (rayPos.x < 0) {
-        FragColor = vec4(0.0);
+        FragColor.rgb = BACKGROUND_COLOR.rgb;
         gl_FragDepth = DEPTH_FAR_AWAY;
         return;
     }
@@ -305,13 +307,13 @@ void main() {
 
     if (DEBUG_MODE == 0) { // NODEBUG
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
-        FragColor.rgb = data.color.rgb * mul;
+        FragColor.rgb = data.color.rgb * mul + BACKGROUND_COLOR.rgb * (1 - mul);
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
 
         if (data.color.r > data.color.g) {// TODO
             FragGlowOnly = FragColor;
         }
-        if (data.color.b > data.color.r && data.color.r < data.color.g) {
+        if (data.color.g > data.color.b && data.color.r < data.color.g) {
             FragBlurOnly = FragColor;
             FragColor = vec4(0.0);
         }
