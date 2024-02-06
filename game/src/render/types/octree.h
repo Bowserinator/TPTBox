@@ -58,7 +58,7 @@ public:
     // and the corresponding bit for it is the last 3 bits of morton_code(x, y, z) >> (3 * (depth - layer - 1))
     uint8_t * data;
 
-    bool modified = false;
+    uint8_t modified = 0x0;
 };
 
 #endif

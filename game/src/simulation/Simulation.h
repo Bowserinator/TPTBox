@@ -41,7 +41,7 @@ public:
 
     // Graphics bookkeeping
     util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
-    std::vector<bool> color_data_modified;
+    util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
     util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
 

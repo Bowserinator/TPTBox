@@ -26,7 +26,7 @@ Simulation::Simulation():
 
     color_data.fill(0);
     ao_blocks.fill(0);
-    color_data_modified = std::vector<bool>(COLOR_DATA_CHUNK_COUNT, false);
+    color_data_modified.fill(0);
 
     pfree = 1;
     maxId = 0;
@@ -296,9 +296,9 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
 
     unsigned int idx = FLAT_IDX(x, y, z);
-    color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = true;
+    color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = 0xFF;
     color_data[idx] = new_color;
-    tree.modified = true;
+    tree.modified = 0xFF;
 
     if (new_color)
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
