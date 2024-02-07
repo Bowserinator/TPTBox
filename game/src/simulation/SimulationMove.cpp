@@ -213,8 +213,8 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
             part_map[oldz][oldy][oldx] = 0;
             part_map[z][y][x] = old_pmap_val;
 
-            _set_color_data_at(x, y, z, GetElements()[parts[idx].type].Color.as_ABGR());
-            _set_color_data_at(oldx, oldy, oldz, 0);
+            _set_color_data_at(x, y, z, &parts[idx]);
+            _set_color_data_at(oldx, oldy, oldz, nullptr);
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -239,9 +239,8 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
  */
 void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
-    uint32_t old_color_1 = color_data[FLAT_IDX(x1, y1, z1)];
-    _set_color_data_at(x1, y1, z1, color_data[FLAT_IDX(x2, y2, z2)]);
-    _set_color_data_at(x2, y2, z2, old_color_1);
+    _set_color_data_at(x1, y1, z1, id2 ? &parts[id2] : nullptr);
+    _set_color_data_at(x2, y2, z2, id1 ? &parts[id1] : nullptr);
 
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);

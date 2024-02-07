@@ -156,7 +156,7 @@ void HUD::draw(const HUDData &data) {
                     sim->parts[idx].vx,
                     sim->parts[idx].vy,
                     sim->parts[idx].vz,
-                    util::bitset_to_str<8>(sim->parts[idx].flag).c_str()
+                    sim->parts[idx].flag.to_string().c_str()
                 ),
                 GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
         }

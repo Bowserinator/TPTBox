@@ -42,4 +42,5 @@ Element::Element() {
 	HighTemperatureTransition;*/
 
     Update = nullptr;
+	Graphics = nullptr;
 }

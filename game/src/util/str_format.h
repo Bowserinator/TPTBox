@@ -8,7 +8,7 @@
 
 namespace util {
     template <int N>
-    std::string bitset_to_str(const std::bitset<N> bits) {
+    std::string bitset_to_str(const util::Bitset8 bits) {
         std::string out(N, ' ');
         for (int i = 0; i < N; i++)
             out[i] = bits[i] ? '1' : '0';

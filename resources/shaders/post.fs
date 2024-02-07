@@ -19,23 +19,24 @@ void main() {
     gl_FragDepth = texture2D(depthTexture, gl_FragCoord.xy / resolution).r;
 
     vec4 orgColor = texture2D(baseTexture, gl_FragCoord.xy / resolution);
-    orgColor.a = 1.0;
     vec4 glowColor = texture2D(glowTexture, gl_FragCoord.xy / resolution);
 
-    for (int dx = -5; dx <= 5; dx++)
-    for (int dy = -5; dy <= 5; dy++) {
+    for (int dx = -3; dx <= 3; dx++)
+    for (int dy = -3; dy <= 3; dy++) {
         glowColor += texture(glowTexture, (gl_FragCoord.xy + vec2(dx, dy)) / resolution, 0.0);
     }
-    glowColor /= 121;
-
+    glowColor /= 100;
 
     vec4 blurColor = vec4(0.0);
     for (int dx = -2; dx <= 2; dx++)
     for (int dy = -2; dy <= 2; dy++) {
-        blurColor += texture(blurTexture, (gl_FragCoord.xy + vec2(dx, dy)) / resolution, 0.0);
+        if (dx != 0 || dy != 0)
+            blurColor += texture(blurTexture, (gl_FragCoord.xy + vec2(dx, dy)) / resolution, 0.0);
     }
     blurColor /= 25;
 
-    vec4 outColor = orgColor + blurColor + glowColor;
+    orgColor.rgb *= 1.0 - blurColor.a;
+
+    vec4 outColor = orgColor + blurColor + 2 * glowColor;
     FragColor = outColor;
 }

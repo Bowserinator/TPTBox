@@ -35,6 +35,4 @@ This project is licensed under the GPLv3 license.
 
 ## Known Bugs
 
-The renderer is a work in progress at the moment and does not actually render the simulation scene.
-
 The program may not run on some Windows computers that are missing certain dlls. Installing MinGW will fix this until I figure out what's causing the issue.

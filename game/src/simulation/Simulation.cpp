@@ -25,6 +25,7 @@ Simulation::Simulation():
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
     color_data.fill(0);
+    color_flags.fill(0);
     ao_blocks.fill(0);
     color_data_modified.fill(0);
     std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
@@ -118,7 +119,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     }
 
     part_map[z][y][x] = PMAP(type, pfree);
-    _set_color_data_at(x, y, z, GetElements()[type].Color.as_ABGR());
+    _set_color_data_at(x, y, z, &parts[pfree]);
 
     maxId = std::max(maxId, pfree + 1);
     pfree = next_pfree;
@@ -144,7 +145,7 @@ void Simulation::kill_part(const part_id i) {
     if (i == maxId && i > 0)
         maxId--;
 
-    _set_color_data_at(x, y, z, 0x0);
+    _set_color_data_at(x, y, z, nullptr);
     if (paused) {
         ao_blocks[AO_FLAT_IDX(x, y, z)]--;
         parts_count--;
@@ -203,7 +204,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         }
 
         if (el.Update) {
-            const auto result = el.Update(this, i, x, y, z, parts, pmap);
+            const auto result = el.Update(*this, i, x, y, z, parts, pmap);
             if (result == -1) return;
         }
         move_behavior(i); // Apply element specific movement, like powder / liquid spread
@@ -284,7 +285,7 @@ void Simulation::recalc_free_particles() {
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
-            _set_color_data_at(x, y, z, GetElements()[part.type].Color.as_ABGR());
+            _set_color_data_at(x, y, z, &part);
         }
 
         update_part(i, false);
@@ -293,16 +294,33 @@ void Simulation::recalc_free_particles() {
 }
 
 
-// Octree updates
+// Octree & color data updates
 // ------------------------
-void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, uint32_t new_color) {
+void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part) {
+    uint32_t new_color = 0;
+    util::Bitset8 new_flags = 0;
+
+    if (part != nullptr) {
+        const auto &el = GetElements()[part->type];
+        if (!el.Graphics)
+            new_color = el.Color.as_ABGR();
+        else {
+            RGBA color_out; // TODO cache
+            el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
+            new_color = color_out.as_ABGR();
+        }
+    }
+
+    unsigned int idx = FLAT_IDX(x, y, z);
+    if (color_data[idx] == new_color && color_flags[idx] == new_flags) return; // Color did not actually change
+
     auto &tree = octree_blocks[
         (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
         (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
 
-    unsigned int idx = FLAT_IDX(x, y, z);
     color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = 0xFF;
     color_data[idx] = new_color;
+    color_flags[idx] = new_flags;
     tree.modified = 0xFF;
 
     if (new_color)

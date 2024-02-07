@@ -2,10 +2,10 @@
 #define RAYCAST_H
 
 #include "SimulationDef.h"
-#include <bitset>
+#include "../util/types/bitset8.h"
 
 namespace RayCast {
-    using RayHitFace = std::bitset<4>;
+    using RayHitFace = util::Bitset8;
     const RayHitFace FACE_X = 0b1;
     const RayHitFace FACE_Y = 0b10;
     const RayHitFace FACE_Z = 0b100;

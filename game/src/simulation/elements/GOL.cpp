@@ -3,6 +3,7 @@
 #include <iostream>
 
 static int update(UPDATE_FUNC_ARGS);
+static int graphics(GRAPHICS_FUNC_ARGS);
 
 void Element::Element_GOL() {
     State = ElementState::TYPE_SOLID;
@@ -10,10 +11,12 @@ void Element::Element_GOL() {
 
     Update = &update;
     Weight = 100;
+
+    Graphics = &graphics;
 };
 
 static int update(UPDATE_FUNC_ARGS) {
-    if (sim->frame_count % 2 == 0) { // Collect neighbors phase
+    if (sim.frame_count % 2 == 0) { // Collect neighbors phase
         int neighbors = 0;
         for (int dz = -1; dz <= 1; dz++)
         for (int dy = -1; dy <= 1; dy++)
@@ -32,5 +35,12 @@ static int update(UPDATE_FUNC_ARGS) {
         }
     }
     
+    return 0;
+}
+
+static int graphics(GRAPHICS_FUNC_ARGS) {
+    flags[GraphicsFlags::GLOW] = true;
+    // flags[GraphicsFlags::REFRACT] = true;
+    color = 0xFF0000FF;
     return 0;
 }

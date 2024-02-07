@@ -15,10 +15,10 @@
 
 Renderer::~Renderer() {
     UnloadShader(part_shader);
-    for (auto i = 0; i < BUFFER_COUNT; i++) {
-        glDeleteBuffers(1, &ssbo_colors[i]);
-        glDeleteBuffers(1, &ssbo_lod[i]);
-    }
+    glDeleteBuffers(BUFFER_COUNT, ssbo_colors);
+    glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
+    glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
+
     glDeleteBuffers(1, &ubo_constants);
     glDeleteBuffers(1, &ubo_settings);
     glDeleteTextures(BUFFER_COUNT, ao_tex);
@@ -55,7 +55,8 @@ void Renderer::init() {
     // SSBOs for color & octree LOD data
     for (auto i = 0; i < BUFFER_COUNT; i++) {
         ssbo_colors[i] = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
-        ssbo_lod[i] = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
+        ssbo_flags[i]  = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint8_t), NULL, RL_DYNAMIC_COPY);
+        ssbo_lod[i]    = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
             NULL, RL_DYNAMIC_COPY);
     }
 
@@ -140,8 +141,13 @@ void Renderer::update_colors_and_lod() {
 
             rlUpdateShaderBuffer(ssbo_colors[ssbo_idx],
                 &sim->color_data[i * COLOR_DATA_CHUNK_SIZE],
-                chunk_len* sizeof(uint32_t),
+                chunk_len * sizeof(uint32_t),
                 i * COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t));
+            rlUpdateShaderBuffer(ssbo_flags[ssbo_idx],
+                &sim->color_flags[i * COLOR_DATA_CHUNK_SIZE],
+                chunk_len * sizeof(uint8_t),
+                i * COLOR_DATA_CHUNK_SIZE * sizeof(uint8_t));
+
             sim->color_data_modified[i] &= ~ssbo_bit;
         }
     }
@@ -160,6 +166,7 @@ void Renderer::update_colors_and_lod() {
 
     glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
     constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
+    #pragma omp simd
     for (int i = 0; i < sim->ao_blocks.size(); i++)
         ao_data[i] = 255 * sim->ao_blocks[i] / AO_VOLUME;
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
@@ -202,15 +209,16 @@ void Renderer::draw() {
 
     const unsigned int ssbo_idx = sim->frame_count % BUFFER_COUNT;
     rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
-    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 1);
+    rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
+    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
 
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
     glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
+    glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 4, ubo_constants);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_settings);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_constants);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
 
 
 #pragma region uniforms

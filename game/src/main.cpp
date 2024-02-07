@@ -52,7 +52,7 @@ int main(void) {
 
 
 #if defined(PLATFORM_WEB)
-    emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
+    emscripten_set_main_loop(UpdateDrawFrame, TARGET_FPS, 1);
 #else
     SetTargetFPS(TARGET_FPS);
 

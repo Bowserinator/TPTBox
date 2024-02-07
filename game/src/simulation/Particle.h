@@ -3,8 +3,7 @@
 
 #include "SimulationDef.h"
 #include "../util/types/color.h"
-
-#include <bitset>
+#include "../util/types/bitset8.h"
 
 namespace PartFlags {
     constexpr uint8_t UPDATE_FRAME = 0;
@@ -15,7 +14,7 @@ namespace PartFlags {
 struct alignas(64) Particle {
     uint16_t type;
     part_id id;
-    std::bitset<8> flag;
+    util::Bitset8 flag;
 
     uint16_t ctype;
     int16_t life = 0;

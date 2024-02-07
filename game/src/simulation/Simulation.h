@@ -41,6 +41,7 @@ public:
 
     // Graphics bookkeeping
     util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
+    util::heap_array<uint8_t, XRES * YRES * ZRES> color_flags;
     util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
     util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
@@ -97,7 +98,7 @@ public:
 private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
-    void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, uint32_t new_color);
+    void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part);
     void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
 };
 
@@ -171,10 +172,9 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
 
     // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
     // the value of t at which the ray crosses the first vertical voxel boundary
-    // TODO: isnt ext_voxel_boundary.x - in.x always just dx? since we never start inside a voxel
-    float tMaxX = (ray.x != 0) ? (next_voxel_boundary.x - in.x) / ray.x : std::numeric_limits<float>::max();
-    float tMaxY = (ray.y != 0) ? (next_voxel_boundary.y - in.y) / ray.y : std::numeric_limits<float>::max();
-    float tMaxZ = (ray.z != 0) ? (next_voxel_boundary.z - in.z) / ray.z : std::numeric_limits<float>::max();
+    float tMaxX = (ray.x != 0) ? (dx) / ray.x : std::numeric_limits<float>::max();
+    float tMaxY = (ray.y != 0) ? (dy) / ray.y : std::numeric_limits<float>::max();
+    float tMaxZ = (ray.z != 0) ? (dz) / ray.z : std::numeric_limits<float>::max();
 
     // tDeltaX, tDeltaY, tDeltaZ --
     // how far along the ray we must move for the horizontal component to equal the width of a voxel

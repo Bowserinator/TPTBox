@@ -3,15 +3,18 @@
 layout(std430, binding = 0) readonly restrict buffer Colors {
     uint colors[];
 };
-layout(std430, binding = 1) readonly restrict buffer colorLod {
+layout(std430, binding = 1) readonly restrict buffer MatFlags {
+    uint colorFlags[];
+};
+layout(std430, binding = 2) readonly restrict buffer ColorLod {
     uint colorsLod[];
 };
 
-layout (binding = 2) uniform sampler3D aoBlocks;
-layout (binding = 3) uniform sampler2D shadowMap;
+layout (binding = 3) uniform sampler3D aoBlocks;
+layout (binding = 4) uniform sampler2D shadowMap;
 
 // We use vec4 instead of vec3s because vec3s have messy alignments
-layout(shared, binding = 4) uniform Constants {
+layout(shared, binding = 5) uniform Constants {
     vec3 SIMRES;           // Vec3 of XRES, YRES, ZRES
     int NUM_LEVELS;        // Each octree goes up to blocks of side length 2^NUM_LENGTH
     float FOV_DIV2;        // (FOV in radians) / 2
@@ -27,7 +30,7 @@ layout(shared, binding = 4) uniform Constants {
     uint MORTON_Z_SHIFTS[256];
 };
 
-layout(shared, binding = 5) uniform Settings {
+layout(shared, binding = 6) uniform Settings {
     int MAX_RAY_STEPS;
     uint DEBUG_MODE;       // 0 = regular rendering, see Renderer.h for flags
     float AO_STRENGTH;     // 0 = No AO effect, 1 = max AO effect
@@ -49,15 +52,23 @@ layout (location = 1) out vec4 FragGlowOnly;
 layout (location = 2) out vec4 FragBlurOnly;
 
 // Other constants
-const float FOG_START_PERCENT = 0.75;   // After this percentage of max ray steps begins to fade to black
-const float ALPHA_THRESH = 0.96;        // Above this alpha a ray is considered "stopped"
-const float AIR_INDEX_REFRACTION = 1.0; // Note: can't be 0
+const float FOG_START_PERCENT = 0.75;     // After this percentage of max ray steps begins to fade to black
+const float ALPHA_THRESH = 0.96;          // Above this alpha a ray is considered "stopped"
+const float AIR_INDEX_REFRACTION = 1.0;   // Note: can't be 0
+const float GLASS_INDEX_REFRACTION = 1.5; // What everything that's "refractive" is assigned to
 const vec3 FACE_COLORS = vec3(0.85, 1.0, 0.92);
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const float DEPTH_FAR_AWAY = 10000.0;
 
 const int MAX_REFRACT_COUNT = 4;
 const int MAX_REFLECT_COUNT = 10;
+
+// Graphics flags - same as 2^ what is in SimulationDef.h
+const uint G_GLOW = 1;
+const uint G_BLUR = 2;
+const uint G_REFRACT = 4;
+const uint G_REFLECT = 8;
+const uint G_NO_LIGHTING = 16;
 
 struct RayCastData {
     bool shouldContinue;
@@ -122,8 +133,16 @@ uint getByteColorsLod(uint pos) {
     uint data = colorsLod[pos >> 2]; // 4 bytes per uint32
     uint remainder = pos & 3; // % 4
     data >>= (remainder << 3);
-    data = data & 0xFF;
-    return data;
+    return data & 0xFF;
+}
+
+// Get flags at location
+uint getByteFlags(uvec3 pos) {
+    uint idx = uint(pos.x + SIMRES.x * pos.y + SIMRES.y * SIMRES.x * pos.z);
+    uint data = colorFlags[idx >> 2]; // 4 bytes per uint32
+    uint remainder = idx & 3; // % 4
+    data >>= (remainder << 3);
+    return data & 0xFF;
 }
 
 // If level = 0 returns the color as ARGB uint
@@ -188,11 +207,13 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
                 vec4 voxelColor = toVec4Color(tmpIntColor);
+                uint flags = getByteFlags(voxelPos);
 
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
+                    float ao = ((flags & G_NO_LIGHTING) == 0) ? AO_estimate(voxelPos) : 1.0;
                     data.color.rgb += voxelColor.rgb *
-                        (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * AO_estimate(voxelPos);
+                        (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * ao;
                     data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
                 }
                 prevVoxelColor = voxelColor;
@@ -203,9 +224,9 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                     return ivec4(voxelPos, prevIdx + int(dirSignBits[prevIdx]) * 3);
                 }
 
-                float indexOfRefraction = voxelColor.a < 1.0 ? 1.5 : AIR_INDEX_REFRACTION; // TODO use a texture to get
-                bool shouldReflect = false && data.counts.x < MAX_REFLECT_COUNT; // TODO
-                bool shouldRefract = false && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
+                float indexOfRefraction = voxelColor.a < 1.0 ? GLASS_INDEX_REFRACTION : AIR_INDEX_REFRACTION;
+                bool shouldReflect = ((flags & G_REFLECT) != 0) && data.counts.x < MAX_REFLECT_COUNT;
+                bool shouldRefract = ((flags & G_REFRACT) != 0) && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
 
                 if (shouldReflect || shouldRefract) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
@@ -230,6 +251,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
 
                     // Reflection
                     if (shouldReflect) {
+                        data.counts.x++;
                         voxelPos[prevIdx] -= rayStep[prevIdx];
                         data.outPos = voxelPos;
                         data.outRay = reflect(dir, normal);
@@ -309,8 +331,10 @@ void main() {
     gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
     if (DEBUG_MODE == 0) { // NODEBUG
-        float shadowZ = SHADOW_STRENGTH > 0.0 ? 255.0 * texelFetch(shadowMap, res.xy + ivec2(SIMRES.z - res.z), 0).r : 0.0;
-        float shadowMul = (SHADOW_STRENGTH > 0.0 && res.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
+        uint flags = getByteFlags(uvec3(res.xyz));
+        bool doShadow = SHADOW_STRENGTH > 0.0 && ((flags & (1 << G_NO_LIGHTING)) != 0);
+        float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, res.xy + ivec2(SIMRES.z - res.z), 0).r : 0.0;
+        float shadowMul = (doShadow && res.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
 
         FragColor.rgb = data.color.rgb * mul * shadowMul
@@ -318,13 +342,10 @@ void main() {
             + BACKGROUND_COLOR.rgb * (1 - mul);
         FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
 
-        if (data.color.r > data.color.g) {// TODO
+        if ((flags & G_GLOW) != 0)
             FragGlowOnly = FragColor;
-        }
-        if (data.color.g > data.color.b && data.color.r < data.color.g) {
+        if ((flags & G_BLUR) != 0)
             FragBlurOnly = FragColor;
-            FragColor = vec4(0.0);
-        }
     }
     else if (DEBUG_MODE == 1) { // DEBUG_STEPS
         FragColor = 8.0 * vec4(data.steps) / MAX_RAY_STEPS;
