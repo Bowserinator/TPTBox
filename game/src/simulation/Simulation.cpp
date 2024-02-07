@@ -145,6 +145,7 @@ void Simulation::kill_part(const part_id i) {
     if (paused) {
         if (_should_do_lighting(part))
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
+        graphics.shadows_force_update = true;
         parts_count--;
     }
     part.id = -pfree;
@@ -222,7 +223,11 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
 }
 
 void Simulation::update() {
-    if (paused) return;
+    if (paused) {
+        if (graphics.shadows_force_update)
+            _force_update_all_shadows();
+        return;
+    }
 
     // air.update(); // TODO
 
@@ -279,7 +284,10 @@ void Simulation::recalc_free_particles() {
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
         max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
 
+        // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
+        if (GetElements()[part.type].Graphics)
+            _set_color_data_at(part.rx, part.ry, part.rz, &part);
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
             _set_color_data_at(x, y, z, &part);
@@ -335,4 +343,16 @@ void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coor
 
 bool Simulation::_should_do_lighting(const Particle &part) {
     return !(static_cast<uint8_t>(GetElements()[part.type].GraphicsFlags) & GraphicsFlagsIdx::NO_LIGHTING);
+}
+
+void Simulation::_force_update_all_shadows() {
+    std::fill(&graphics.shadow_map[0][0], &graphics.shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+    graphics.shadows_force_update = false;
+
+    for (part_id i = 0; i <= maxId; i++) {
+        auto &part = parts[i];
+        if (!part.type) continue;
+        if (part.id == ID(pmap[part.rz][part.ry][part.rx]) && _should_do_lighting(part))
+            _update_shadow_map(part.rx, part.ry, part.rz);
+    }
 }

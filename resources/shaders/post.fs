@@ -16,10 +16,10 @@ uniform sampler2D blurTexture;
 uniform sampler2D depthTexture;
 
 void main() {
-    gl_FragDepth = texture2D(depthTexture, gl_FragCoord.xy / resolution).r;
+    gl_FragDepth = texture(depthTexture, gl_FragCoord.xy / resolution).r;
 
-    vec4 orgColor = texture2D(baseTexture, gl_FragCoord.xy / resolution);
-    vec4 glowColor = texture2D(glowTexture, gl_FragCoord.xy / resolution);
+    vec4 orgColor = texture(baseTexture, gl_FragCoord.xy / resolution);
+    vec4 glowColor = texture(glowTexture, gl_FragCoord.xy / resolution);
 
     for (int dx = -3; dx <= 3; dx++)
     for (int dy = -3; dy <= 3; dy++) {

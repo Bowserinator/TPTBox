@@ -41,6 +41,7 @@ static int update(UPDATE_FUNC_ARGS) {
 static int graphics(GRAPHICS_FUNC_ARGS) {
     flags[GraphicsFlagsIdx::GLOW] = true;
     // flags[GraphicsFlagsIdx::REFRACT] = true;
-    color = 0xFF0000FF;
+    color = 0xFF0000FF | ((sim.frame_count % 256) << 8);
+
     return 0;
 }

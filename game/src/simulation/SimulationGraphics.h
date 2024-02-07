@@ -55,8 +55,10 @@ struct SimulationGraphics {
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
     util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
     uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
+    bool shadows_force_update;
 
     SimulationGraphics() {
+        shadows_force_update = false;
         color_data.fill(0);
         color_flags.fill(0);
         ao_blocks.fill(0);

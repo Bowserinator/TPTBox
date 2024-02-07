@@ -9,7 +9,7 @@
 #include "types/octree.h"
 
 constexpr float DOWNSCALE_RATIO = 1.5f;
-constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte
+constexpr unsigned int BUFFER_COUNT = 4; // Must be < 8 because modified bitset is 1 byte
 constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
 constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
 
