@@ -30,7 +30,7 @@ void Renderer::init() {
     part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
 
-    ao_data = new uint8_t[sim->ao_blocks.size()];
+    ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
 
     rlEnableShader(part_shader.id);
@@ -132,52 +132,52 @@ void Renderer::update_colors_and_lod() {
     const unsigned int ssbo_bit = 1 << ssbo_idx;
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
-        if (sim->color_data_modified[i] & ssbo_bit) {
+        if (sim->graphics.color_data_modified[i] & ssbo_bit) {
             // Since the chunks might overestimate actual color count
             // on last one take # of colors - last chunk boundary
             const auto chunk_len = (i == COLOR_DATA_CHUNK_COUNT - 1) ?
-                sim->color_data.size() - i * COLOR_DATA_CHUNK_SIZE :
+                sim->graphics.color_data.size() - i * COLOR_DATA_CHUNK_SIZE :
                 COLOR_DATA_CHUNK_SIZE;
 
             rlUpdateShaderBuffer(ssbo_colors[ssbo_idx],
-                &sim->color_data[i * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
                 chunk_len * sizeof(uint32_t),
                 i * COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t));
             rlUpdateShaderBuffer(ssbo_flags[ssbo_idx],
-                &sim->color_flags[i * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
                 chunk_len * sizeof(uint8_t),
                 i * COLOR_DATA_CHUNK_SIZE * sizeof(uint8_t));
 
-            sim->color_data_modified[i] &= ~ssbo_bit;
+            sim->graphics.color_data_modified[i] &= ~ssbo_bit;
         }
     }
 
-    for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
-        if (sim->octree_blocks[i].modified & ssbo_bit) {
+    for (std::size_t i = 0; i < sim->graphics.octree_blocks.size(); i++) {
+        if (sim->graphics.octree_blocks[i].modified & ssbo_bit) {
             // We do not upload the whole octree here, we upload all layers except
             // the last layer, since the last layer only stores info about the 1x1x1 voxel
             // data which we already have in the form of color_data
-            rlUpdateShaderBuffer(ssbo_lod[ssbo_idx], sim->octree_blocks[i].data,
+            rlUpdateShaderBuffer(ssbo_lod[ssbo_idx], sim->graphics.octree_blocks[i].data,
                 sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1],
                 i * sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]);
-            sim->octree_blocks[i].modified &= ~ssbo_bit;
+            sim->graphics.octree_blocks[i].modified &= ~ssbo_bit;
         }
     }
 
     glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
     constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
     #pragma omp simd
-    for (int i = 0; i < sim->ao_blocks.size(); i++)
-        ao_data[i] = 255 * sim->ao_blocks[i] / AO_VOLUME;
+    for (int i = 0; i < sim->graphics.ao_blocks.size(); i++)
+        ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
 
     glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->shadow_map);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
 }
 
 void Renderer::draw_octree_debug() {
-    for (std::size_t i = 0; i < sim->octree_blocks.size(); i++) {
-        if (!sim->octree_blocks[i].data[0]) continue;
+    for (std::size_t i = 0; i < sim->graphics.octree_blocks.size(); i++) {
+        if (!sim->graphics.octree_blocks[i].data[0]) continue;
         int blockX = i % X_BLOCKS;
         int blockY = (i / X_BLOCKS) % Y_BLOCKS;
         int blockZ = (i / X_BLOCKS / Y_BLOCKS);
@@ -188,7 +188,7 @@ void Renderer::draw_octree_debug() {
         for (int dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
             unsigned int morton = util::morton_decode8(dx, dy, dz);
 
-            if (sim->octree_blocks[i].data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {
+            if (sim->graphics.octree_blocks[i].data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {
                 float trueX = static_cast<float>((dx << layer) + blockX * OCTREE_BLOCK_DIM);
                 float trueY = static_cast<float>((dy << layer) + blockY * OCTREE_BLOCK_DIM);
                 float trueZ = static_cast<float>((dz << layer) + blockZ * OCTREE_BLOCK_DIM);

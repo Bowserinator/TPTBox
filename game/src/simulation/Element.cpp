@@ -7,6 +7,7 @@ Element::Element() {
     State = ElementState::TYPE_SOLID;
 
     Color = 0xFFFFFFFF;
+	GraphicsFlags = 0x0;
     Identifier = "NONE";
     Name = "NONE";
     Description = "Element not defined";

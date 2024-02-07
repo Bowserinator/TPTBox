@@ -59,15 +59,4 @@ namespace PartErr {
     constexpr part_id PARTS_FULL = -3;
 };
 
-
-// Graphics are stored as 8 bit texture, so can only fit 8 bits
-// Defaults should be when the flag = 0
-namespace GraphicsFlags {
-    constexpr uint8_t GLOW = 0;            // Glow (like fire)
-    constexpr uint8_t BLUR = 1;            // Blur (like a gas)
-    constexpr uint8_t REFRACT = 2;         // Refractive (mutually exclusive with reflective)
-    constexpr uint8_t REFLECT = 3;         // Reflective (mutually exclusive with refractive)
-    constexpr uint8_t NO_LIGHTING = 4;     // Unaffected by ambient occlusion & shadows
-}
-
 #endif

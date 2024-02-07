@@ -224,7 +224,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                     return ivec4(voxelPos, prevIdx + int(dirSignBits[prevIdx]) * 3);
                 }
 
-                float indexOfRefraction = voxelColor.a < 1.0 ? GLASS_INDEX_REFRACTION : AIR_INDEX_REFRACTION;
+                float indexOfRefraction = ((flags & G_REFRACT) != 0) ? GLASS_INDEX_REFRACTION : AIR_INDEX_REFRACTION;
                 bool shouldReflect = ((flags & G_REFLECT) != 0) && data.counts.x < MAX_REFLECT_COUNT;
                 bool shouldRefract = ((flags & G_REFRACT) != 0) && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
 
@@ -331,8 +331,8 @@ void main() {
     gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
     if (DEBUG_MODE == 0) { // NODEBUG
-        uint flags = getByteFlags(uvec3(res.xyz));
-        bool doShadow = SHADOW_STRENGTH > 0.0 && ((flags & (1 << G_NO_LIGHTING)) != 0);
+        uint flags = getByteFlags(ivec3(res.xyz));
+        bool doShadow = SHADOW_STRENGTH > 0.0 && ((flags & G_NO_LIGHTING) == 0);
         float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, res.xy + ivec2(SIMRES.z - res.z), 0).r : 0.0;
         float shadowMul = (doShadow && res.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
         float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;

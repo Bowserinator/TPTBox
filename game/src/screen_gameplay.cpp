@@ -186,6 +186,8 @@ void ScreenGameplay::draw() {
         brush_renderer.set_selected_element(3);
     else if (IsKeyDown(KEY_FOUR))
         brush_renderer.set_selected_element(4);
+    else if (IsKeyDown(KEY_FIVE))
+        brush_renderer.set_selected_element(5);
 
     fps = 1.0f / drawTime;
 }

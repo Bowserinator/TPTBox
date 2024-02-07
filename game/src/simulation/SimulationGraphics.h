@@ -2,6 +2,9 @@
 #define SIM_GRAPHICS_H
 
 #include "SimulationDef.h"
+#include "../util/types/heap_array.h"
+#include "../util/types/bitset8.h"
+
 #include <cmath>
 
 constexpr unsigned int OCTREE_BLOCK_DEPTH = 6;
@@ -23,4 +26,43 @@ constexpr unsigned int AO_Z_BLOCKS = static_cast<unsigned int>(std::ceil(static_
 constexpr uint32_t AO_FLAT_IDX(coord_t x, coord_t y, coord_t z) {
     return (x / AO_BLOCK_SIZE) + (y / AO_BLOCK_SIZE) * AO_X_BLOCKS + (z / AO_BLOCK_SIZE) * AO_X_BLOCKS * AO_Y_BLOCKS;
 }
+
+// Graphics are stored as 8 bit texture, so can only fit 8 bits
+// Defaults should be when the flag = 0
+namespace GraphicsFlagsIdx {
+    constexpr uint8_t GLOW = 0;            // Glow (like fire)
+    constexpr uint8_t BLUR = 1;            // Blur (like a gas)
+    constexpr uint8_t REFRACT = 2;         // Refractive (mutually exclusive with reflective)
+    constexpr uint8_t REFLECT = 3;         // Reflective (mutually exclusive with refractive)
+    constexpr uint8_t NO_LIGHTING = 4;     // Unaffected by ambient occlusion & shadows
+}
+
+// Preshifted
+namespace GraphicsFlags {
+    constexpr uint8_t GLOW = 1 << GraphicsFlagsIdx::GLOW;
+    constexpr uint8_t BLUR = 1 << GraphicsFlagsIdx::BLUR;
+    constexpr uint8_t REFRACT = 1 << GraphicsFlagsIdx::REFRACT;
+    constexpr uint8_t REFLECT = 1 << GraphicsFlagsIdx::REFLECT;
+    constexpr uint8_t NO_LIGHTING = 1 << GraphicsFlagsIdx::NO_LIGHTING;
+}
+
+
+class BitOctreeBlock;
+struct SimulationGraphics {
+    util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
+    util::heap_array<uint8_t, XRES * YRES * ZRES> color_flags;
+    util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
+    util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
+    util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
+    uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
+
+    SimulationGraphics() {
+        color_data.fill(0);
+        color_flags.fill(0);
+        ao_blocks.fill(0);
+        color_data_modified.fill(0);
+        std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+    }
+};
+
 #endif

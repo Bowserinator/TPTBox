@@ -24,12 +24,6 @@ Simulation::Simulation():
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
-    color_data.fill(0);
-    color_flags.fill(0);
-    ao_blocks.fill(0);
-    color_data_modified.fill(0);
-    std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
-
     pfree = 1;
     maxId = 0;
     frame_count = 0;
@@ -113,8 +107,10 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vy = 0.0f;
     parts[pfree].vz = 0.0f;
     if (paused) {
-        ao_blocks[AO_FLAT_IDX(x, y, z)]++;
-        _update_shadow_map(x, y, z);
+        if (_should_do_lighting(parts[pfree])) {
+            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+            _update_shadow_map(x, y, z);
+        }
         parts_count++;
     }
 
@@ -147,7 +143,8 @@ void Simulation::kill_part(const part_id i) {
 
     _set_color_data_at(x, y, z, nullptr);
     if (paused) {
-        ao_blocks[AO_FLAT_IDX(x, y, z)]--;
+        if (_should_do_lighting(part))
+            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
         parts_count--;
     }
     part.id = -pfree;
@@ -258,8 +255,8 @@ void Simulation::recalc_free_particles() {
     part_id newMaxId = 0;
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
-    std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
-    ao_blocks.fill(0);
+    std::fill(&graphics.shadow_map[0][0], &graphics.shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+    graphics.ao_blocks.fill(0);
 
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
@@ -273,8 +270,8 @@ void Simulation::recalc_free_particles() {
         const coord_t z = part.rz;
 
         // Ambient occlusion and shadow rules
-        if (part.id == ID(pmap[z][y][x])) {
-            ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+        if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
+            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
             _update_shadow_map(x, y, z);
         }
 
@@ -302,25 +299,26 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
 
     if (part != nullptr) {
         const auto &el = GetElements()[part->type];
-        if (!el.Graphics)
-            new_color = el.Color.as_ABGR();
-        else {
-            RGBA color_out; // TODO cache
+        new_color = el.Color.as_ABGR();
+        new_flags = util::Bitset8(el.GraphicsFlags);
+
+        if (el.Graphics) {
+            RGBA color_out;
             el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
             new_color = color_out.as_ABGR();
         }
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);
-    if (color_data[idx] == new_color && color_flags[idx] == new_flags) return; // Color did not actually change
+    if (graphics.color_data[idx] == new_color && graphics.color_flags[idx] == new_flags) return; // Color did not actually change
 
-    auto &tree = octree_blocks[
+    auto &tree = graphics.octree_blocks[
         (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
         (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
 
-    color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = 0xFF;
-    color_data[idx] = new_color;
-    color_flags[idx] = new_flags;
+    graphics.color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = 0xFF;
+    graphics.color_data[idx] = new_color;
+    graphics.color_flags[idx] = new_flags;
     tree.modified = 0xFF;
 
     if (new_color)
@@ -332,5 +330,9 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
 void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coord_t z) {
     unsigned int proj_x = (static_cast<unsigned int>(x) + (ZRES - z)) / SHADOW_MAP_SCALE;
     unsigned int proj_y = (static_cast<unsigned int>(y) + (ZRES - z)) / SHADOW_MAP_SCALE;
-    shadow_map[proj_y][proj_x] = std::max(shadow_map[proj_y][proj_x], static_cast<uint8_t>(z));
+    graphics.shadow_map[proj_y][proj_x] = std::max(graphics.shadow_map[proj_y][proj_x], static_cast<uint8_t>(z));
+}
+
+bool Simulation::_should_do_lighting(const Particle &part) {
+    return !(static_cast<uint8_t>(GetElements()[part.type].GraphicsFlags) & GraphicsFlagsIdx::NO_LIGHTING);
 }

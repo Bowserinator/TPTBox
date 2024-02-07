@@ -40,12 +40,7 @@ public:
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
     // Graphics bookkeeping
-    util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
-    util::heap_array<uint8_t, XRES * YRES * ZRES> color_flags;
-    util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
-    util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
-    util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
-    uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
+    SimulationGraphics graphics;
 
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
@@ -100,6 +95,7 @@ private:
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
     void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part);
     void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
+    bool _should_do_lighting(const Particle &part);
 };
 
 

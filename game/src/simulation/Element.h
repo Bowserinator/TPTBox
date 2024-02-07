@@ -5,6 +5,7 @@
 #include "stdint.h"
 
 #include "../util/types/color.h"
+#include "../util/types/bitset8.h"
 #include "ElementDefs.h"
 
 class Element {
@@ -46,6 +47,7 @@ public:
     // todo: default properties
 
 	RGBA Color;
+	util::Bitset8 GraphicsFlags;
     std::string Identifier;  // ID string, like METL
 	std::string Name;        // Display name, like METL
     std::string Description; // Menu description

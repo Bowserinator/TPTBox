@@ -39,8 +39,8 @@ static int update(UPDATE_FUNC_ARGS) {
 }
 
 static int graphics(GRAPHICS_FUNC_ARGS) {
-    flags[GraphicsFlags::GLOW] = true;
-    // flags[GraphicsFlags::REFRACT] = true;
+    flags[GraphicsFlagsIdx::GLOW] = true;
+    // flags[GraphicsFlagsIdx::REFRACT] = true;
     color = 0xFF0000FF;
     return 0;
 }
