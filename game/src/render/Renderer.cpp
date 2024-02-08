@@ -15,9 +15,14 @@
 
 Renderer::~Renderer() {
     UnloadShader(part_shader);
+    UnloadShader(post_shader);
+    UnloadShader(cone_shader);
+    UnloadShader(blur_shader);
+
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
+    UnloadRenderTexture(cone_tex);
     glDeleteBuffers(BUFFER_COUNT, ssbo_colors);
     glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
     glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
@@ -33,15 +38,19 @@ void Renderer::init() {
     part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
     blur_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/blur.fs");
+    cone_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/cone.fs");
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+    cone_tex = util::load_render_texture_only_color(
+        GetScreenWidth() / CONE_DOWNSCALE_RATIO, GetScreenHeight() / CONE_DOWNSCALE_RATIO,
+        PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
     const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
-    blur1_tex = LoadRenderTexture(blur_width, blur_height);
-    blur2_tex = LoadRenderTexture(blur_width, blur_height);
-    blur_tmp_tex = LoadRenderTexture(blur_width, blur_height);
+    blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     rlEnableShader(part_shader.id);
         rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
@@ -55,6 +64,7 @@ void Renderer::init() {
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
+    part_shader_cone_tex_loc = GetShaderLocation(part_shader, "coneTexture");
 
     post_shader_base_texture_loc = GetShaderLocation(post_shader, "baseTexture");
     post_shader_glow_texture_loc = GetShaderLocation(post_shader, "glowTexture");
@@ -65,6 +75,12 @@ void Renderer::init() {
     blur_shader_base_texture_loc = GetShaderLocation(blur_shader, "baseTexture");
     blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
+
+    cone_shader_res_loc = GetShaderLocation(cone_shader, "resolution");
+    cone_shader_camera_pos_loc = GetShaderLocation(cone_shader, "cameraPos");
+    cone_shader_camera_dir_loc = GetShaderLocation(cone_shader, "cameraDir");
+    cone_shader_uv1_loc = GetShaderLocation(cone_shader, "uv1");
+    cone_shader_uv2_loc = GetShaderLocation(cone_shader, "uv2");
 
     // SSBOs for color & octree LOD data
     for (auto i = 0; i < BUFFER_COUNT; i++) {
@@ -229,25 +245,12 @@ void Renderer::draw() {
     update_colors_and_lod();
     // draw_octree_debug();
 
-    const unsigned int ssbo_idx = sim->frame_count % BUFFER_COUNT;
-    rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
-    rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
-    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_constants);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
-
-
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
     const Vector2 virtual_resolution{ (float)GetScreenWidth() / DOWNSCALE_RATIO, (float)GetScreenHeight() / DOWNSCALE_RATIO };
     const Vector2 blur_resolution{ (float)GetScreenWidth() / BLUR_DOWNSCALE_RATIO, (float)GetScreenHeight() / BLUR_DOWNSCALE_RATIO };
-    
+    const Vector2 cone_resolution{ (float)GetScreenWidth() / CONE_DOWNSCALE_RATIO, (float)GetScreenHeight() / CONE_DOWNSCALE_RATIO };
+
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
     util::reduce_to_rotation(transform_mat);
@@ -268,6 +271,43 @@ void Renderer::draw() {
 #pragma endregion uniforms
 
 
+    // Pre-render first pass for cone tracing
+    // --------------------------------------
+    const unsigned int ssbo_idx = sim->frame_count % BUFFER_COUNT;
+    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_constants);
+
+    BeginTextureMode(cone_tex);
+    BeginMode3D(cam->camera);
+    BeginShaderMode(cone_shader);
+        ClearBackground(Color{0, 0, 0, 0});
+        util::set_shader_value(cone_shader, cone_shader_res_loc, cone_resolution);
+        util::set_shader_value(cone_shader, cone_shader_camera_pos_loc, cam->camera.position);
+        util::set_shader_value(cone_shader, cone_shader_camera_dir_loc, look_ray);
+        util::set_shader_value(cone_shader, cone_shader_uv1_loc, uv1);
+        util::set_shader_value(cone_shader, cone_shader_uv2_loc, uv2);
+        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
+    EndShaderMode();
+    EndMode3D();
+    EndTextureMode();
+
+
+    // First actual pass
+    // --------------------------------------
+    rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
+    rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
+    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_constants);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
+    // glBindBufferBase(GL_UNIFORM_BUFFER, 7, cone_tex.texture.id);
+
+
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
     rlEnableFramebuffer(base_tex.frameBuffer);
@@ -276,9 +316,9 @@ void Renderer::draw() {
 
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
+        ClearBackground(Color{0, 0, 0, 0});
 
-        ClearBackground(Color{0, 0, 0, 0}); // Semi-transparent background
-
+        SetShaderValueTexture(part_shader, part_shader_cone_tex_loc, cone_tex.texture);
         util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
         util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
         util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
@@ -287,7 +327,6 @@ void Renderer::draw() {
 
         // Draw fullscreen triangle, the overdraw has 0 effect on performance
         DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
-
     EndShaderMode();
     EndMode3D();
 
