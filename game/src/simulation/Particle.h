@@ -11,7 +11,7 @@ namespace PartFlags {
     constexpr uint8_t IS_ENERGY = 2;
 }
 
-struct alignas(64) Particle {
+struct Particle {
     uint16_t type;
     part_id id;
     util::Bitset8 flag;
