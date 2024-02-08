@@ -16,13 +16,11 @@
 Renderer::~Renderer() {
     UnloadShader(part_shader);
     UnloadShader(post_shader);
-    UnloadShader(cone_shader);
     UnloadShader(blur_shader);
 
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
-    UnloadRenderTexture(cone_tex);
     glDeleteBuffers(BUFFER_COUNT, ssbo_colors);
     glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
     glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
@@ -38,13 +36,9 @@ void Renderer::init() {
     part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
     blur_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/blur.fs");
-    cone_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/cone.fs");
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
-    cone_tex = util::load_render_texture_only_color(
-        GetScreenWidth() / CONE_DOWNSCALE_RATIO, GetScreenHeight() / CONE_DOWNSCALE_RATIO,
-        PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
     const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
@@ -64,7 +58,6 @@ void Renderer::init() {
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
     part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
-    part_shader_cone_tex_loc = GetShaderLocation(part_shader, "coneTexture");
 
     post_shader_base_texture_loc = GetShaderLocation(post_shader, "baseTexture");
     post_shader_glow_texture_loc = GetShaderLocation(post_shader, "glowTexture");
@@ -75,12 +68,6 @@ void Renderer::init() {
     blur_shader_base_texture_loc = GetShaderLocation(blur_shader, "baseTexture");
     blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
-
-    cone_shader_res_loc = GetShaderLocation(cone_shader, "resolution");
-    cone_shader_camera_pos_loc = GetShaderLocation(cone_shader, "cameraPos");
-    cone_shader_camera_dir_loc = GetShaderLocation(cone_shader, "cameraDir");
-    cone_shader_uv1_loc = GetShaderLocation(cone_shader, "uv1");
-    cone_shader_uv2_loc = GetShaderLocation(cone_shader, "uv2");
 
     // SSBOs for color & octree LOD data
     for (auto i = 0; i < BUFFER_COUNT; i++) {
@@ -166,7 +153,7 @@ void Renderer::init() {
 }
 
 void Renderer::update_colors_and_lod() {
-    const unsigned int ssbo_idx = (sim->frame_count + 1) % BUFFER_COUNT;
+    const unsigned int ssbo_idx = (frame_count + 1) % BUFFER_COUNT;
     const unsigned int ssbo_bit = 1 << ssbo_idx;
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
@@ -249,7 +236,6 @@ void Renderer::draw() {
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
     const Vector2 virtual_resolution{ (float)GetScreenWidth() / DOWNSCALE_RATIO, (float)GetScreenHeight() / DOWNSCALE_RATIO };
     const Vector2 blur_resolution{ (float)GetScreenWidth() / BLUR_DOWNSCALE_RATIO, (float)GetScreenHeight() / BLUR_DOWNSCALE_RATIO };
-    const Vector2 cone_resolution{ (float)GetScreenWidth() / CONE_DOWNSCALE_RATIO, (float)GetScreenHeight() / CONE_DOWNSCALE_RATIO };
 
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
@@ -270,30 +256,9 @@ void Renderer::draw() {
     const Vector3 fullt3 = cent + uv1 + uv2;
 #pragma endregion uniforms
 
-
-    // Pre-render first pass for cone tracing
-    // --------------------------------------
-    const unsigned int ssbo_idx = sim->frame_count % BUFFER_COUNT;
-    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_constants);
-
-    BeginTextureMode(cone_tex);
-    BeginMode3D(cam->camera);
-    BeginShaderMode(cone_shader);
-        ClearBackground(Color{0, 0, 0, 0});
-        util::set_shader_value(cone_shader, cone_shader_res_loc, cone_resolution);
-        util::set_shader_value(cone_shader, cone_shader_camera_pos_loc, cam->camera.position);
-        util::set_shader_value(cone_shader, cone_shader_camera_dir_loc, look_ray);
-        util::set_shader_value(cone_shader, cone_shader_uv1_loc, uv1);
-        util::set_shader_value(cone_shader, cone_shader_uv2_loc, uv2);
-        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
-    EndShaderMode();
-    EndMode3D();
-    EndTextureMode();
-
-
     // First actual pass
     // --------------------------------------
+    const unsigned int ssbo_idx = frame_count % BUFFER_COUNT;
     rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
     rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
     rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
@@ -305,8 +270,6 @@ void Renderer::draw() {
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_constants);
     glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
-    // glBindBufferBase(GL_UNIFORM_BUFFER, 7, cone_tex.texture.id);
-
 
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
@@ -318,7 +281,6 @@ void Renderer::draw() {
     BeginShaderMode(part_shader);
         ClearBackground(Color{0, 0, 0, 0});
 
-        SetShaderValueTexture(part_shader, part_shader_cone_tex_loc, cone_tex.texture);
         util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
         util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
         util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
@@ -358,6 +320,8 @@ void Renderer::draw() {
     EndShaderMode();
     rlEnableColorBlend();
     EndMode3D();
+
+    frame_count++;
 }
 
 

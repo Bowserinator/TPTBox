@@ -22,11 +22,9 @@ void main() {
     vec4 glowColor = texture(glowTexture, gl_FragCoord.xy / resolution);
     vec4 blurColor = texture(blurTexture, gl_FragCoord.xy / resolution);
 
-    // glowColor = 1.0 - exp(-glowColor);
-
-    orgColor.rgb = orgColor.a == 0.0 ? 4.0 * blurColor.rgb : orgColor.rgb; // blurColor.rgb  + orgColor.rgb * (1 - blurColor.a);
+    orgColor.rgb = orgColor.rgb * orgColor.a + blurColor.rgb * (1.0 - orgColor.a) * blurColor.a;
+    orgColor.a = orgColor.a + blurColor.a * (1.0 - orgColor.a);
 
     vec4 outColor = orgColor + 4.0 * glowColor;
     FragColor = outColor;
-
 }

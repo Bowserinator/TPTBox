@@ -33,6 +33,7 @@ out vec4 FragColor;
 // Other constants
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const float DEPTH_FAR_AWAY = 10000.0;
+const int STOP_LEVEL = 4;
 
 // Functions
 // ---------
@@ -111,10 +112,8 @@ ivec4 raymarch(vec3 pos, vec3 dir) {
 
         // Go down a level
         if (sampleVoxels(voxelPos, level) != 0) {
-            if (level == 4) {
-                vec3 tDelta = (vec3(voxelPos + ivec3(not(dirSignBits))) - pos) * idir;
-                float minDis = min3(tDelta);
-                return ivec4(voxelPos << level, 0);
+            if (level == STOP_LEVEL) {
+                return ivec4(voxelPos << level, 1);
             } else {
                 vec3 tDelta = (vec3((voxelPos + ivec3(dirSignBits)) << level) - pos) * idir;
                 float dist = max(tDelta[prevIdx], 0.);
@@ -150,12 +149,12 @@ void main() {
         rayPos = rayCollideSim(rayPos, rayDir);
     // Outside of box early termination
     if (rayPos.x < 0) {
-        FragColor.rgb = vec3(1.0);
+        FragColor = vec4(0.0); // 0 offset in worst case we round wrong won't affect color
         return;
     }
 
+    vec3 rayPosRounded = vec3(floor(rayPos / 16) * 16);
     ivec4 res = raymarch(rayPos, rayDir);
-    float dis = distance(vec3(res.xyz), rayPos);
-    FragColor.rgb = res.w < 0 ? vec3(1.0) : vec3(dis / dot(SIMRES, ivec3(1)));
+    FragColor.rgb = vec3(res.w < 0 ? 0.0 : distance(rayPosRounded, res.xyz) / (SIMRES.x * 2));
     FragColor.a = 1.0;
 }

@@ -20,4 +20,5 @@ void main() {
     for (int r = -RADIUS; r <= RADIUS; r++)
         color += texture(baseTexture, (gl_FragCoord.xy + direction * r) / resolution) * WEIGHTS[abs(r)];
     FragColor = color;
+    FragColor.a *= 2.0;
 }

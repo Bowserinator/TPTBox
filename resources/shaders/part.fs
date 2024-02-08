@@ -12,7 +12,6 @@ layout(std430, binding = 2) readonly restrict buffer ColorLod {
 
 layout (binding = 3) uniform sampler3D aoBlocks;
 layout (binding = 4) uniform sampler2D shadowMap;
-uniform sampler2D coneTexture;
 
 // We use vec4 instead of vec3s because vec3s have messy alignments
 layout(shared, binding = 5) uniform Constants {
@@ -317,13 +316,6 @@ void main() {
         gl_FragDepth = DEPTH_FAR_AWAY;
         return;
     }
-
-    // Move as far as we can in the pre-pass
-    float dis = texture(coneTexture, gl_FragCoord.xy / resolution).r * dot(SIMRES, ivec3(1));
-    rayPos += rayDir * (dis - 32.0); // We stop at level 4 so 2^4 * 2 to account for block error
-
-    if (!isInSim(ivec3(rayPos)))
-        rayPos = rayCollideSim(rayPos, rayDir);
 
     RayCastData data = RayCastData(
         true,      // shouldContinue
