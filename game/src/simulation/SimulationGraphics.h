@@ -34,7 +34,7 @@ namespace GraphicsFlagsIdx {
     constexpr uint8_t BLUR = 1;            // Blur (like a gas)
     constexpr uint8_t REFRACT = 2;         // Refractive (mutually exclusive with reflective)
     constexpr uint8_t REFLECT = 3;         // Reflective (mutually exclusive with refractive)
-    constexpr uint8_t NO_LIGHTING = 4;     // Unaffected by ambient occlusion & shadows
+    constexpr uint8_t NO_LIGHTING = 4;     // Unaffected by ambient occlusion & shadows, only works with static flags
 }
 
 // Preshifted

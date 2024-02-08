@@ -37,6 +37,13 @@ layout(shared, binding = 6) uniform Settings {
     vec3 BACKGROUND_COLOR; // RGB normalized 0-1
     float SHADOW_STRENGTH; // 0 = no shadow, 1 = max strength
     vec3 SHADOW_COLOR;     // RGB normalized 0-1
+
+    bool ENABLE_TRANSPARENCY;
+    bool ENABLE_REFLECTION;
+    bool ENABLE_REFRACTION;
+    bool ENABLE_BLUR;
+    bool ENABLE_GLOW;
+    bool ENABLE_AO;
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -120,7 +127,7 @@ uint mortonDecode(int x, int y, int z) {
 // Estimate AO at point, returns darkness multiplier
 // (ie 1 = no shadow, 0 = all shadow)
 float AO_estimate(ivec3 pos) {
-    if (AO_STRENGTH == 0.0) return 1.0;
+    if (AO_STRENGTH == 0.0 || !ENABLE_AO) return 1.0;
 
     vec3 aoPos = vec3(pos) / vec3(AO_BLOCK_DIMS) / float(AO_BLOCK_SIZE);
     float ao = texture(aoBlocks, aoPos).r;
@@ -221,14 +228,14 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                 prevVoxelColor = voxelColor;
 
                 // Color is "solid enough", return
-                if (data.color.a > ALPHA_THRESH) {
+                if (data.color.a > ALPHA_THRESH || !ENABLE_TRANSPARENCY) {
                     data.shouldContinue = false;
                     return ivec4(voxelPos, prevIdx + int(dirSignBits[prevIdx]) * 3);
                 }
 
                 float indexOfRefraction = ((flags & G_REFRACT) != 0) ? GLASS_INDEX_REFRACTION : AIR_INDEX_REFRACTION;
-                bool shouldReflect = ((flags & G_REFLECT) != 0) && data.counts.x < MAX_REFLECT_COUNT;
-                bool shouldRefract = ((flags & G_REFRACT) != 0) && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
+                bool shouldReflect = ENABLE_REFLECTION && ((flags & G_REFLECT) != 0) && data.counts.x < MAX_REFLECT_COUNT;
+                bool shouldRefract = ENABLE_REFRACTION && ((flags & G_REFRACT) != 0) && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
 
                 if (shouldReflect || shouldRefract) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
@@ -345,9 +352,9 @@ void main() {
             + BACKGROUND_COLOR.rgb * (1 - mul);
         FragColor.a = data.color.a;
 
-        if ((flags & G_GLOW) != 0)
+        if (ENABLE_GLOW && (flags & G_GLOW) != 0)
             FragGlowOnly = FragColor;
-        else if ((flags & G_BLUR) != 0)
+        else if (ENABLE_BLUR && (flags & G_BLUR) != 0)
             FragBlurOnly = FragColor;
     }
     else if (DEBUG_MODE == 1) { // DEBUG_STEPS

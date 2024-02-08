@@ -137,6 +137,14 @@ void Renderer::init() {
         settings_writer.write_member("BACKGROUND_COLOR", BG_COLOR);
         settings_writer.write_member("SHADOW_STRENGTH", 0.35f);
         settings_writer.write_member("SHADOW_COLOR", SH_COLOR);
+
+        settings_writer.write_member("ENABLE_TRANSPARENCY", 1);
+        settings_writer.write_member("ENABLE_REFLECTION", 1);
+        settings_writer.write_member("ENABLE_REFRACTION", 1);
+        settings_writer.write_member("ENABLE_BLUR", 1);
+        settings_writer.write_member("ENABLE_GLOW", 1);
+        settings_writer.write_member("ENABLE_AO", 1);
+
         settings_writer.upload();
     }
 }
