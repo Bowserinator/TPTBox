@@ -58,7 +58,6 @@ private:
 
     RenderTexture2D blur1_tex, blur2_tex, blur_tmp_tex, cone_tex;
     MultiTexture base_tex;
-    unsigned int frame_count = 0;
 
     enum class FragDebugMode: uint32_t {
         NODEBUG = 0,

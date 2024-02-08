@@ -166,7 +166,7 @@ void Renderer::init() {
 }
 
 void Renderer::update_colors_and_lod() {
-    const unsigned int ssbo_idx = (frame_count + 1) % BUFFER_COUNT;
+    const unsigned int ssbo_idx = (sim->frame_count + 1) % BUFFER_COUNT;
     const unsigned int ssbo_bit = 1 << ssbo_idx;
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
@@ -358,8 +358,6 @@ void Renderer::draw() {
     EndShaderMode();
     rlEnableColorBlend();
     EndMode3D();
-
-    frame_count++;
 }
 
 
