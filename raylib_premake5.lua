@@ -48,6 +48,8 @@ function link_raylib()
     includedirs {"../" .. raylib_dir .. "/src" }
     includedirs {"../" .. raylib_dir .."/src/external" }
     includedirs {"../" .. raylib_dir .."/src/external/glfw/include" }
+
+    defines{"RL_CULL_DISTANCE_FAR=2000.0"}
     platform_defines()
 
     filter "action:vs*"
