@@ -9,6 +9,7 @@
 #include "types/octree.h"
 
 constexpr float DOWNSCALE_RATIO = 1.5f;
+constexpr float BLUR_DOWNSCALE_RATIO = 1.5f;
 constexpr unsigned int BUFFER_COUNT = 4; // Must be < 8 because modified bitset is 1 byte
 constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
 constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
@@ -28,7 +29,7 @@ private:
     Simulation * sim;
     RenderCamera * cam;
 
-    Shader part_shader, post_shader;
+    Shader part_shader, post_shader, blur_shader;
     int part_shader_res_loc,
         part_shader_uv1_loc,
         part_shader_uv2_loc,
@@ -39,12 +40,16 @@ private:
         post_shader_blur_texture_loc,
         post_shader_depth_texture_loc,
         post_shader_res_loc;
+    int blur_shader_base_texture_loc,
+        blur_shader_res_loc,
+        blur_shader_dir_loc;
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     unsigned int ssbo_colors[BUFFER_COUNT], ssbo_flags[BUFFER_COUNT], ssbo_lod[BUFFER_COUNT];
     unsigned int ubo_constants, ubo_settings;
     uint8_t * ao_data;
 
+    RenderTexture2D blur1_tex, blur2_tex, blur_tmp_tex;
     MultiTexture base_tex;
     unsigned int frame_count = 0;
 
@@ -54,6 +59,8 @@ private:
         DEBUG_NORMALS = 2,
         DEBUG_AO = 3
     };
+
+    void _blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex);
 };
 
 #endif

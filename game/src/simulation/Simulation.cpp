@@ -342,13 +342,14 @@ void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coor
 }
 
 bool Simulation::_should_do_lighting(const Particle &part) {
-    return !(static_cast<uint8_t>(GetElements()[part.type].GraphicsFlags) & GraphicsFlagsIdx::NO_LIGHTING);
+    return !GetElements()[part.type].GraphicsFlags[GraphicsFlagsIdx::NO_LIGHTING];
 }
 
 void Simulation::_force_update_all_shadows() {
     std::fill(&graphics.shadow_map[0][0], &graphics.shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
     graphics.shadows_force_update = false;
 
+    #pragma parallel for
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;

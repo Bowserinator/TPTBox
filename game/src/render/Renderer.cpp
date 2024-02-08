@@ -15,6 +15,9 @@
 
 Renderer::~Renderer() {
     UnloadShader(part_shader);
+    UnloadRenderTexture(blur1_tex);
+    UnloadRenderTexture(blur2_tex);
+    UnloadRenderTexture(blur_tmp_tex);
     glDeleteBuffers(BUFFER_COUNT, ssbo_colors);
     glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
     glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
@@ -29,9 +32,16 @@ Renderer::~Renderer() {
 void Renderer::init() {
     part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
+    blur_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/blur.fs");
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+
+    const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
+    const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
+    blur1_tex = LoadRenderTexture(blur_width, blur_height);
+    blur2_tex = LoadRenderTexture(blur_width, blur_height);
+    blur_tmp_tex = LoadRenderTexture(blur_width, blur_height);
 
     rlEnableShader(part_shader.id);
         rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
@@ -51,6 +61,10 @@ void Renderer::init() {
     post_shader_blur_texture_loc = GetShaderLocation(post_shader, "blurTexture");
     post_shader_depth_texture_loc = GetShaderLocation(post_shader, "depthTexture");
     post_shader_res_loc = GetShaderLocation(post_shader, "resolution");
+
+    blur_shader_base_texture_loc = GetShaderLocation(blur_shader, "baseTexture");
+    blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
+    blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
 
     // SSBOs for color & octree LOD data
     for (auto i = 0; i < BUFFER_COUNT; i++) {
@@ -224,6 +238,7 @@ void Renderer::draw() {
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
     const Vector2 virtual_resolution{ (float)GetScreenWidth() / DOWNSCALE_RATIO, (float)GetScreenHeight() / DOWNSCALE_RATIO };
+    const Vector2 blur_resolution{ (float)GetScreenWidth() / BLUR_DOWNSCALE_RATIO, (float)GetScreenHeight() / BLUR_DOWNSCALE_RATIO };
     
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
@@ -271,6 +286,13 @@ void Renderer::draw() {
     rlDisableFramebuffer();
     rlEnableColorBlend();
 
+    // TODO: time - 0.2ms
+    auto start = GetTime();
+    _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
+    _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
+    auto end = GetTime();
+    // std::cout << (end -start )<<'\n';
+
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
     rlDisableColorBlend();
@@ -278,8 +300,8 @@ void Renderer::draw() {
 
         rlEnableShader(post_shader.id);
         rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
-        rlSetUniformSampler(post_shader_glow_texture_loc, base_tex.glowOnlyTexture);
-        rlSetUniformSampler(post_shader_blur_texture_loc, base_tex.blurOnlyTexture);
+        rlSetUniformSampler(post_shader_glow_texture_loc, blur1_tex.texture.id);
+        rlSetUniformSampler(post_shader_blur_texture_loc, blur2_tex.texture.id);
         rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
         util::set_shader_value(post_shader, post_shader_res_loc, resolution);
 
@@ -291,4 +313,29 @@ void Renderer::draw() {
     EndMode3D();
 
     frame_count++;
+}
+
+
+/**
+ * @brief Blur a render texture
+ * 
+ * @param textureInId ID of the input texture, if you use Texture2D pass texture.id
+ * @param resolution Resolution of the texture
+ * @param blur_tex Output texture blurred image is written to
+ */
+void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex) {
+    BeginShaderMode(blur_shader);
+
+    // Split into 2 passes: horizontal and vertical
+    for (int i = 0; i < 2; i++) {
+        BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
+            ClearBackground(Color{0, 0, 0, 0});
+            util::set_shader_value(blur_shader, blur_shader_res_loc, resolution);
+            util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
+            rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
+            DrawRectangle(0, 0, resolution.x, resolution.y, WHITE);
+        EndTextureMode();
+    }
+
+    EndShaderMode();
 }

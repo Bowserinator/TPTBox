@@ -76,6 +76,7 @@ struct RayCastData {
     vec4 color;
     vec3 outPos;
     vec3 outRay;
+    ivec3 lastVoxel;
     float prevIndexOfRefraction;
     ivec2 counts;
 };
@@ -208,6 +209,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
                 // We are blending front to back
                 vec4 voxelColor = toVec4Color(tmpIntColor);
                 uint flags = getByteFlags(voxelPos);
+                data.lastVoxel = voxelPos;
 
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
@@ -314,7 +316,8 @@ void main() {
         vec4(0.0), // color
         vec3(0.0), // outPos
         vec3(0.0), // outRay
-        AIR_INDEX_REFRACTION,  // prevIndexOfRefraction
+        ivec3(-1), // lastVoxel
+        AIR_INDEX_REFRACTION, // prevIndexOfRefraction
         ivec2(0)   // counts
     );
 
@@ -331,20 +334,20 @@ void main() {
     gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
     if (DEBUG_MODE == 0) { // NODEBUG
-        uint flags = getByteFlags(ivec3(res.xyz));
+        uint flags = getByteFlags(ivec3(data.lastVoxel));
         bool doShadow = SHADOW_STRENGTH > 0.0 && ((flags & G_NO_LIGHTING) == 0);
-        float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, res.xy + ivec2(SIMRES.z - res.z), 0).r : 0.0;
-        float shadowMul = (doShadow && res.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
-        float mul = (res.w < 0 ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
+        float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, data.lastVoxel.xy + ivec2(SIMRES.z - data.lastVoxel.z), 0).r : 0.0;
+        float shadowMul = (doShadow && data.lastVoxel.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
+        float mul = (res.w < 0 || ((flags & G_NO_LIGHTING) != 0) ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
 
         FragColor.rgb = data.color.rgb * mul * shadowMul
             + SHADOW_COLOR * mul * (1 - shadowMul)
             + BACKGROUND_COLOR.rgb * (1 - mul);
-        FragColor.a = data.color.a > 0.0 ? 1.0 : 0.0;
+        FragColor.a = data.color.a;
 
         if ((flags & G_GLOW) != 0)
             FragGlowOnly = FragColor;
-        if ((flags & G_BLUR) != 0)
+        else if ((flags & G_BLUR) != 0)
             FragBlurOnly = FragColor;
     }
     else if (DEBUG_MODE == 1) { // DEBUG_STEPS
