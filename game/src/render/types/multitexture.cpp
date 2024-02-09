@@ -21,6 +21,13 @@ MultiTexture::MultiTexture(const unsigned int screenWidth, const unsigned int sc
     glowOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, format, 1);
     blurOnlyTexture = rlLoadTexture(NULL, screenWidth, screenHeight, format, 1);
 
+    rlTextureParameters(colorTexture, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(colorTexture, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(glowOnlyTexture, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(glowOnlyTexture, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(blurOnlyTexture, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(blurOnlyTexture, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+
     rlActiveDrawBuffers(3);
     rlFramebufferAttach(frameBuffer, colorTexture, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
     rlFramebufferAttach(frameBuffer, glowOnlyTexture, RL_ATTACHMENT_COLOR_CHANNEL1, RL_ATTACHMENT_TEXTURE2D, 0);

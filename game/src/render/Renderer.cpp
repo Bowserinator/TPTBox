@@ -45,6 +45,9 @@ void Renderer::init() {
     blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    
+    rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
 
     rlEnableShader(part_shader.id);
         rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
