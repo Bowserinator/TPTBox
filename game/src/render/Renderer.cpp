@@ -33,9 +33,9 @@ Renderer::~Renderer() {
 }
 
 void Renderer::init() {
-    part_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/part.fs");
-    post_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/post.fs");
-    blur_shader = LoadShader("resources/shaders/base.vs", "resources/shaders/blur.fs");
+    part_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/part.fs");
+    post_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/post.fs");
+    blur_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/blur.fs");
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
@@ -45,7 +45,7 @@ void Renderer::init() {
     blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    
+
     rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
     rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
 
@@ -252,11 +252,6 @@ void Renderer::draw() {
     const Vector3 uv1 = Vector3Transform(Vector3{1.0, 0.0, 0.0} * aspect_ratio, transform_matT);
     const Vector3 uv2 = Vector3Transform(Vector3{0.0, 1.0, 0.0}, transform_matT);
 
-    // Fullscreen triangle vertices
-    const Vector3 cent = cam->camera.position + look_ray; // Center pos of triangle
-    const Vector3 fullt1 = cent - 2.0f * uv1 + uv2;
-    const Vector3 fullt2 = cent + uv1 - 2.0 * uv2;
-    const Vector3 fullt3 = cent + uv1 + uv2;
 #pragma endregion uniforms
 
     // First actual pass
@@ -282,28 +277,22 @@ void Renderer::draw() {
 
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
-        ClearBackground(Color{0, 0, 0, 0});
 
         util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
         util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
         util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
         util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
         util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+        util::draw_dummy_triangle();
 
-        // Draw fullscreen triangle, the overdraw has 0 effect on performance
-        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
     EndShaderMode();
     EndMode3D();
 
     rlDisableFramebuffer();
     rlEnableColorBlend();
 
-    // TODO: time - 0.2ms
-    auto start = GetTime();
     _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
     _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
-    auto end = GetTime();
-    // std::cout << (end -start )<<'\n';
 
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
@@ -317,7 +306,7 @@ void Renderer::draw() {
         rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
         util::set_shader_value(post_shader, post_shader_res_loc, resolution);
 
-        DrawTriangle3D(fullt1, fullt2, fullt3, WHITE);
+        util::draw_dummy_triangle();
         glBindTexture(GL_TEXTURE_2D, 0);
 
     EndShaderMode();
@@ -337,17 +326,16 @@ void Renderer::draw() {
  */
 void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex) {
     BeginShaderMode(blur_shader);
+    util::set_shader_value(blur_shader, blur_shader_res_loc, resolution);
 
     // Split into 2 passes: horizontal and vertical
     for (int i = 0; i < 2; i++) {
         BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
             ClearBackground(Color{0, 0, 0, 0});
-            util::set_shader_value(blur_shader, blur_shader_res_loc, resolution);
             util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
             rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
-            DrawRectangle(0, 0, resolution.x, resolution.y, WHITE);
+            util::draw_dummy_triangle();
         EndTextureMode();
     }
-
     EndShaderMode();
 }

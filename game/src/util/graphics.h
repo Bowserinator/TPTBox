@@ -60,6 +60,15 @@ namespace util {
         else TRACELOG(LOG_WARNING, "FBO: Framebuffer object can not be created");
         return target;
     }
+
+    // Draw a triangle, vertices meant to be changed by vertex shader
+    inline void draw_dummy_triangle() {
+        rlBegin(RL_TRIANGLES);
+            rlVertex3f(0, 0, 0);
+            rlVertex3f(0, 0, 0);
+            rlVertex3f(0, 0, 0);
+        rlEnd();
+    }
 }
 
 #endif
