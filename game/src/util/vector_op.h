@@ -215,6 +215,13 @@ public:
         z = other.z;
         return *this;
     }
+    explicit operator Vector3() const {
+        Vector3 v;
+        v.x = x;
+        v.y = y;
+        v.z = z;
+        return v;
+    }
 };
 
 template <class T> inline std::ostream& operator<<(std::ostream& os, const Vector3T<T>& vec) {
