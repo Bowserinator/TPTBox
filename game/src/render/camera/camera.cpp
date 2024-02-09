@@ -115,7 +115,7 @@ void RenderCamera::updateControlsShared(const float delta) {
     // Hold middle to pan
     if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
         const float deltaScaleFactor = GetScreenWidth() / 60.0f; // Arbritrary scaling for how much pan affects
-        const Vector3 rightDir = Vector3Normalize(GetCameraRight(&camera)) * -mouseDelta.x / deltaScaleFactor;
+        const Vector3 rightDir = GetCameraRight(&camera) * -mouseDelta.x / deltaScaleFactor;
 
         // Raylib's GetCameraUp gets up direction for rotation, not the 2D "up"
         // direction on your screen for panning, so we have to do cross product here

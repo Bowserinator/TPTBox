@@ -40,7 +40,7 @@ namespace util {
     // Custom load render textures
     inline RenderTexture2D load_render_texture_only_color(int width, int height, int format) {
         RenderTexture2D target = { 0 };
-        target.id = rlLoadFramebuffer(width, height);
+        target.id = rlLoadFramebuffer();
 
         if (target.id > 0) {
             rlEnableFramebuffer(target.id);

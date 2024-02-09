@@ -28,6 +28,7 @@ struct HUDData {
 class HUD {
 private:
     Simulation * sim;
+    RenderCamera * cam;
     NavCube cube;
     HUDState state;
 
@@ -46,14 +47,14 @@ private:
     }
 public:
     HUD(Simulation * sim, RenderCamera * cam):
-        sim(sim), cube(cam), state(HUDState::NORMAL) {}
+        sim(sim), cam(cam), cube(cam), state(HUDState::NORMAL) {}
 
     void drawText(const char * text, int x, const int y, const Color color, const bool ralign = false) const;
     void drawTextRAlign(const char * text, const int x, const int y, const Color color) const;
     void displayTooltip(const char * text);
 
     void init(); // called after OpenGL instance is initialized
-    void update_controls(RenderCamera &render_camera, const BrushRenderer &brush_renderer);
+    void update_controls(const BrushRenderer &brush_renderer);
     void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };

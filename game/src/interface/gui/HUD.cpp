@@ -61,7 +61,7 @@ void HUD::displayTooltip(const char * text) {
     strcpy(tooltip, text);
 }
 
-void HUD::update_controls(RenderCamera &render_camera, const BrushRenderer &brush_renderer) {
+void HUD::update_controls(const BrushRenderer &brush_renderer) {
     // This updates cube controls and textures
     cube.update();
 
@@ -81,8 +81,8 @@ void HUD::update_controls(RenderCamera &render_camera, const BrushRenderer &brus
         displayTooltip(TextFormat("Gravity: %s", Simulation::getGravityModeName(sim->gravity_mode)));
         consumeKey = true;
     }
-    if (EventConsumer::ref()->isKeyPressed(KEY_F)) {
-        render_camera.setLerpTarget(render_camera.camera.position, (Vector3)brush_renderer.get_raycast_pos(), render_camera.camera.up);
+    if (EventConsumer::ref()->isKeyPressed(KEY_F)) { // Set rotate point
+        cam->setLerpTarget(cam->camera.position, (Vector3)brush_renderer.get_raycast_pos(), cam->camera.up);
         consumeKey = true;
     }
 

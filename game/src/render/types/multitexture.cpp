@@ -6,7 +6,7 @@
 MultiTexture::MultiTexture(const unsigned int screenWidth, const unsigned int screenHeight):
         width(screenWidth), height(screenHeight), frameBuffer(0), colorTexture(0),
         glowOnlyTexture(0), blurOnlyTexture(0), depthTexture(0) {
-    frameBuffer = rlLoadFramebuffer(screenWidth, screenHeight);
+    frameBuffer = rlLoadFramebuffer();
 
 #ifdef DEBUG
     if (!frameBuffer)
