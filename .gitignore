@@ -4,3 +4,5 @@ _bin
 .vs
 out.txt
 .vscode
+
+resources/shaders/generated/*.h

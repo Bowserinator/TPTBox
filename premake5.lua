@@ -91,6 +91,7 @@ workspace (workspaceName)
 check_raylib();
 
 include ("libs")
+include ("resources")
 include ("raylib_premake5.lua")
 
 if(os.isdir("game")) then

@@ -33,9 +33,20 @@ Renderer::~Renderer() {
 }
 
 void Renderer::init() {
+#ifdef EMBED_SHADERS
+    #include "../../resources/shaders/generated/fullscreen.vs.h"
+    #include "../../resources/shaders/generated/part.fs.h"
+    #include "../../resources/shaders/generated/post.fs.h"
+    #include "../../resources/shaders/generated/blur.fs.h"
+
+    part_shader = LoadShaderFromMemory(fullscreen_vs_source, part_fs_source);
+    post_shader = LoadShaderFromMemory(fullscreen_vs_source, post_fs_source);
+    blur_shader = LoadShaderFromMemory(fullscreen_vs_source, blur_fs_source);
+#else
     part_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/post.fs");
     blur_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/blur.fs");
+#endif
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
@@ -273,8 +284,6 @@ void Renderer::draw() {
     // which contains multiple textures for glow, blur, base, depth, etc...
     rlEnableFramebuffer(base_tex.frameBuffer);
     rlClearScreenBuffers();
-    rlDisableColorBlend();
-
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
 
@@ -287,16 +296,13 @@ void Renderer::draw() {
 
     EndShaderMode();
     EndMode3D();
-
     rlDisableFramebuffer();
-    rlEnableColorBlend();
 
     _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
     _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
 
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
-    rlDisableColorBlend();
     BeginShaderMode(post_shader);
 
         rlEnableShader(post_shader.id);
@@ -310,7 +316,6 @@ void Renderer::draw() {
         glBindTexture(GL_TEXTURE_2D, 0);
 
     EndShaderMode();
-    rlEnableColorBlend();
     EndMode3D();
 
     frame_count++;

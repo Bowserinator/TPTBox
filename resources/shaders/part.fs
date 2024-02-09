@@ -162,8 +162,9 @@ uint sampleVoxels(ivec3 pos, int level) {
         return colors[uint(pos.x + SIMRES.x * pos.y + (SIMRES.x * SIMRES.y) * pos.z)];
 
     ivec3 level0Pos = pos << level;
-    uint chunkOffset = (level0Pos.x >> NUM_LEVELS) + (level0Pos.y >> NUM_LEVELS) * OCTTREE_BLOCK_DIMS.x
-        + (level0Pos.z >> NUM_LEVELS) * OCTTREE_BLOCK_DIMS.x * OCTTREE_BLOCK_DIMS.y;
+    ivec3 chunkPos = pos >> (NUM_LEVELS - level);
+    uint chunkOffset = (chunkPos.x) + (chunkPos.y) * OCTTREE_BLOCK_DIMS.x
+        + (chunkPos.z) * OCTTREE_BLOCK_DIMS.x * OCTTREE_BLOCK_DIMS.y;
 
     if (level == 1) {
         // To check if last level (level 1) is occupied (level with the 2x2x2 chunks,

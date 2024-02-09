@@ -8,6 +8,8 @@
 #include "types/multitexture.h"
 #include "types/octree.h"
 
+#define EMBED_SHADERS
+
 constexpr float DOWNSCALE_RATIO = 1.5f;
 constexpr float BLUR_DOWNSCALE_RATIO = 1.5f;
 constexpr unsigned int BUFFER_COUNT = 8; // Must be < 8 because modified bitset is 1 byte
