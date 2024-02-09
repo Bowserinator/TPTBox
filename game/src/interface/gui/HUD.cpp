@@ -148,7 +148,7 @@ void HUD::draw(const HUDData &data) {
         const char * dcolor = sim->parts[idx].dcolor.as_RGBA() ?
             TextFormat("#%08X", sim->parts[idx].dcolor.as_RGBA()) : "0";
         drawTextRAlign(TextFormat("Temp: %.2f C  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
-                sim->parts[idx].temp,
+                sim->parts[idx].temp - R_ZERO_C,
                 sim->parts[idx].life,
                 sim->parts[idx].tmp1,
                 sim->parts[idx].tmp2,

@@ -35,6 +35,8 @@ static double fps = 1.0f;
 static int currentElementId = 1;
 
 
+#include "src/simulation/SimulationHeat.h"
+
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position
@@ -50,6 +52,13 @@ void ScreenGameplay::init() {
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
+
+    SimulationHeat lol;
+    lol.init();
+    lol.dispatch();
+    auto a = GetTime();
+    lol.wait_and_get();
+    std::cout << " time: " << (GetTime() - a ) << "\n";
 
     // Create staircase
     // for (int x = 0; x < XRES; x++) 
