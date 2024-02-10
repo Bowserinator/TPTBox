@@ -25,7 +25,7 @@ Renderer::~Renderer() {
     glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
     glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
 
-    glDeleteBuffers(1, &ubo_constants);
+    glDeleteBuffers(1, &ssbo_constants);
     glDeleteBuffers(1, &ubo_settings);
     glDeleteTextures(BUFFER_COUNT, ao_tex);
     glDeleteTextures(BUFFER_COUNT, shadow_tex);
@@ -87,8 +87,9 @@ void Renderer::init() {
     for (auto i = 0; i < BUFFER_COUNT; i++) {
         ssbo_colors[i] = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
         ssbo_flags[i]  = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint8_t), NULL, RL_DYNAMIC_COPY);
-        ssbo_lod[i]    = rlLoadShaderBuffer(sizeof(uint8_t) *  OctreeBlockMetadata::size * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
-            NULL, RL_DYNAMIC_COPY);
+        ssbo_lod[i]    = rlLoadShaderBuffer(sizeof(uint8_t)
+                * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
+                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, NULL, RL_DYNAMIC_COPY);
     }
 
     // Ambient occlusion texture, uses texture for free linear filtering
@@ -109,34 +110,34 @@ void Renderer::init() {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, SHADOW_MAP_X, SHADOW_MAP_Y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
     }
 
-    // Uniform constants
+    // SSBO constants
+    // These are effectively uniform, however AMD cards default to std140
+    // for `shared` layout, so array offsets are broken.
+    // DO NOT USE ARRAYS IN UBOS unless you defined them as std140 and correctly
+    // pad every array element to 16 bytes
     {
     #ifdef DEBUG
         if (cam->camera.fovy == 0.0)
             throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
     #endif
-        glGenBuffers(1, &ubo_constants);
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo_constants);
-        UBOWriter constants_writer(part_shader.id, ubo_constants, "Constants");
-        glBufferData(GL_UNIFORM_BUFFER, constants_writer.size(), NULL, GL_STATIC_DRAW);
 
-        float SIMRES[] = { (float)XRES, (float)YRES, (float)ZRES };
-        int32_t OCTTREE_BLOCK_DIMS[3] = { X_BLOCKS, Y_BLOCKS, Z_BLOCKS };
-        int32_t AO_BLOCK_DIMS[3] = { AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS };
+        ssbo_constants = rlLoadShaderBuffer(sizeof(SSBO_Constants_t), NULL, RL_STATIC_READ);
+        SSBO_Constants_t data {
+            .SIMRES{ (float)XRES, (float)YRES, (float)ZRES },
+            .NUM_LEVELS = OCTREE_BLOCK_DEPTH,
+            .FOV_DIV2 = cam->camera.fovy * DEG2RAD / 2.0f,
+            .MOD_MASK = (1 << OCTREE_BLOCK_DEPTH) - 1,
+            .AO_BLOCK_SIZE = AO_BLOCK_SIZE,
+            .OCTTREE_BLOCK_DIMS{ X_BLOCKS, Y_BLOCKS, Z_BLOCKS },
+            .AO_BLOCK_DIMS{ AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS }
+        };
+        memcpy(&data.LAYER_OFFSETS, &OctreeBlockMetadata::layer_offsets[0],
+            OctreeBlockMetadata::layer_offsets.size() * sizeof(unsigned int));
+        memcpy(&data.MORTON_X_SHIFTS, &Morton::X_SHIFTS[0], sizeof(Morton::X_SHIFTS));
+        memcpy(&data.MORTON_Y_SHIFTS, &Morton::Y_SHIFTS[0], sizeof(Morton::Y_SHIFTS));
+        memcpy(&data.MORTON_Z_SHIFTS, &Morton::Z_SHIFTS[0], sizeof(Morton::Z_SHIFTS));
 
-        constants_writer.write_member("SIMRES", SIMRES);
-        constants_writer.write_member("NUM_LEVELS", OCTREE_BLOCK_DEPTH);
-        constants_writer.write_member("FOV_DIV2", cam->camera.fovy * DEG2RAD / 2.0f);
-        constants_writer.write_member("MOD_MASK", (1 << OCTREE_BLOCK_DEPTH) - 1);
-        constants_writer.write_member("AO_BLOCK_SIZE", AO_BLOCK_SIZE);
-        constants_writer.write_member("OCTTREE_BLOCK_DIMS", OCTTREE_BLOCK_DIMS);
-        constants_writer.write_member("AO_BLOCK_DIMS", AO_BLOCK_DIMS);
-
-        constants_writer.write_member("LAYER_OFFSETS", &OctreeBlockMetadata::layer_offsets[0], OCTREE_BLOCK_DEPTH * sizeof(unsigned int));
-        constants_writer.write_member("MORTON_X_SHIFTS", Morton::X_SHIFTS);
-        constants_writer.write_member("MORTON_Y_SHIFTS", Morton::Y_SHIFTS);
-        constants_writer.write_member("MORTON_Z_SHIFTS", Morton::Z_SHIFTS);
-        constants_writer.upload();
+        rlUpdateShaderBuffer(ssbo_constants, &data, sizeof(data), 0);
     }
 
     // UBO: settings
@@ -277,7 +278,7 @@ void Renderer::draw() {
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 5, ubo_constants);
+    rlBindShaderBuffer(ssbo_constants, 5);
     glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
 
     // First render everything to FBO
