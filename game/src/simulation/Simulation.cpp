@@ -80,7 +80,8 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
             std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z));
     #endif
 
-    auto is_energy = GetElements()[type].State == ElementState::TYPE_ENERGY;
+    const auto &el = GetElements()[type];
+    const auto is_energy = el.State == ElementState::TYPE_ENERGY;
     const auto part_map = is_energy ? photons : pmap;
 
     if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
@@ -106,6 +107,8 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vx = 0.0f;
     parts[pfree].vy = 0.0f;
     parts[pfree].vz = 0.0f;
+    parts[pfree].assign_with_defaults(el.DefaultProperties);
+
     if (paused) {
         if (_should_do_lighting(parts[pfree])) {
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
@@ -160,10 +163,14 @@ void Simulation::update_zslice(const coord_t pz) {
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     for (coord_t py = min_y_per_zslice[pz - 1]; py < max_y_per_zslice[pz - 1]; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
-        if (pmap[pz][py][px])
-            update_part(ID(pmap[pz][py][px]));
-        if (photons[pz][py][px])
-            update_part(ID(photons[pz][py][px]));
+        if (pmap[pz][py][px]) {
+            part_id id = ID(pmap[pz][py][px]);
+            update_part(id);
+        }
+        if (photons[pz][py][px]) {
+            part_id id = ID(photons[pz][py][px]);
+            update_part(id);
+        }
     }
 }
 
@@ -184,6 +191,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
     // Velocity can be set but the particle cannot move beyond its causality radius
     if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity) { // Need to update
         const auto &el = GetElements()[part.type];
+        update_heat_conduct(part);
 
         if (consider_causality && el.Causality > max_ok_causality_range)
             return;
@@ -220,6 +228,39 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         if (part.vx || part.vy || part.vz)
             _raycast_movement(i, x, y, z); // Apply velocity to displacement
     }
+}
+
+void Simulation::update_heat_conduct(Particle &part) {
+    const auto &el = GetElements()[part.type];
+    if (!el.HeatConduct) return;
+    if (!rng.chance(el.HeatConduct, 255)) return;
+
+    float new_temp_sum = part.temp;
+    unsigned int count = 1;
+
+    auto check_neighbor = [this, &part, &new_temp_sum, &count](pmap_id map[ZRES][YRES][XRES], int dx, int dy, int dz) {
+        pmap_id r = map[part.rz + dz][part.ry + dy][part.rx + dx];
+        if (!r || !GetElements()[TYP(r)].HeatConduct) return;
+        if (!rng.chance(GetElements()[TYP(r)].HeatConduct, 255)) return;
+        new_temp_sum += parts[ID(r)].temp;
+        count++;
+    };
+
+    check_neighbor(pmap, 0, 0, 1);
+    check_neighbor(pmap, 0, 0, -1);
+    check_neighbor(pmap, 0, 1, 0);
+    check_neighbor(pmap, 0, -1, 0);
+    check_neighbor(pmap, 1, 0, 0);
+    check_neighbor(pmap, -1, 0, 0);
+
+    check_neighbor(photons, 0, 0, 1);
+    check_neighbor(photons, 0, 0, -1);
+    check_neighbor(photons, 0, 1, 0);
+    check_neighbor(photons, 0, -1, 0);
+    check_neighbor(photons, 1, 0, 0);
+    check_neighbor(photons, -1, 0, 0);
+
+    part.temp_tmp = new_temp_sum / count;
 }
 
 void Simulation::update() {
@@ -286,7 +327,7 @@ void Simulation::recalc_free_particles() {
 
         // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
-        if (GetElements()[part.type].Graphics)
+        if (GetElements()[part.type].Graphics || true) // TODO
             _set_color_data_at(part.rx, part.ry, part.rz, &part);
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
@@ -294,6 +335,7 @@ void Simulation::recalc_free_particles() {
         }
 
         update_part(i, false);
+        part.temp = part.temp_tmp;
     }
     maxId = newMaxId + 1;
 }
@@ -315,6 +357,11 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
             el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
             new_color = color_out.as_ABGR();
         }
+
+        // TODO heat
+        int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
+        RGBA tmp(t, t, t, 255);
+        new_color = tmp.as_ABGR();
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);

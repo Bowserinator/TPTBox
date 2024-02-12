@@ -1,6 +1,8 @@
 // TODO
 
 #include "Element.h"
+#include "Particle.h"
+#include "SimulationDef.h"
 
 Element::Element() {
     Properties = 0;
@@ -29,9 +31,9 @@ Element::Element() {
 
 	Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect
 
-	Weight;
-	HeatConduct;
-	LatentHeat;
+	Weight;*/
+	HeatConduct = 0;
+	/*LatentHeat;
 
 	LowPressure;
 	LowPressureTransition;
@@ -41,6 +43,13 @@ Element::Element() {
 	LowTemperatureTransition;
 	HighTemperature;
 	HighTemperatureTransition;*/
+
+	DefaultProperties.ctype = 0;
+	DefaultProperties.life = 0;
+	DefaultProperties.temp = R_TEMP;
+	DefaultProperties.tmp1 = 0;
+	DefaultProperties.tmp2 = 0;
+	DefaultProperties.dcolor = RGBA{0, 0, 0, 0};
 
     Update = nullptr;
 	Graphics = nullptr;

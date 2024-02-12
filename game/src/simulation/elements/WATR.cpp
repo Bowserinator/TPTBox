@@ -11,4 +11,6 @@ void Element::Element_WATR() {
     Loss = 0.96f;
     Gravity = 0.3f;
     Diffusion = 5.0f;
+
+    HeatConduct = 255;
 };

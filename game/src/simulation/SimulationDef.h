@@ -34,6 +34,8 @@ constexpr unsigned int SHADOW_MAP_SCALE = 1; // Mostly unused, needs to be set i
 constexpr unsigned int SHADOW_MAP_X = (XRES + ZRES) / SHADOW_MAP_SCALE;
 constexpr unsigned int SHADOW_MAP_Y = (YRES + ZRES) / SHADOW_MAP_SCALE;
 
+constexpr float R_ZERO_C = 273.15f;
+constexpr float R_TEMP = R_ZERO_C + 22.0f;
 constexpr float MAX_VELOCITY = 50.0f;
 
 constexpr bool BOUNDS_CHECK(int x, int y, int z) {

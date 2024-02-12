@@ -60,6 +60,7 @@ public:
     void kill_part(const part_id id);
 
     void update();
+    void update_heat_conduct(Particle &part);
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();
 

@@ -8,6 +8,8 @@
 #include "../util/types/bitset8.h"
 #include "ElementDefs.h"
 
+struct Particle;
+
 class Element {
 public:
 	ElementState State;
@@ -43,8 +45,9 @@ public:
 	int (*Update)(UPDATE_FUNC_ARGS);
 	int (*Graphics)(GRAPHICS_FUNC_ARGS);
 
+	Particle DefaultProperties;
+
     // TODO: create function, create allowed, change type, ctype draw
-    // todo: default properties
 
 	RGBA Color;
 	util::Bitset8 GraphicsFlags;
