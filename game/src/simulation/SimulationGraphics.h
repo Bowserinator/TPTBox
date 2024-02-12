@@ -6,6 +6,7 @@
 #include "../util/types/bitset8.h"
 
 #include <cmath>
+#include <cstring>
 
 constexpr unsigned int OCTREE_BLOCK_DEPTH = 6;
 constexpr unsigned int OCTREE_BLOCK_DIM = 1 << OCTREE_BLOCK_DEPTH; // Sim split into blocks of this size, each of which is an octree
@@ -63,7 +64,7 @@ struct SimulationGraphics {
         color_flags.fill(0);
         ao_blocks.fill(0);
         color_data_modified.fill(0);
-        std::fill(&shadow_map[0][0], &shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+        memset(&shadow_map[0][0], 0, sizeof(shadow_map));
     }
 };
 

@@ -12,13 +12,14 @@
 #include <cmath>
 #include <limits>
 #include <cstring>
+#include <cstdint>
 
 Simulation::Simulation():
     paused(false),
     air(*this)
 {
-    std::fill(&pmap[0][0][0], &pmap[ZRES][YRES][XRES], 0);
-    std::fill(&photons[0][0][0], &photons[ZRES][YRES][XRES], 0);
+    memset(&pmap[0][0][0], 0, sizeof(pmap));
+    memset(&photons[0][0][0], 0, sizeof(photons));
 
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
@@ -238,27 +239,28 @@ void Simulation::update_heat_conduct(Particle &part) {
     float new_temp_sum = part.temp;
     unsigned int count = 1;
 
-    auto check_neighbor = [this, &part, &new_temp_sum, &count](pmap_id map[ZRES][YRES][XRES], int dx, int dy, int dz) {
-        pmap_id r = map[part.rz + dz][part.ry + dy][part.rx + dx];
-        if (!r || !GetElements()[TYP(r)].HeatConduct) return;
-        if (!rng.chance(GetElements()[TYP(r)].HeatConduct, 255)) return;
-        new_temp_sum += parts[ID(r)].temp;
-        count++;
+    auto check_neighbor = [this, &new_temp_sum, &count](Particle &part, pmap_id map[ZRES][YRES][XRES], int dx, int dy, int dz) {
+        if (pmap_id r = map[part.rz + dz][part.ry + dy][part.rx + dx]) {
+            auto heat_conduct = GetElements()[TYP(r)].HeatConduct;
+            if (!heat_conduct || !rng.chance(heat_conduct, 255)) return;
+            new_temp_sum += parts[ID(r)].temp;
+            count++;
+        }
     };
 
-    check_neighbor(pmap, 0, 0, 1);
-    check_neighbor(pmap, 0, 0, -1);
-    check_neighbor(pmap, 0, 1, 0);
-    check_neighbor(pmap, 0, -1, 0);
-    check_neighbor(pmap, 1, 0, 0);
-    check_neighbor(pmap, -1, 0, 0);
+    check_neighbor(part, pmap, 0, 0, 1);
+    check_neighbor(part, pmap, 0, 0, -1);
+    check_neighbor(part, pmap, 0, 1, 0);
+    check_neighbor(part, pmap, 0, -1, 0);
+    check_neighbor(part, pmap, 1, 0, 0);
+    check_neighbor(part, pmap, -1, 0, 0);
 
-    check_neighbor(photons, 0, 0, 1);
-    check_neighbor(photons, 0, 0, -1);
-    check_neighbor(photons, 0, 1, 0);
-    check_neighbor(photons, 0, -1, 0);
-    check_neighbor(photons, 1, 0, 0);
-    check_neighbor(photons, -1, 0, 0);
+    check_neighbor(part, photons, 0, 0, 1);
+    check_neighbor(part, photons, 0, 0, -1);
+    check_neighbor(part, photons, 0, 1, 0);
+    check_neighbor(part, photons, 0, -1, 0);
+    check_neighbor(part, photons, 1, 0, 0);
+    check_neighbor(part, photons, -1, 0, 0);
 
     part.temp_tmp = new_temp_sum / count;
 }
@@ -301,7 +303,7 @@ void Simulation::recalc_free_particles() {
     part_id newMaxId = 0;
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
-    std::fill(&graphics.shadow_map[0][0], &graphics.shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+    memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.ao_blocks.fill(0);
 
     for (part_id i = 0; i <= maxId; i++) {
@@ -393,7 +395,7 @@ bool Simulation::_should_do_lighting(const Particle &part) {
 }
 
 void Simulation::_force_update_all_shadows() {
-    std::fill(&graphics.shadow_map[0][0], &graphics.shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X], 0);
+    memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.shadows_force_update = false;
 
     #pragma parallel for
