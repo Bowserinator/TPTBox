@@ -13,17 +13,17 @@ layout(std430, binding = 2) readonly restrict buffer ColorLod {
 layout (binding = 3) uniform sampler3D aoBlocks;
 layout (binding = 4) uniform sampler2D shadowMap;
 
-// We use vec4 instead of vec3s because vec3s have messy alignments
-layout(shared, binding = 5) uniform Constants {
-    vec3 SIMRES;           // Vec3 of XRES, YRES, ZRES
+// This is an SSBO due to alignment issues and better packing of arrays
+layout(std430, binding = 5) readonly restrict buffer Constants {
+    vec4 SIMRES;           // Vec3 of XRES, YRES, ZRES
     int NUM_LEVELS;        // Each octree goes up to blocks of side length 2^NUM_LENGTH
     float FOV_DIV2;        // (FOV in radians) / 2
 
-    uint LAYER_OFFSETS[6]; // Pre-computed layer offsets
     int MOD_MASK;          // x % 2^(NUM_LEVELS) = x & MOD_MASK, MOD_MASK = (1 << NUM_LEVELS) - 1
     int AO_BLOCK_SIZE;     // Size of ambient occlusion blocks
-    ivec3 OCTTREE_BLOCK_DIMS;  // Vec3 of octree block counts (w unused)
-    ivec3 AO_BLOCK_DIMS;       // Vec3 of ao block counts (w unused)
+    ivec4 OCTTREE_BLOCK_DIMS;  // Vec3 of octree block counts (w unused)
+    ivec4 AO_BLOCK_DIMS;       // Vec3 of ao block counts (w unused)
+    uint LAYER_OFFSETS[6]; // Pre-computed layer offsets
 
     uint MORTON_X_SHIFTS[256];
     uint MORTON_Y_SHIFTS[256];
@@ -335,7 +335,7 @@ void main() {
         rayDir = data.outRay;
         rayPos = data.outPos;
     } while (data.shouldContinue);
-
+    
     // https://stackoverflow.com/a/29397319/6079328
     vec4 vClipCoord = mvp * vec4(res.xyz, 1.0);
     float fNdcDepth = vClipCoord.z / vClipCoord.w;

@@ -48,7 +48,8 @@ private:
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     unsigned int ssbo_colors[BUFFER_COUNT], ssbo_flags[BUFFER_COUNT], ssbo_lod[BUFFER_COUNT];
-    unsigned int ubo_constants, ubo_settings;
+    unsigned int ssbo_constants;
+    unsigned int ubo_settings;
     uint8_t * ao_data;
 
     RenderTexture2D blur1_tex, blur2_tex, blur_tmp_tex;
@@ -61,6 +62,26 @@ private:
         DEBUG_NORMALS = 2,
         DEBUG_AO = 3
     };
+
+    #pragma pack(push, 1)
+    // Vec3s are vec4s and big arrays are at the end for packing purposes
+    // std430 packing rules apply
+    struct SSBO_Constants_t {
+        float SIMRES[4];
+        int32_t NUM_LEVELS;
+        float FOV_DIV2;
+
+        int32_t MOD_MASK;
+        int32_t AO_BLOCK_SIZE;
+        int32_t OCTTREE_BLOCK_DIMS[4];
+        int32_t AO_BLOCK_DIMS[4];
+
+        uint32_t LAYER_OFFSETS[OCTREE_BLOCK_DEPTH];
+        uint32_t MORTON_X_SHIFTS[256];
+        uint32_t MORTON_Y_SHIFTS[256];
+        uint32_t MORTON_Z_SHIFTS[256];
+    };
+    #pragma pack(pop)
 
     void _blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex);
 };

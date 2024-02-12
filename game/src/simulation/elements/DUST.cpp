@@ -12,6 +12,6 @@ void Element::Element_DUST() {
     Gravity = 0.1f;
     Loss = 1.0f;
 
-    HeatConduct = 10;
+    HeatConduct = 255;
     DefaultProperties.temp = 500.0f;
 };

@@ -31,9 +31,9 @@ Element::Element() {
 
 	Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect
 
-	Weight;
-	HeatConduct;
-	LatentHeat;
+	Weight;*/
+	HeatConduct = 0;
+	/*LatentHeat;
 
 	LowPressure;
 	LowPressureTransition;

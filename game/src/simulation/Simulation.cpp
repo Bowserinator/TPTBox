@@ -237,29 +237,28 @@ void Simulation::update_heat_conduct(Particle &part) {
 
     float new_temp_sum = part.temp;
     unsigned int count = 1;
-    part_id r;
 
-    for (int delta = -1; delta <= 1; delta += 2) {
-        r = pmap[part.rz + delta][part.ry][part.rx];
-        if (!r) r = photons[part.rz + delta][part.ry][part.rx];
-        if (!r || !GetElements()[TYP(r)].HeatConduct) continue;
+    auto check_neighbor = [this, &part, &new_temp_sum, &count](pmap_id map[ZRES][YRES][XRES], int dx, int dy, int dz) {
+        pmap_id r = map[part.rz + dz][part.ry + dy][part.rx + dx];
+        if (!r || !GetElements()[TYP(r)].HeatConduct) return;
+        if (!rng.chance(GetElements()[TYP(r)].HeatConduct, 255)) return;
         new_temp_sum += parts[ID(r)].temp;
         count++;
-    }
-    for (int delta = -1; delta <= 1; delta += 2) {
-        r = pmap[part.rz][part.ry + delta][part.rx];
-        if (!r) r = photons[part.rz][part.ry + delta][part.rx];
-        if (!r || !GetElements()[TYP(r)].HeatConduct) continue;
-        new_temp_sum += parts[ID(r)].temp;
-        count++;
-    }
-    for (int delta = -1; delta <= 1; delta += 2) {
-        r = pmap[part.rz][part.ry][part.rx + delta];
-        if (!r) r = photons[part.rz][part.ry][part.rx + delta];
-        if (!r || !GetElements()[TYP(r)].HeatConduct) continue;
-        new_temp_sum += parts[ID(r)].temp;
-        count++;
-    }
+    };
+
+    check_neighbor(pmap, 0, 0, 1);
+    check_neighbor(pmap, 0, 0, -1);
+    check_neighbor(pmap, 0, 1, 0);
+    check_neighbor(pmap, 0, -1, 0);
+    check_neighbor(pmap, 1, 0, 0);
+    check_neighbor(pmap, -1, 0, 0);
+
+    check_neighbor(photons, 0, 0, 1);
+    check_neighbor(photons, 0, 0, -1);
+    check_neighbor(photons, 0, 1, 0);
+    check_neighbor(photons, 0, -1, 0);
+    check_neighbor(photons, 1, 0, 0);
+    check_neighbor(photons, -1, 0, 0);
 
     part.temp_tmp = new_temp_sum / count;
 }
@@ -359,11 +358,10 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
             new_color = color_out.as_ABGR();
         }
 
-        // TODO
+        // TODO heat
         int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
         RGBA tmp(t, t, t, 255);
         new_color = tmp.as_ABGR();
-
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);
