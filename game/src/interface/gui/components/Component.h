@@ -7,7 +7,8 @@ namespace ui {
 	class Panel;
     class Component {
     public:
-        Component(const Vector2 &pos, const Vector2 &size): pos(pos), size(size) {};
+        Component(const Vector2 &pos, const Vector2 &size, const int cursor = MOUSE_CURSOR_DEFAULT):
+			pos(pos), size(size), cursor(cursor) {};
         virtual ~Component() = default;
 
 		virtual void tick(float dt);
@@ -41,12 +42,12 @@ namespace ui {
 		Vector2 globalPos{0, 0};
 		Panel * parent = nullptr;
 
-		void disable() { disabled = true; }
-		void enable() { disabled = false; }
-		void hide() { hidden = true; }
-		void show() { hidden = false; }
-		void focus() { focused = true; onFocus(); }
-		void unfocus() { focused = false; onUnfocus(); }
+		Component * disable() { disabled = true; return this; }
+		Component * enable() { disabled = false; return this; }
+		Component * hide() { hidden = true; return this; }
+		Component * show() { hidden = false; return this; }
+		Component * focus() { focused = true; onFocus(); return this; }
+		Component * unfocus() { focused = false; onUnfocus(); return this; }
 
 		bool getDisabled() const { return disabled; }
 		bool getHidden() const { return hidden; }
@@ -58,6 +59,7 @@ namespace ui {
         bool hidden = false;
         bool focused = false;
 		bool hovered = false;
+		int cursor = MOUSE_CURSOR_DEFAULT;
     };
 }
 

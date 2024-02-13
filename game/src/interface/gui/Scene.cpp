@@ -14,6 +14,9 @@ void Scene::update() {
     float dt = GetFrameTime();
     bool mouseConsume = false;
 
+    if (GetMouseDelta() != Vector2{0, 0})
+        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+
     for (auto child : children) {
         // -- Updates --
         child->tick(dt);
@@ -57,7 +60,6 @@ void Scene::update() {
 
         // -- Mouse scroll --
         if (float scroll = EventConsumer::ref()->getMouseWheelMove()) {
-            mouseConsume = true;
             child->onMouseWheel(childLocalPos, scroll);
             if (containsCurrentMousePos)
                 child->onMouseWheelInside(childLocalPos, scroll);

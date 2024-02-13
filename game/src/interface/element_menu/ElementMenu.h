@@ -1,7 +1,6 @@
 #ifndef ELEMENT_MENU_H
 #define ELEMENT_MENU_H
 
-#include "../gui/components/Panel.h"
 #include "../gui/Scene.h"
 
 class BrushRenderer;

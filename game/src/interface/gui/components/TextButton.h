@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "Button.h"
+#include "../styles.h"
 #include "../../FontCache.h"
 #include "../../../util/vector_op.h"
 #include <string>
@@ -15,12 +16,13 @@ namespace ui {
             const Vector2 &pos,
             const Vector2 &size,
             const std::string &text,
-            const Color bg_color = BLACK,
-            const Color color = WHITE,
-            const Color outline_color = WHITE
+            const Color bgColor = styles::DEFAULT_BG_COLOR,
+            const Color color = styles::DEFAULT_TEXT_COLOR,
+            const Color outlineColor = styles::DEFAULT_OUTLINE_COLOR,
+            const Color outlineHoverColor = styles::DEFAULT_HOVER_OUTLINE_COLOR
         ):
-            ui::Button(pos, size), text(text), bg_color(bg_color),
-            color(color), outline_color(outline_color) {};
+            ui::Button(pos, size, bgColor, outlineColor, outlineHoverColor), text(text),
+            color(color) {};
 
         virtual ~TextButton() = default;
 
@@ -28,8 +30,8 @@ namespace ui {
             Component::draw(screenPos);
             if (hidden) return;
 
-            DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, bg_color);
-            DrawRectangleLines(screenPos.x, screenPos.y, size.x, size.y, outline_color);
+            DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, bgColor);
+            DrawRectangleLines(screenPos.x, screenPos.y, size.x, size.y, hovered ? outlineHoverColor : outlineColor);
 
             const Vector2 tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
             const Vector2 pad = (size - tsize) / 2.0f;
@@ -39,9 +41,7 @@ namespace ui {
 
     protected:
         std::string text;
-        Color bg_color;
         Color color;
-        Color outline_color;
     };
 }
 
