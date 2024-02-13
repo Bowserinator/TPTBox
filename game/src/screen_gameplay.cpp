@@ -149,10 +149,7 @@ void ScreenGameplay::draw() {
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
     auto t = GetTime();
-    
-    // DrawCubeParticle(sim, render_camera, Color{red, red, red, 255}, BLACK);
     brush_renderer.draw();
-
 
     drawTime = GetTime() - t;
     // DrawGrid(100, 1.0f);
@@ -183,14 +180,12 @@ void ScreenGameplay::draw() {
 
     EndMode3D();
 
-    renderer.draw(); // TODO
-
+    renderer.draw();
     hud.draw(HUDData {
-        .fps = (float)GetFPS(), // fps
+        .fps = (float)GetFPS(),
         .sim_fps = (float)(1.0f / simTime),
         .brush_renderer = &brush_renderer
     });
-
     element_menu.draw();
 
     fps = 1.0f / drawTime;

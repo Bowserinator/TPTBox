@@ -5,6 +5,7 @@
 #include "../util/types/heap_array.h"
 #include "../util/types/bitset8.h"
 
+#include <array>
 #include <cmath>
 #include <cstring>
 
@@ -50,11 +51,11 @@ namespace GraphicsFlags {
 
 class BitOctreeBlock;
 struct SimulationGraphics {
-    util::heap_array<uint32_t, XRES * YRES * ZRES> color_data;
-    util::heap_array<uint8_t, XRES * YRES * ZRES> color_flags;
-    util::heap_array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
+    std::array<uint32_t, XRES * YRES * ZRES> color_data;
+    std::array<uint8_t, XRES * YRES * ZRES> color_flags;
+    std::array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
-    util::heap_array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
+    std::array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
     uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
     bool shadows_force_update;
 

@@ -85,7 +85,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
 
 void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     const auto mousePos = GetMousePosition();
-    if (mousePos == prevMousePos && camera->camera.position == prevCameraPos)
+    if (mousePos == prevMousePos && camera->camera.position == prevCameraPos && sim->frame_count == prevSimFrameCount)
         return;
 
     Ray ray = GetMouseRay(mousePos, camera->camera);
@@ -128,6 +128,7 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
 
     prevMousePos = mousePos;
     prevCameraPos = camera->camera.position;
+    prevSimFrameCount = sim->frame_count;
     this->x = this->bx = out.x;
     this->y = this->by = out.y;
     this->z = this->bz = out.z;

@@ -44,6 +44,7 @@ private:
     int selected_element;
     Vector2 prevMousePos;
     Vector3 prevCameraPos;
+    unsigned int prevSimFrameCount = -1;
 
     Simulation * sim;
     RenderCamera * camera;

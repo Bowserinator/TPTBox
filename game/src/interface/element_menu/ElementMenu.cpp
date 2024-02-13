@@ -38,6 +38,8 @@ void ElementMenu::init() {
 
     addChild(main_panel);
 
+
+    // TODO
     int * j = new int;
     *j = 0;
     auto f = [j]() {
