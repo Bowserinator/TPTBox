@@ -4,7 +4,7 @@ void ui::Component::tick(float dt) {}
 void ui::Component::draw(const Vector2 &screenPos) { globalPos = screenPos; }
 
 void ui::Component::onMouseMoved(Vector2 localPos) {
-    SetMouseCursor(cursor);
+    if (!disabled) SetMouseCursor(cursor);
     hovered = !disabled && contains(localPos);
 }
 void ui::Component::onMouseEnter(Vector2 localPos) { hovered = !disabled; }
