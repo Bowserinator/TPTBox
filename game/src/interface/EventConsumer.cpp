@@ -50,6 +50,11 @@ bool EventConsumer::isMouseButtonDown(const int button) {
     return IsMouseButtonDown(button);
 }
 
+bool EventConsumer::isMouseButtonUp(const int button) {
+    if (mouseEvtConsumed) return false;
+    return IsMouseButtonUp(button);
+}
+
 float EventConsumer::getMouseWheelMove() {
     if (mouseEvtConsumed) return 0.0f;
     return GetMouseWheelMove();

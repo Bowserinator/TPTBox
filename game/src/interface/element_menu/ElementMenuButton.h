@@ -22,14 +22,17 @@ public:
 
     virtual ~ElementMenuButton() = default;
 
-    void onMouseClick(int localx, int localy, unsigned button) override {
-        std::cout << text << "\n";
+    void onMouseClick(Vector2 localPos, unsigned button) override {
+        TextButton::onMouseClick(localPos, button);
+        std::cout << "click: " << text << "\n";
     };
-    void onMouseEnter(int localx, int localy) override {
-        std::cout << "entered " << localx << " " << localy << "\n";
+    void onMouseEnter(Vector2 localPos) override {
+        TextButton::onMouseEnter(localPos);
+        std::cout << "entered " << text << localPos.x << " " << localPos.y << "\n";
     }
-    void onMouseLeave(int localx, int localy) override {
-        std::cout << "left " << localx << " " << localy << "\n";
+    void onMouseLeave(Vector2 localPos) override {
+        TextButton::onMouseLeave(localPos);
+        std::cout << "left " << text << localPos.x << " " << localPos.y << "\n";
     }
 private:
     BrushRenderer * brush_renderer;

@@ -12,12 +12,12 @@ namespace ui {
         virtual ~Button() = default;
 
         void draw(const Vector2 &screenPos) override;
-		void onMouseMoved(int localx, int localy) override {}
-		void onMouseEnter(int localx, int localy) override {}
-		void onMouseLeave(int localx, int localy) override {}
-		void onMouseDown(int x, int y, unsigned button) override {}
-		void onMouseUp(int x, int y, unsigned button) override {}
-		void onMouseClick(int localx, int localy, unsigned button) override {}
+		void onMouseMoved(Vector2 localPos) override { Component::onMouseMoved(localPos); }
+		void onMouseEnter(Vector2 localPos) override { Component::onMouseEnter(localPos); }
+		void onMouseLeave(Vector2 localPos) override { Component::onMouseLeave(localPos); }
+		void onMouseDown(Vector2 localPos, unsigned button) override { Component::onMouseDown(localPos, button); }
+		void onMouseUp(Vector2 localPos, unsigned button) override { Component::onMouseUp(localPos, button); }
+		void onMouseClick(Vector2 localPos, unsigned button) override { Component::onMouseClick(localPos, button); }
     };
 }
 

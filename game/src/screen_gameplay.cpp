@@ -138,10 +138,10 @@ void ScreenGameplay::draw() {
     FrameTime::ref()->update();
     EventConsumer::ref()->reset();
 
+    element_menu.update();
     hud.update_controls(brush_renderer);
     brush_renderer.update();
     render_camera.update();
-    element_menu.update();
 
     ClearBackground(BLACK);
 

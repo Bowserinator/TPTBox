@@ -25,6 +25,7 @@ namespace ui {
         virtual ~TextButton() = default;
 
         void draw(const Vector2 &screenPos) override {
+            Component::draw(screenPos);
             if (hidden) return;
 
             DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, bg_color);

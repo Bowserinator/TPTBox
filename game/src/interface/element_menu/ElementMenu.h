@@ -2,18 +2,16 @@
 #define ELEMENT_MENU_H
 
 #include "../gui/components/Panel.h"
+#include "../gui/Scene.h"
 
 class BrushRenderer;
 
-class ElementMenu {
+class ElementMenu : public ui::Scene {
 public:
     ElementMenu(BrushRenderer * brush_renderer);
 
-    void init();
-    void draw();
-    void update();
+    void init() override;
 private:
-    ui::Panel main_panel;
     BrushRenderer * brush_renderer;
 };
 
