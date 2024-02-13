@@ -8,7 +8,8 @@
 #include "src/simulation/Simulation.h"
 #include "src/simulation/ElementClasses.h"
 
-#include "src/interface/gui/HUD.h"
+#include "src/interface/hud/HUD.h"
+#include "src/interface/element_menu/ElementMenu.h"
 #include "src/interface/brush/Brush.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
@@ -27,6 +28,7 @@ static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
 static Renderer renderer(&sim, &render_camera);
+static ElementMenu element_menu(&brush_renderer);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -48,7 +50,8 @@ void ScreenGameplay::init() {
     hud.init();
     hud.setState(HUDState::DEBUG_MODE);
 
-    renderer.init();    
+    renderer.init();
+    element_menu.init();
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
@@ -138,6 +141,7 @@ void ScreenGameplay::draw() {
     hud.update_controls(brush_renderer);
     brush_renderer.update();
     render_camera.update();
+    element_menu.update();
 
     ClearBackground(BLACK);
 
@@ -197,6 +201,8 @@ void ScreenGameplay::draw() {
         brush_renderer.set_selected_element(4);
     else if (IsKeyDown(KEY_FIVE))
         brush_renderer.set_selected_element(5);
+
+    element_menu.draw();
 
     fps = 1.0f / drawTime;
 }

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <format>
 #include "stdint.h"
+#include "raylib.h"
 
 class RGBA {
 public:
@@ -31,8 +32,13 @@ public:
         b *= amt;
     }
 
+    uint8_t brightness() const { // Yes it's not very accurate...
+        return static_cast<uint8_t>(0.2 * r + 0.7 * g + 0.1 * b);
+    }
+
     uint32_t as_RGBA() const { return (r << 24) | (g << 16) | (b << 8) | a; }
     uint32_t as_ABGR() const { return (a << 24) | (b << 16) | (g << 8) | r; }
+    Color as_Color() const { return Color{r, g, b, a}; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const RGBA& color) {

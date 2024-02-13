@@ -30,6 +30,7 @@ public:
     void update();
     void set_selected_element(int element) { selected_element = element; }
 
+    bool brush_in_sim() const { return x >= 0 && y >= 0 && z >= 0; }
     Vector3T<int> get_raycast_pos() const { return Vector3T<int>{ x, y, z }; };
     Vector3T<int> get_brush_pos() const { return Vector3T<int>{ bx, by, bz }; };
     int get_offset() const { return offset; }

@@ -192,10 +192,10 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
     // Velocity can be set but the particle cannot move beyond its causality radius
     if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity) { // Need to update
         const auto &el = GetElements()[part.type];
-        update_heat_conduct(part);
-
         if (consider_causality && el.Causality > max_ok_causality_range)
             return;
+
+        update_heat_conduct(part);
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
         // Air acceleration

@@ -15,7 +15,6 @@
 
 constexpr float PAD_X = 5.0f;
 constexpr float PAD_Y = 7.0f;
-constexpr float SPACING = -0.5f;
 constexpr int RHUD_X_OFFSET = 100;
 
 constexpr Color BLUE_TEXT{21, 145, 171, 255};
@@ -34,7 +33,7 @@ void HUD::init() {
  * @param color Color of text
  */
 void HUD::drawText(const char * text, int x, const int y, const Color color, const bool ralign) const {
-    const auto tsize = MeasureTextEx(FontCache::ref()->main_font, text, FONT_SIZE, SPACING);
+    const auto tsize = MeasureTextEx(FontCache::ref()->main_font, text, FONT_SIZE, FONT_SPACING);
     if (ralign)
         x -= tsize.x;
 
@@ -43,7 +42,7 @@ void HUD::drawText(const char * text, int x, const int y, const Color color, con
         tsize.x + PAD_X * 2,
         tsize.y + 2 * PAD_Y,
         Fade(BLACK, 0.5f));
-    DrawTextEx(FontCache::ref()->main_font, text, Vector2{ (float)x, (float)y }, FONT_SIZE, SPACING, color);
+    DrawTextEx(FontCache::ref()->main_font, text, Vector2{ (float)x, (float)y }, FONT_SIZE, FONT_SPACING, color);
 }
 
 // RAlign version, x marks right hand side
@@ -107,7 +106,7 @@ void HUD::draw(const HUDData &data) {
             idx = ID(sim->photons[rz][ry][rx]);
     }
 
-    if (debug) {
+    if (debug && data.brush_renderer->brush_in_sim()) {
         const Vector3T<int> brush_pos = data.brush_renderer->get_brush_pos();
         drawText(TextFormat("%d, %d, %d / d%d / s%d",
                 brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(), data.brush_renderer->get_size()),
@@ -171,10 +170,10 @@ void HUD::draw(const HUDData &data) {
 
     // Tooltip
     if (tooltip_opacity) {
-        const auto tsize = MeasureTextEx(FontCache::ref()->main_font, tooltip, FONT_SIZE, SPACING);
+        const auto tsize = MeasureTextEx(FontCache::ref()->main_font, tooltip, FONT_SIZE, FONT_SPACING);
         DrawTextEx(FontCache::ref()->main_font, tooltip,
             Vector2{ (float)(GetScreenWidth() / 2 - tsize.x / 2), (float)(GetScreenHeight() / 2) },
-            FONT_SIZE, SPACING, Color{ 255, 255, 255, (uint8_t)(tooltip_opacity * 255) });
+            FONT_SIZE, FONT_SPACING, Color{ 255, 255, 255, (uint8_t)(tooltip_opacity * 255) });
 
         tooltip_opacity -= FrameTime::ref()->getDelta() / TOOLTIP_TIME_SECONDS;
         if (tooltip_opacity < 0.01)
