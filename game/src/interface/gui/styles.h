@@ -5,6 +5,7 @@
 
 namespace styles {
     constexpr Vector2 ELEMENT_BUTTON_SIZE{ 60, 32 };
+    constexpr float CHECKBOX_SIZE = 24.0f;
 }
 
 #endif

@@ -59,6 +59,7 @@ namespace ui {
         bool hidden = false;
         bool focused = false;
 		bool hovered = false;
+		bool staticComponent = false;
 		Style style;
 		int cursor = MOUSE_CURSOR_DEFAULT;
     };

@@ -20,12 +20,14 @@ namespace ui {
             const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0})
         ): Component(pos, size, style), text(text) {
             tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
+            staticComponent = true;
         }
 
         void draw(const Vector2 &screenPos) override {
-            if (style.backgroundColor.a) DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.getBackgroundColor(this));
             const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
-
+            if (style.backgroundColor.a)
+                DrawRectangle(screenPos.x + pad.x - 5, screenPos.y, tsize.x + 10, size.y, style.getBackgroundColor(this));
+            
             SetTextLineSpacing(FONT_SIZE);
             DrawTextEx(FontCache::ref()->main_font, text.c_str(), screenPos + pad, FONT_SIZE, FONT_SPACING,
                 style.getTextColor(this));
