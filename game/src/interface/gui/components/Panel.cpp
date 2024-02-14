@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-ui::Panel::Panel(const Vector2 &pos, const Vector2 &size): ui::Component(pos, size) {}
+ui::Panel::Panel(const Vector2 &pos, const Vector2 &size, const Style &style): ui::Component(pos, size, style) {}
 
 ui::Panel::~Panel() {
     for (auto child : children)
@@ -18,9 +18,9 @@ void ui::Panel::tick(float dt) {
 
 void ui::Panel::draw(const Vector2 &screenPos) {
     Component::draw(screenPos);
-    if (hidden) return;
     for (auto child : children)
-        child->draw(Vector2{ screenPos.x + child->pos.x, screenPos.y + child->pos.y });
+        if (!child->getHidden())
+            child->draw(Vector2{ screenPos.x + child->pos.x, screenPos.y + child->pos.y });
 }
 
 void ui::Panel::addChild(Component * component) {

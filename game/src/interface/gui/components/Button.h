@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "Component.h"
+#include "../Style.h"
 #include "../styles.h"
 #include <functional>
 
@@ -10,10 +11,7 @@ namespace ui {
     // Base button class. Recommended to use derived button types instead
     class Button : public Component {
     public:
-        Button(const Vector2 &pos, const Vector2 &size,
-            const Color &bgColor = styles::DEFAULT_BG_COLOR,
-            const Color &outlineColor = styles::DEFAULT_OUTLINE_COLOR,
-            const Color &outlineHoverColor = styles::DEFAULT_HOVER_OUTLINE_COLOR);
+        Button(const Vector2 &pos, const Vector2 &size, const Style &style);
         virtual ~Button() = default;
 
         void draw(const Vector2 &screenPos) override;
@@ -35,10 +33,6 @@ namespace ui {
     protected:
         std::function<void ()> clickCallback = [](){};
         std::function<void ()> enterCallback = [](){};
-
-        Color bgColor = styles::DEFAULT_BG_COLOR;
-        Color outlineColor = styles::DEFAULT_OUTLINE_COLOR;
-        Color outlineHoverColor = styles::DEFAULT_HOVER_OUTLINE_COLOR;
     };
 }
 

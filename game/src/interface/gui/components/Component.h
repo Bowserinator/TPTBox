@@ -2,13 +2,13 @@
 #define GUI_COMPONENT_H
 
 #include "raylib.h"
+#include "../Style.h"
 
 namespace ui {
-	class Panel;
     class Component {
     public:
-        Component(const Vector2 &pos, const Vector2 &size, const int cursor = MOUSE_CURSOR_DEFAULT):
-			pos(pos), size(size), cursor(cursor) {};
+        Component(const Vector2 &pos, const Vector2 &size, Style style = Style::getDefault(), const int cursor = MOUSE_CURSOR_DEFAULT):
+			pos(pos), size(size), style(style), cursor(cursor) {};
         virtual ~Component() = default;
 
 		virtual void tick(float dt);
@@ -27,7 +27,7 @@ namespace ui {
 		virtual void onFocus();
 		virtual void onUnfocus();
     
-		void setParent(Panel * parent) { this->parent = parent; }
+		void setParent(Component * parent) { this->parent = parent; }
 		
 		// @param pos Local position inside the element
 		inline bool contains(const Vector2 pos) const {
@@ -40,7 +40,7 @@ namespace ui {
 
         Vector2 pos, size;
 		Vector2 globalPos{0, 0};
-		Panel * parent = nullptr;
+		Component * parent = nullptr;
 
 		Component * disable() { disabled = true; return this; }
 		Component * enable() { disabled = false; return this; }
@@ -59,6 +59,7 @@ namespace ui {
         bool hidden = false;
         bool focused = false;
 		bool hovered = false;
+		Style style;
 		int cursor = MOUSE_CURSOR_DEFAULT;
     };
 }

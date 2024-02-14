@@ -1,48 +1,39 @@
-#ifndef GUI_TEXT_BUTTON_H
-#define GUI_TEXT_BUTTON_H
+#ifndef GUI_LABEL_H
+#define GUI_LABEL_H
 
 #include "raylib.h"
-#include "Button.h"
 #include "../styles.h"
 #include "../Style.h"
 #include "../../FontCache.h"
 #include "../../../util/vector_op.h"
+#include "Component.h"
+
 #include <string>
 
 namespace ui {
-    // Button that displays text inside
-    class TextButton : public Button {
+    class Label: public Component {
     public:
-        TextButton(
-            const Vector2 &pos,
+        Label(
+            const Vector2 &pos, 
             const Vector2 &size,
             const std::string &text,
-            const Style &style = Style::getDefault()
-        ):
-            ui::Button(pos, size, style), text(text)
-        {
+            const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0})
+        ): Component(pos, size, style), text(text) {
             tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
-        };
-
-        virtual ~TextButton() = default;
+        }
 
         void draw(const Vector2 &screenPos) override {
-            Component::draw(screenPos);
-
-            DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.getBackgroundColor(this));
-            DrawRectangleLinesEx(Rectangle { screenPos.x, screenPos.y, size.x, size.y },
-                style.borderThickness,
-                style.getBorderColor(this));
-
+            if (style.backgroundColor.a) DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.getBackgroundColor(this));
             const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
+
             SetTextLineSpacing(FONT_SIZE);
             DrawTextEx(FontCache::ref()->main_font, text.c_str(), screenPos + pad, FONT_SIZE, FONT_SPACING,
                 style.getTextColor(this));
         }
-
+    
     protected:
-        std::string text;
         Vector2 tsize;
+        std::string text;
     };
 }
 

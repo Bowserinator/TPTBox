@@ -3,13 +3,14 @@
 
 #include "raylib.h"
 #include "Component.h"
+#include "../Style.h"
 #include <vector>
 
 namespace ui {
     // A container for multiple child components
     class Panel : public Component {
     public:
-        Panel(const Vector2 &pos, const Vector2 &size);
+        Panel(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
         ~Panel();
 
         void tick(float dt) override;

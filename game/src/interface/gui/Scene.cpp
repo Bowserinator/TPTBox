@@ -77,5 +77,6 @@ void Scene::update() {
 
 void Scene::draw() {
     for (auto child : children)
-        child->draw(child->pos);
+        if (!child->getHidden())
+            child->draw(child->pos);
 }
