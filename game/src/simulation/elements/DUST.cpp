@@ -2,6 +2,7 @@
 
 void Element::Element_DUST() {
     Name = "DUST";
+    Description = "Dust. Light, flammable powder";
     State = ElementState::TYPE_POWDER;
     Color = 0xFFE0A0FF;
 

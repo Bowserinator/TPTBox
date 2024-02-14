@@ -2,7 +2,7 @@
 #define GUI_TEXT_BUTTON_H
 
 #include "raylib.h"
-#include "Button.h"
+#include "./abstract/Button.h"
 #include "../styles.h"
 #include "../Style.h"
 #include "../../FontCache.h"
@@ -27,7 +27,7 @@ namespace ui {
         virtual ~TextButton() = default;
 
         void draw(const Vector2 &screenPos) override {
-            Component::draw(screenPos);
+            InteractiveComponent::draw(screenPos);
 
             DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.getBackgroundColor(this));
             DrawRectangleLinesEx(Rectangle { screenPos.x, screenPos.y, size.x, size.y },

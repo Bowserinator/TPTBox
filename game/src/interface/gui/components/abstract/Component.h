@@ -2,7 +2,7 @@
 #define GUI_COMPONENT_H
 
 #include "raylib.h"
-#include "../Style.h"
+#include "../../Style.h"
 
 namespace ui {
     class Component {
@@ -54,14 +54,14 @@ namespace ui {
 		bool getFocused() const { return focused; }
 		bool getHovered() const { return hovered; }
 
+		Style style;
+		int cursor = MOUSE_CURSOR_DEFAULT;
+
 	protected:
 		bool disabled = false;
         bool hidden = false;
         bool focused = false;
 		bool hovered = false;
-		bool staticComponent = false;
-		Style style;
-		int cursor = MOUSE_CURSOR_DEFAULT;
     };
 }
 

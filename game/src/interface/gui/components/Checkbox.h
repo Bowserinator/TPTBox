@@ -4,15 +4,15 @@
 #include "raylib.h"
 #include "../styles.h"
 #include "../Style.h"
-#include "Component.h"
+#include "./abstract/InteractiveComponent.h"
 
 namespace ui {
-    class Checkbox: public Component {
+    class Checkbox: public InteractiveComponent {
     public:
         Checkbox(
             const Vector2 &pos,
             const Style &style = Style::getDefault()
-        ): Component(pos, Vector2{styles::CHECKBOX_SIZE, styles::CHECKBOX_SIZE}, style, MOUSE_CURSOR_POINTING_HAND) {}
+        ): InteractiveComponent(pos, Vector2{styles::CHECKBOX_SIZE, styles::CHECKBOX_SIZE}, style, MOUSE_CURSOR_POINTING_HAND) {}
 
         void draw(const Vector2 &screenPos) override {
             constexpr float PAD = 5.0f;
@@ -25,7 +25,7 @@ namespace ui {
         }
 
         void onMouseClick(Vector2 localPos, unsigned button) override {
-            Component::onMouseClick(localPos, button);
+            InteractiveComponent::onMouseClick(localPos, button);
             if (!disabled) {
                 toggle();
                 clickCallback(_checked);

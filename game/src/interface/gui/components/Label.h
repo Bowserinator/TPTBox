@@ -6,7 +6,7 @@
 #include "../Style.h"
 #include "../../FontCache.h"
 #include "../../../util/vector_op.h"
-#include "Component.h"
+#include "./abstract/Component.h"
 
 #include <string>
 
@@ -20,7 +20,11 @@ namespace ui {
             const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0})
         ): Component(pos, size, style), text(text) {
             tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
-            staticComponent = true;
+        }
+
+        void setText(const std::string &str) {
+            text = str;
+            tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         }
 
         void draw(const Vector2 &screenPos) override {

@@ -1,5 +1,5 @@
 #include "Style.h"
-#include "./components/Component.h"
+#include "./components/abstract/Component.h"
 #include "../../util/vector_op.h"
 
 using namespace ui;

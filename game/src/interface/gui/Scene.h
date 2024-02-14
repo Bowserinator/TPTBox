@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "raylib.h"
-#include "./components/Component.h"
+#include "./components/abstract/Component.h"
 
 // A global level container for all components
 namespace ui {

@@ -2,16 +2,26 @@
 #define ELEMENT_MENU_H
 
 #include "../gui/Scene.h"
+#include "../gui/components/Label.h"
+#include "../gui/components/TextButton.h"
+#include "../gui/components/Panel.h"
+#include <vector>
 
 class BrushRenderer;
 
 class ElementMenu : public ui::Scene {
 public:
-    ElementMenu(BrushRenderer * brush_renderer);
+    ElementMenu(BrushRenderer * brushRenderer);
 
     void init() override;
+    void update() override;
 private:
-    BrushRenderer * brush_renderer;
+    BrushRenderer * brushRenderer;
+    ui::Label * elementDescLabel = nullptr;
+    ui::Panel * mainPanel = nullptr;
+
+    float elementDescAlpha = 0.0f;
+    std::vector<ui::TextButton *> elementButtons;
 };
 
 #endif

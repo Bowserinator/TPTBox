@@ -2,13 +2,13 @@
 #define GUI_PANEL_H
 
 #include "raylib.h"
-#include "Component.h"
+#include "./abstract/InteractiveComponent.h"
 #include "../Style.h"
 #include <vector>
 
 namespace ui {
     // A container for multiple child components
-    class Panel : public Component {
+    class Panel : public InteractiveComponent {
     public:
         Panel(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
         ~Panel();

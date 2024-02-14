@@ -27,6 +27,7 @@ namespace ui {
         Color hoverBorderColor    = WHITE;
         Color focusBorderColor    = Color{ 120, 120, 120, 255 };
         Color disabledBorderColor = Color{ 120, 120, 120, 255 };
+
         float borderThickness = 1.0f;
 
         // Compute alignment of an object inside another with current alignments

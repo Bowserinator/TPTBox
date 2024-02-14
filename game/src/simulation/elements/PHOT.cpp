@@ -2,6 +2,7 @@
 
 void Element::Element_PHOT() {
     Name = "PHOT";
+    Description = "Photons.";
     State = ElementState::TYPE_ENERGY;
     Color = 0xFFFFFFFF;
     GraphicsFlags = GraphicsFlags::GLOW | GraphicsFlags::NO_LIGHTING;

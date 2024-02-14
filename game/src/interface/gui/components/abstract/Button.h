@@ -2,29 +2,29 @@
 #define GUI_BUTTON_H
 
 #include "raylib.h"
-#include "Component.h"
-#include "../Style.h"
-#include "../styles.h"
+#include "InteractiveComponent.h"
+#include "../../Style.h"
+#include "../../styles.h"
 #include <functional>
 
 namespace ui {
     // Base button class. Recommended to use derived button types instead
-    class Button : public Component {
+    class Button : public InteractiveComponent {
     public:
-        Button(const Vector2 &pos, const Vector2 &size, const Style &style);
+        Button(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
         virtual ~Button() = default;
 
         void draw(const Vector2 &screenPos) override;
-		void onMouseMoved(Vector2 localPos) override { Component::onMouseMoved(localPos); }
+		void onMouseMoved(Vector2 localPos) override { InteractiveComponent::onMouseMoved(localPos); }
 		void onMouseEnter(Vector2 localPos) override {
-            Component::onMouseEnter(localPos);
+            InteractiveComponent::onMouseEnter(localPos);
             if (!disabled) enterCallback();
         }
-		void onMouseLeave(Vector2 localPos) override { Component::onMouseLeave(localPos); }
-		void onMouseDown(Vector2 localPos, unsigned button) override { Component::onMouseDown(localPos, button); }
-		void onMouseUp(Vector2 localPos, unsigned button) override { Component::onMouseUp(localPos, button); }
+		void onMouseLeave(Vector2 localPos) override { InteractiveComponent::onMouseLeave(localPos); }
+		void onMouseDown(Vector2 localPos, unsigned button) override { InteractiveComponent::onMouseDown(localPos, button); }
+		void onMouseUp(Vector2 localPos, unsigned button) override { InteractiveComponent::onMouseUp(localPos, button); }
 		void onMouseClick(Vector2 localPos, unsigned button) override {
-            Component::onMouseClick(localPos, button);
+            InteractiveComponent::onMouseClick(localPos, button);
             if (!disabled) clickCallback();
         }
 

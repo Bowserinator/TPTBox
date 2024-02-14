@@ -10,25 +10,27 @@
 #include "../gui/components/Label.h"
 #include "../gui/styles.h"
 
-ElementMenu::ElementMenu(BrushRenderer * brush_renderer):
-    brush_renderer(brush_renderer) {}
+ElementMenu::ElementMenu(BrushRenderer * brushRenderer):
+    brushRenderer(brushRenderer) {}
 
 void ElementMenu::init() {
-    ui::Panel * main_panel = new ui::Panel(
-        Vector2{ 0, (float)GetScreenHeight() - 100 },
-        Vector2{ (float)GetScreenWidth(), 100 }
+    mainPanel = new ui::Panel(
+        Vector2{ 0, (float)GetScreenHeight() - 130 },
+        Vector2{ (float)GetScreenWidth(), 130 }
     );
 
     // Label for displaying element descriptions
-    main_panel->addChild(new ui::Label(
+    elementDescLabel = new ui::Label(
         Vector2{ (float)GetScreenWidth() - 1005, 0 },
         Vector2{ 1000.0f, 30.0f },
-        "This is an element description.",
+        "",
         ui::Style {
             .horizontalAlign = ui::Style::Align::Right,
-            .backgroundColor = Color{0, 0, 0, 68}
+            .backgroundColor = Color{0, 0, 0, 0},
+            .textColor = Color{255, 255, 255, 0}
         }
-    ));
+    );
+    mainPanel->addChild(elementDescLabel);
 
     // Element buttons
     for (auto id = 1; id <= ELEMENT_COUNT; id++) {
@@ -36,7 +38,7 @@ void ElementMenu::init() {
         Color bg_color = el.Color.as_Color();
         bg_color.a = 255;
 
-        float btnX = main_panel->size.x - (id % 22) * (styles::ELEMENT_BUTTON_SIZE.x + 5);
+        float btnX = mainPanel->size.x - (id % 22) * (styles::ELEMENT_BUTTON_SIZE.x + 5);
         float btnY = (id > 22 ? styles::ELEMENT_BUTTON_SIZE.y + 5 : 0) + 35;
 
         ui::TextButton * btn = new ui::TextButton(
@@ -53,27 +55,29 @@ void ElementMenu::init() {
                 .setAllBackgroundColors(bg_color)
                 .setAllTextColors(el.Color.brightness() < 128 ? WHITE : BLACK)
         );
-        btn->setClickCallback([this, id]() { brush_renderer->set_selected_element(id); });
-        main_panel->addChild(btn);
+        btn->setClickCallback([this, id]() { brushRenderer->set_selected_element(id); });
+        btn->setEnterCallback([this, &el]() {
+            elementDescLabel->setText(el.Description);
+            elementDescAlpha = 1.0f;
+        });
+        elementButtons.push_back(btn);
+        mainPanel->addChild(btn);
     }
 
-    addChild(main_panel);
-
-
-    // TODO
-    int * j = new int;
-    *j = 0;
-    auto f = [j]() {
-        (*j)++;
-        std::cout << "CLick " << *j << "\n";
-    };
-
-    ui::Modal * modal = new ui::Modal(Vector2{300, 20}, Vector2{400, 400});
-    modal->addChild((new ui::TextButton(Vector2{10, 10}, Vector2{100, 30}, "Button"))
-        ->setClickCallback(f)
-        ->enable());
-    modal->addChild(new ui::Checkbox(Vector2{150, 10}));
-
-    addChild(modal);
+    addChild(mainPanel);
 }
 
+void ElementMenu::update() {
+    Scene::update();
+
+    if (elementDescAlpha > 0)
+        elementDescAlpha -= 0.01f;
+    for (auto child : elementButtons)
+        if (child->contains(GetMousePosition() - mainPanel->pos - child->pos)) {
+            elementDescAlpha = 1.0f;
+            break;
+        }
+    elementDescAlpha = std::max(0.0f, elementDescAlpha);
+    elementDescLabel->style.backgroundColor.a = 128 * elementDescAlpha;
+    elementDescLabel->style.textColor.a = 255 * elementDescAlpha;
+}

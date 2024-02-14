@@ -2,6 +2,7 @@
 
 void Element::Element_WATR() {
     Name = "WATR";
+    Description = "Water.";
     State = ElementState::TYPE_LIQUID;
     Color = 0x2030D0FF;
     Weight = 10;
