@@ -4,11 +4,13 @@
 #include "Particle.h"
 #include "SimulationDef.h"
 #include "SimulationGraphics.h"
+#include "Gol.h"
 #include "Raycast.h"
 #include "Air.h"
 
 #include "../util/types/rand.h"
 #include "../util/types/heap_array.h"
+#include "../util/types/spinlock.h"
 
 #include "../util/math.h"
 #include "../util/vector_op.h"
@@ -30,8 +32,10 @@ public:
     pmap_id pmap[ZRES][YRES][XRES];
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
+    util::Spinlock parts_add_remove_lock;
 
     Air air;
+    SimulationGol gol;
 
     part_id pfree;
     part_id maxId;
@@ -53,6 +57,7 @@ public:
     Simulation();
     ~Simulation();
 
+    void init();
     void cycle_gravity_mode();
     void set_paused(const bool paused) { this->paused = paused; };
 
@@ -60,6 +65,7 @@ public:
     void kill_part(const part_id id);
 
     void update();
+    void dispatch_compute_shaders();
     void update_heat_conduct(Particle &part);
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();

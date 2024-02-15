@@ -18,6 +18,6 @@ void main() {
     orgColor.rgb = orgColor.rgb * orgColor.a + blurColor.rgb * (1.0 - orgColor.a) * blurColor.a;
     orgColor.a = orgColor.a + blurColor.a * (1.0 - orgColor.a);
 
-    vec4 outColor = orgColor + 2.0 * glowColor;
+    vec4 outColor = orgColor + glowColor;
     FragColor = outColor;
 }

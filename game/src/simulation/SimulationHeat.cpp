@@ -28,7 +28,6 @@ void SimulationHeat::dispatch() {
     rlBindShaderBuffer(ssbo_out, 1);
     rlComputeShaderDispatch(XRES / 16, YRES / 16, ZRES);
     rlDisableShader();
-
 }
 
 void SimulationHeat::wait_and_get() {

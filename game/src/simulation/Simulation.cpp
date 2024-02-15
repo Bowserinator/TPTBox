@@ -48,6 +48,10 @@ Simulation::Simulation():
 
 Simulation::~Simulation() {}
 
+// Called when OpenGL context is initialized
+void Simulation::init() {
+    gol.init();
+}
 
 void Simulation::_init_can_move() {
     ElementType movingType, destinationType;
@@ -75,6 +79,8 @@ void Simulation::cycle_gravity_mode() {
 }
 
 part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
+    util::unique_spinlock _lock(parts_add_remove_lock);
+
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -110,6 +116,12 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vz = 0.0f;
     parts[pfree].assign_with_defaults(el.DefaultProperties);
 
+    if (type == PT_GOL) {
+        // TODO
+        gol.gol_map[z][y][x] = 1; // TODO: have 2nd compute shader to upload or something or track diffs
+        gol.golCount++;
+    }
+
     if (paused) {
         if (_should_do_lighting(parts[pfree])) {
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
@@ -130,6 +142,7 @@ void Simulation::kill_part(const part_id i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
 
+    util::unique_spinlock _lock(parts_add_remove_lock);
     coord_t x = part.rx;
     coord_t y = part.ry;
     coord_t z = part.rz;
@@ -139,6 +152,11 @@ void Simulation::kill_part(const part_id i) {
     else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
         photons[z][y][x] = 0;
 
+    if (part.type == PT_GOL) {
+        gol.gol_map[z][y][x] = 0;
+        gol.golCount--;
+    }
+
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
 
@@ -146,6 +164,7 @@ void Simulation::kill_part(const part_id i) {
         maxId--;
 
     _set_color_data_at(x, y, z, nullptr);
+
     if (paused) {
         if (_should_do_lighting(part))
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
@@ -162,16 +181,40 @@ void Simulation::update_zslice(const coord_t pz) {
 
     // Dirty rect does not have any impact on performance
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
-    for (coord_t py = min_y_per_zslice[pz - 1]; py < max_y_per_zslice[pz - 1]; py++)
+    coord_t y1, y2;
+
+    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[pz - 1] && !gol.zsliceHasGol[pz + 1]) { // No GOL, can use smaller dirty rect
+        y1 = min_y_per_zslice[pz - 1];
+        y2 = max_y_per_zslice[pz - 1];
+    } else {
+        // Dirty rect is expanded by 1 along each axis to allow GOL to propagate
+        y1 = std::min(1, std::max({
+            min_y_per_zslice[std::min((int)ZRES - 2, pz - 0)] - 1,
+            min_y_per_zslice[pz - 1] - 1,
+            min_y_per_zslice[std::max(1, pz - 2)] - 1
+        }));
+        y2 = std::min((int)(YRES - 1), std::max({
+            max_y_per_zslice[pz - 1] + 2,
+            max_y_per_zslice[std::min((int)ZRES - 2, pz - 0)] + 2, // z + 1
+            max_y_per_zslice[std::max(1, pz - 2)] + 2              // z - 1
+        }));
+    }
+
+    for (coord_t py = y1; py < y2; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
         if (pmap[pz][py][px]) {
-            part_id id = ID(pmap[pz][py][px]);
-            update_part(id);
+            if (TYP(pmap[pz][py][px]) == PT_GOL && !gol.gol_map[pz][py][px]) // Kill GOL that should die
+                kill_part(ID(pmap[pz][py][px]));
+            else
+                update_part(ID(pmap[pz][py][px]));
         }
-        if (photons[pz][py][px]) {
-            part_id id = ID(photons[pz][py][px]);
-            update_part(id);
+        else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
+            part_id i = create_part(px, py, pz, PT_GOL); // TODO: assign type, etc..
+            parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
         }
+
+        if (photons[pz][py][px])
+            update_part(ID(photons[pz][py][px]));
     }
 }
 
@@ -272,6 +315,9 @@ void Simulation::update() {
         return;
     }
 
+    gol.wait_and_get();
+
+
     // air.update(); // TODO
 
     #pragma omp parallel num_threads(sim_thread_count)
@@ -301,10 +347,12 @@ void Simulation::update() {
 void Simulation::recalc_free_particles() {
     parts_count = 0;
     part_id newMaxId = 0;
+
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.ao_blocks.fill(0);
+    gol.zsliceHasGol.fill(false);
 
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
@@ -323,13 +371,17 @@ void Simulation::recalc_free_particles() {
             _update_shadow_map(x, y, z);
         }
 
+        // GOL check
+        if (TYP(pmap[z][y][x]) == PT_GOL)
+            gol.zsliceHasGol[z] = true;
+
         // Pmap / other cache
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
         max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
 
         // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
-        if (GetElements()[part.type].Graphics || true) // TODO
+        if (GetElements()[part.type].Graphics) // TODO: always update if heat view for example
             _set_color_data_at(part.rx, part.ry, part.rz, &part);
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
@@ -340,6 +392,11 @@ void Simulation::recalc_free_particles() {
         part.temp = part.temp_tmp;
     }
     maxId = newMaxId + 1;
+}
+
+void Simulation::dispatch_compute_shaders() {
+    if (gol.golCount)
+        gol.dispatch();
 }
 
 
@@ -361,9 +418,9 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         }
 
         // TODO heat
-        int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
-        RGBA tmp(t, t, t, 255);
-        new_color = tmp.as_ABGR();
+        // int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
+        // RGBA tmp(t, t, t, 255);
+        // new_color = tmp.as_ABGR();
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);

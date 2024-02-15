@@ -52,6 +52,7 @@ void ScreenGameplay::init() {
 
     renderer.init();
     element_menu.init();
+    sim.init();
 
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
@@ -59,6 +60,7 @@ void ScreenGameplay::init() {
     SimulationHeat lol;
     lol.init();
     lol.dispatch();
+
     auto a = GetTime();
     lol.wait_and_get();
     std::cout << " time: " << (GetTime() - a ) << "\n";
@@ -131,9 +133,7 @@ void ScreenGameplay::update() {
     auto t = GetTime();
     sim.update();
     simTime = GetTime() - t;
-}
 
-void ScreenGameplay::draw() {
     // TODO
     FrameTime::ref()->update();
     EventConsumer::ref()->reset();
@@ -143,6 +143,10 @@ void ScreenGameplay::draw() {
     brush_renderer.update();
     render_camera.update();
 
+    sim.dispatch_compute_shaders();
+}
+
+void ScreenGameplay::draw() {
     ClearBackground(BLACK);
 
     BeginMode3D(render_camera.camera);
