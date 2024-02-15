@@ -118,7 +118,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
 
     if (type == PT_GOL) {
         // TODO
-        gol.gol_map[z][y][x] = 1; // TODO: have 2nd compute shader to upload or something or track diffs
+        gol.gol_map[z][y][x] = 2; // TODO: have 2nd compute shader to upload or something or track diffs
         gol.golCount++;
     }
 
@@ -205,10 +205,16 @@ void Simulation::update_zslice(const coord_t pz) {
     for (coord_t py = y1; py < y2; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
         if (pmap[pz][py][px]) {
-            if (TYP(pmap[pz][py][px]) == PT_GOL && !gol.gol_map[pz][py][px]) // Kill GOL that should die
-                kill_part(ID(pmap[pz][py][px]));
-            else
+            if (TYP(pmap[pz][py][px]) == PT_GOL && !gol.gol_map[pz][py][px]) { // Kill GOL that should die
+                auto id = ID(pmap[pz][py][px]);
+                parts[id].tmp1--;
+
+                if (parts[id].tmp1 == 0) kill_part(id);
+                else gol.gol_map[pz][py][px] = 1; // TODO gol type id
+            } else {
+                gol.gol_map[pz][py][px] = 0;
                 update_part(ID(pmap[pz][py][px]));
+            }
         }
         else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
             part_id i = create_part(px, py, pz, PT_GOL); // TODO: assign type, etc..
