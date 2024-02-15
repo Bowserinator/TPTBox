@@ -182,8 +182,10 @@ void Simulation::update_zslice(const coord_t pz) {
     // Dirty rect does not have any impact on performance
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     coord_t y1, y2;
+    coord_t golz2 = (pz - 1) == 0 ? ZRES - 2 : pz - 1; // Check neighbors for gol as well, needs to wrap
+    coord_t golz3 = (pz + 1) == ZRES - 1 ? 1 : pz + 1;
 
-    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[pz - 1] && !gol.zsliceHasGol[pz + 1]) { // No GOL, can use smaller dirty rect
+    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[golz2] && !gol.zsliceHasGol[golz3]) { // No GOL, can use smaller dirty rect
         y1 = min_y_per_zslice[pz - 1];
         y2 = max_y_per_zslice[pz - 1];
     } else {

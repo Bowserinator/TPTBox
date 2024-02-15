@@ -1,22 +1,51 @@
 #version 430
 
 // uniform uvec4 SIMRES; // TODO
-const uvec3 SIMRES = uvec3(200, 200, 200);
+const ivec3 SIMRES = ivec3(200, 200, 200);
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(std430, binding = 1) readonly restrict buffer golLayout {
+layout(std430, binding = 1) readonly restrict buffer golInput {
     uint golBuffer[];
 };
-layout(std430, binding = 2) writeonly restrict buffer golLayout2 {
+layout(std430, binding = 2) readonly writeonly restrict buffer golOutput {
     uint golBufferDest[];
 };
 
-uint golIdx(uint x, uint y, uint z) { // TODO this as macro was faulty for some reason parens removed??
-    return (x) + (y) * SIMRES.x + (z) * SIMRES.y * SIMRES.x;
+
+// (x, y, z) -> array IDX (with wrapping on edges), note edges have 1 padding
+uint golIdx(uint x, uint y, uint z) {
+    x = (x == 0) ? (SIMRES.x - 2) : (x == SIMRES.x - 1 ? 1 : x);
+    y = (y == 0) ? (SIMRES.y - 2) : (y == SIMRES.y - 1 ? 1 : y);
+    z = (z == 0) ? (SIMRES.z - 2) : (z == SIMRES.z - 1 ? 1 : z);
+    return x + y * SIMRES.x + z * SIMRES.y * SIMRES.x;
 }
-#define setGol(x, y, z, value) golBufferDest[golIdx(x, y, z)] = value
-#define getGol(x, y, z) golBuffer[golIdx(x, y, z)] > 0 ? 1 : 0
+
+// Set gol at x, y, z coordinates to value
+void setGol(uint x, uint y, uint z, uint value) {
+    uint idx = golIdx(x, y, z);
+    uint shift = (idx & 3) << 3; // (idx%4) * 8
+    uint orgval, target;
+
+    do {
+        orgval = golBufferDest[idx >> 2];
+        target = (orgval & ~uint(255 << shift)) | uint(value << shift);
+    } while (atomicCompSwap(golBufferDest[idx >> 2], orgval, target) != orgval);
+}
+
+// Return 1 if gol at x, y, z is non-zero, else 0
+uint getGol01(uint x, uint y, uint z) {
+    uint idx = golIdx(x, y, z);
+    return (golBuffer[idx >> 2] & uint(255 << ((idx & 3) << 3))) != 0 ? 1 : 0;
+}
+
+// Return actual value at coordinate
+uint getGol(uint x, uint y, uint z) {
+    uint idx = golIdx(x, y, z);
+    uint shift = (idx & 3) << 3;
+    return (golBuffer[idx >> 2] & uint(255 << shift)) >> shift;
+}
+
 
 void main() {
     uint neighbourCount = 0;
@@ -24,36 +53,35 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
     uint z = gl_GlobalInvocationID.z;
 
-    // if (clamp(uvec3(x, y, z), uvec3(0), SIMRES - uvec3(1)) != uvec3(x, y, z))
-    if (x >= SIMRES.x - 1 || y >= SIMRES.y - 1 || z >= SIMRES.z - 1 || x < 1 || y < 1 || z < 1)
+    if (clamp(ivec3(x, y, z), ivec3(1), SIMRES - ivec3(2)) != ivec3(x, y, z))
         return;
 
-    neighbourCount += getGol(x - 1, y - 1, z - 1);
-    neighbourCount += getGol(x - 1, y - 1, z + 0);
-    neighbourCount += getGol(x - 1, y - 1, z + 1);
-    neighbourCount += getGol(x - 1, y + 0, z - 1);
-    neighbourCount += getGol(x - 1, y + 0, z + 0);
-    neighbourCount += getGol(x - 1, y + 0, z + 1);
-    neighbourCount += getGol(x - 1, y + 1, z - 1);
-    neighbourCount += getGol(x - 1, y + 1, z + 0);
-    neighbourCount += getGol(x - 1, y + 1, z + 1);
-    neighbourCount += getGol(x + 0, y - 1, z - 1);
-    neighbourCount += getGol(x + 0, y - 1, z + 0);
-    neighbourCount += getGol(x + 0, y - 1, z + 1);
-    neighbourCount += getGol(x + 0, y + 0, z - 1);
-    neighbourCount += getGol(x + 0, y + 0, z + 1);
-    neighbourCount += getGol(x + 0, y + 1, z - 1);
-    neighbourCount += getGol(x + 0, y + 1, z + 0);
-    neighbourCount += getGol(x + 0, y + 1, z + 1);
-    neighbourCount += getGol(x + 1, y - 1, z - 1);
-    neighbourCount += getGol(x + 1, y - 1, z + 0);
-    neighbourCount += getGol(x + 1, y - 1, z + 1);
-    neighbourCount += getGol(x + 1, y + 0, z - 1);
-    neighbourCount += getGol(x + 1, y + 0, z + 0);
-    neighbourCount += getGol(x + 1, y + 0, z + 1);
-    neighbourCount += getGol(x + 1, y + 1, z - 1);
-    neighbourCount += getGol(x + 1, y + 1, z + 0);
-    neighbourCount += getGol(x + 1, y + 1, z + 1);
+    neighbourCount += getGol01(x - 1, y - 1, z - 1);
+    neighbourCount += getGol01(x - 1, y - 1, z + 0);
+    neighbourCount += getGol01(x - 1, y - 1, z + 1);
+    neighbourCount += getGol01(x - 1, y + 0, z - 1);
+    neighbourCount += getGol01(x - 1, y + 0, z + 0);
+    neighbourCount += getGol01(x - 1, y + 0, z + 1);
+    neighbourCount += getGol01(x - 1, y + 1, z - 1);
+    neighbourCount += getGol01(x - 1, y + 1, z + 0);
+    neighbourCount += getGol01(x - 1, y + 1, z + 1);
+    neighbourCount += getGol01(x + 0, y - 1, z - 1);
+    neighbourCount += getGol01(x + 0, y - 1, z + 0);
+    neighbourCount += getGol01(x + 0, y - 1, z + 1);
+    neighbourCount += getGol01(x + 0, y + 0, z - 1);
+    neighbourCount += getGol01(x + 0, y + 0, z + 1);
+    neighbourCount += getGol01(x + 0, y + 1, z - 1);
+    neighbourCount += getGol01(x + 0, y + 1, z + 0);
+    neighbourCount += getGol01(x + 0, y + 1, z + 1);
+    neighbourCount += getGol01(x + 1, y - 1, z - 1);
+    neighbourCount += getGol01(x + 1, y - 1, z + 0);
+    neighbourCount += getGol01(x + 1, y - 1, z + 1);
+    neighbourCount += getGol01(x + 1, y + 0, z - 1);
+    neighbourCount += getGol01(x + 1, y + 0, z + 0);
+    neighbourCount += getGol01(x + 1, y + 0, z + 1);
+    neighbourCount += getGol01(x + 1, y + 1, z - 1);
+    neighbourCount += getGol01(x + 1, y + 1, z + 0);
+    neighbourCount += getGol01(x + 1, y + 1, z + 1);
 
     if (neighbourCount == 6)
         setGol(x, y, z, 1);
