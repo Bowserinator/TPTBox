@@ -30,8 +30,6 @@ const GOLRule golRules[GOL_RULE_COUNT] = {
 // GOL SIM
 // -----------------------------
 SimulationGol::~SimulationGol() {
-    rlUnloadShaderBuffer(ssboIn);
-    rlUnloadShaderBuffer(ssboOut);
     rlUnloadShaderBuffer(ssboRules);
     rlUnloadShaderProgram(golProgram);
 }
@@ -47,8 +45,7 @@ void SimulationGol::init() {
         uint32_t data[GOL_RULE_COUNT * 2];
     } golRuleData;
 
-    ssboIn    = rlLoadShaderBuffer(sizeof(gol_map), NULL, RL_DYNAMIC_DRAW);
-    ssboOut   = rlLoadShaderBuffer(sizeof(gol_map), NULL, RL_DYNAMIC_READ);
+    ssbosData = util::MultibufferSSBO(2, sizeof(gol_map), RL_DYNAMIC_COPY);
     ssboRules = rlLoadShaderBuffer(sizeof(golRuleData), NULL, RL_STATIC_READ);
 
     for (auto i = 0; i < GOL_RULE_COUNT; i++) {
@@ -61,17 +58,18 @@ void SimulationGol::init() {
 }
 
 void SimulationGol::dispatch() {
-    rlUpdateShaderBuffer(ssboIn, gol_map, sizeof(gol_map), 0);
+    rlUpdateShaderBuffer(ssbosData.get(0), gol_map, sizeof(gol_map), 0);
 
     rlEnableShader(golProgram);
     rlBindShaderBuffer(ssboRules, 0);
-    rlBindShaderBuffer(ssboIn, 1);
-    rlBindShaderBuffer(ssboOut, 2);
+    rlBindShaderBuffer(ssbosData.get(0), 1);
+    rlBindShaderBuffer(ssbosData.get(1), 2);
     rlComputeShaderDispatch(XRES / 8 + 1, YRES / 8 + 1, ZRES / 8 + 1);
     rlDisableShader();
 }
 
 void SimulationGol::wait_and_get() {
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    rlReadShaderBuffer(ssboOut, gol_map, sizeof(gol_map), 0);
+    rlReadShaderBuffer(ssbosData.get(1), gol_map, sizeof(gol_map), 0);
+    ssbosData.advance_cycle();
 }

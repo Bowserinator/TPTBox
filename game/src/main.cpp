@@ -30,9 +30,11 @@ MessageCallback(GLenum source,
                 GLsizei length,
                 const GLchar* message,
                 const void* userParam ) {
-    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+    if (id == 0x20071) return; // Usage hint is GL_STATIC_READ< will use VIDEO memory as the source for buffer object operations
+
+    fprintf(stderr, "GL CALLBACK: %s id = 0x%x, type = 0x%x, severity = 0x%x, message = %s\n",
             (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-            type, severity, message);
+            id, type, severity, message);
 }
 #endif
 

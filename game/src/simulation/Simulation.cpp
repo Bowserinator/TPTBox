@@ -323,8 +323,9 @@ void Simulation::update() {
         return;
     }
 
-    gol.wait_and_get();
-
+    auto t = GetTime();
+    if (gol.golCount) gol.wait_and_get();
+    std::cout << (GetTime() - t) << "\n";
 
     // air.update(); // TODO
 
