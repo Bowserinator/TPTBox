@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 
-constexpr float FONT_SIZE = 11.0f;
+constexpr float FONT_SIZE = 9.0f;
 constexpr float FONT_SPACING = -0.5f;
 
 class FontCache {

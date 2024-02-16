@@ -5,6 +5,8 @@
 #include "../../Style.h"
 
 namespace ui {
+	class Scene;
+
     class Component {
     public:
         Component(const Vector2 &pos, const Vector2 &size, Style style = Style::getDefault(), const int cursor = MOUSE_CURSOR_DEFAULT):
@@ -27,7 +29,11 @@ namespace ui {
 		virtual void onFocus();
 		virtual void onUnfocus();
     
-		void setParent(Component * parent) { this->parent = parent; }
+		virtual void setParent(Component * parent) { this->parent = parent; }
+		virtual void setParentScene(Scene * scene) { this->parentScene = scene; }
+
+		void addToParent(Component * child);
+		void removeFromParent(Component * child);
 		
 		// @param pos Local position inside the element
 		inline bool contains(const Vector2 pos) const {
@@ -41,6 +47,7 @@ namespace ui {
         Vector2 pos, size;
 		Vector2 globalPos{0, 0};
 		Component * parent = nullptr;
+		Scene * parentScene = nullptr;
 
 		Component * disable() { disabled = true; return this; }
 		Component * enable() { disabled = false; return this; }

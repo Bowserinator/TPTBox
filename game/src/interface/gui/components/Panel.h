@@ -7,6 +7,8 @@
 #include <vector>
 
 namespace ui {
+    class Scene;
+
     // A container for multiple child components
     class Panel : public InteractiveComponent {
     public:
@@ -33,6 +35,10 @@ namespace ui {
         // @brief Remove a child from component list by value
         // @param component 
         void removeChild(Component * component);
+
+        // Update parent scene
+        // @param scene
+        void setParentScene(Scene * scene) override;
 
         // @brief Get child by idx, is not bounds checked
         // @param idx

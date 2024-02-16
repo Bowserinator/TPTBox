@@ -10,6 +10,8 @@
 #include "../gui/components/Label.h"
 #include "../gui/styles.h"
 
+#include "../settings/GraphicsSettingsModal.h"
+
 ElementMenu::ElementMenu(BrushRenderer * brushRenderer):
     brushRenderer(brushRenderer) {}
 
@@ -65,6 +67,8 @@ void ElementMenu::init() {
     }
 
     addChild(mainPanel);
+
+    addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}));
 }
 
 void ElementMenu::update() {

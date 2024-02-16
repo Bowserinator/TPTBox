@@ -3,11 +3,20 @@
 #include "../../util/vector_op.h"
 #include "raylib.h"
 
+#include <ranges>
+#include <algorithm>
+
 using namespace ui;
 
 Scene::~Scene() {
     for (auto child : children)
         delete child;
+}
+
+void Scene::removeChild(Component * component) {
+    auto itr = std::remove(children.begin(), children.end(), component);
+    children.erase(itr, children.end());
+    delete *itr;
 }
 
 void Scene::update() {
@@ -17,7 +26,7 @@ void Scene::update() {
     if (GetMouseDelta() != Vector2{0, 0})
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
-    for (auto child : children) {
+    for (auto child : std::ranges::views::reverse(children)) {
         // -- Updates --
         child->tick(dt);
 

@@ -17,7 +17,9 @@ namespace ui {
             const Vector2 &pos, 
             const Vector2 &size,
             const std::string &text,
-            const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0})
+            const Style &style = (Style {
+                    .horizontalAlign = Style::Align::Left
+                }).setAllBackgroundColors(Color{0, 0, 0, 0})
         ): Component(pos, size, style), text(text) {
             tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         }

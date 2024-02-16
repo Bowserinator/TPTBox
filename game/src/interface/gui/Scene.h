@@ -16,7 +16,12 @@ namespace ui {
         // @param child - New child, must be heap allocated
         void addChild(Component * child) {
             children.push_back(child);
+            child->setParentScene(this);
         }
+
+        // Remove a child
+        // @param child - Child pointer
+        void removeChild(Component * component);
 
         // Called after OpenGL context is initialized
         virtual void init() {};

@@ -1,9 +1,9 @@
 #include "Panel.h"
+#include "../Scene.h"
 #include "../../EventConsumer.h"
 #include "../../../util/vector_op.h"
 
-#include <iostream> // TODO
-
+#include <ranges>
 #include <algorithm>
 
 ui::Panel::Panel(const Vector2 &pos, const Vector2 &size, const Style &style): ui::InteractiveComponent(pos, size, style) {}
@@ -27,7 +27,14 @@ void ui::Panel::draw(const Vector2 &screenPos) {
 
 void ui::Panel::addChild(Component * component) {
     component->setParent(this);
+    component->setParentScene(parentScene);
     children.push_back(component);
+}
+
+void ui::Panel::setParentScene(Scene * scene) {
+    parentScene = scene;
+    for (auto child : children)
+        child->setParentScene(scene);
 }
 
 void ui::Panel::removeChild(Component * component) {
@@ -45,18 +52,24 @@ std::size_t ui::Panel::getChildCount() const {
 }
 
 // Propogate rest of the events
-#define PROPOGATE_EVENT(evt) for (auto child : children) \
-        if (child->contains(localPos - child->pos)) \
-            child->evt(localPos - child->pos);
-#define PROPOGATE_EVENT_VAR(evt, var) for (auto child : children) \
-        if (child->contains(localPos - child->pos)) \
-            child->evt(localPos - child->pos, var);
+#define PROPOGATE_EVENT(evt) for (auto child : std::ranges::views::reverse(children)) \
+        if (child->contains(localPos - child->pos)) { \
+            child->evt(localPos - child->pos); \
+            break; \
+        }
+#define PROPOGATE_EVENT_VAR(evt, var) for (auto child : std::ranges::views::reverse(children)) \
+        if (child->contains(localPos - child->pos)) { \
+            child->evt(localPos - child->pos, var); \
+            break; \
+        }
 
 void ui::Panel::onMouseMoved(Vector2 localPos) {
-    PROPOGATE_EVENT(onMouseMoved)
+    for (auto child : std::ranges::views::reverse(children))
+        if (child->contains(localPos - child->pos))
+            child->onMouseMoved(localPos - child->pos);
 
     Vector2 prevLocalPos = localPos - GetMouseDelta();
-    for (auto child : children) {
+    for (auto child : std::ranges::views::reverse(children)) {
         if (child->contains(prevLocalPos - child->pos) && !child->contains(localPos - child->pos))
             child->onMouseLeave(localPos - child->pos);
         if (!child->contains(prevLocalPos - child->pos) && child->contains(localPos - child->pos))
@@ -68,7 +81,7 @@ void ui::Panel::onMouseEnter(Vector2 localPos) {
 }
 void ui::Panel::onMouseLeave(Vector2 localPos) {
     Vector2 prevLocalPos = localPos - GetMouseDelta();
-    for (auto child : children)
+    for (auto child : std::ranges::views::reverse(children))
         if (child->contains(prevLocalPos - child->pos))
             child->onMouseLeave(localPos - child->pos);
 }
@@ -86,11 +99,11 @@ void ui::Panel::onMouseWheelInside(Vector2 localPos, float d) {
 }
 
 void ui::Panel::onMouseWheel(Vector2 localPos, float d) {
-    for (auto child : children)
+    for (auto child : std::ranges::views::reverse(children))
         child->onMouseWheel(localPos - child->pos, d);
 }
 
 void ui::Panel::updateKeys(bool shift, bool ctrl, bool alt) {
-    for (auto child : children)
+    for (auto child : std::ranges::views::reverse(children))
         child->updateKeys(shift, ctrl, alt);
 }
