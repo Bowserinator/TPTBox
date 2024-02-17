@@ -68,6 +68,10 @@ private:
     MultiTexture base_tex;
     unsigned int frame_count = 0;
     bool show_octree = false;
+    bool do_blur = true;
+    bool do_glow = true;
+    bool do_shadows = true;
+    bool do_ao = true;
 
     #pragma pack(push, 1)
     // Vec3s are vec4s and big arrays are at the end for packing purposes

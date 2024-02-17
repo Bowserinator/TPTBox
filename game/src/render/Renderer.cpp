@@ -164,6 +164,7 @@ void Renderer::init() {
         settings_writer->write_member("ENABLE_BLUR", 1);
         settings_writer->write_member("ENABLE_GLOW", 1);
         settings_writer->write_member("ENABLE_AO", 1);
+        settings_writer->write_member("ENABLE_SHADOWS", 1);
 
         settings_writer->upload();
     }
@@ -171,6 +172,11 @@ void Renderer::init() {
 
 void Renderer::update_settings(settings::Graphics * settings) {
     show_octree = settings->showOctree;
+    do_blur = settings->enableBlur;
+    do_glow = settings->enableGlow;
+    do_ao = settings->enableAO;
+    do_shadows = settings->enableShadows;
+
     settings_writer->write_member("DEBUG_MODE", (FragDebugMode)settings->renderMode);
     settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
     settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);
@@ -181,6 +187,7 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("ENABLE_BLUR", settings->enableBlur ? 1 : 0);
     settings_writer->write_member("ENABLE_GLOW", settings->enableGlow ? 1 : 0);
     settings_writer->write_member("ENABLE_AO", settings->enableAO ? 1 : 0);
+    settings_writer->write_member("ENABLE_SHADOWS", settings->enableShadows ? 1 : 0);
     settings_writer->upload();
 }
 
@@ -221,15 +228,19 @@ void Renderer::update_colors_and_lod() {
         }
     }
 
-    glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
-    constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
-    #pragma omp simd
-    for (int i = 0; i < sim->graphics.ao_blocks.size(); i++)
-        ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
-    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
+    if (do_ao) {
+        glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
+        constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
+        #pragma omp simd
+        for (int i = 0; i < sim->graphics.ao_blocks.size(); i++)
+            ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
+        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
+    }
 
-    glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
+    if (do_shadows) {
+        glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
+    }
 }
 
 void Renderer::draw_octree_debug() {
@@ -319,8 +330,17 @@ void Renderer::draw() {
     EndMode3D();
     rlDisableFramebuffer();
 
-    _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
-    _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
+    auto glow_tex_id = base_tex.glowOnlyTexture;
+    auto blur_tex_id = base_tex.blurOnlyTexture;
+
+    if (do_glow) {
+        _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
+        glow_tex_id = blur1_tex.texture.id;
+    }
+    if (do_blur) {
+        _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
+        blur_tex_id = blur2_tex.texture.id;
+    }
 
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
@@ -328,8 +348,8 @@ void Renderer::draw() {
 
         rlEnableShader(post_shader.id);
         rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
-        rlSetUniformSampler(post_shader_glow_texture_loc, blur1_tex.texture.id);
-        rlSetUniformSampler(post_shader_blur_texture_loc, blur2_tex.texture.id);
+        rlSetUniformSampler(post_shader_glow_texture_loc, glow_tex_id);
+        rlSetUniformSampler(post_shader_blur_texture_loc, blur_tex_id);
         rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
         util::set_shader_value(post_shader, post_shader_res_loc, resolution);
 

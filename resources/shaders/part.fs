@@ -44,6 +44,7 @@ layout(shared, binding = 6) uniform Settings {
     bool ENABLE_BLUR;
     bool ENABLE_GLOW;
     bool ENABLE_AO;
+    bool ENABLE_SHADOWS;
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -343,7 +344,7 @@ void main() {
 
     if (DEBUG_MODE == 0) { // NODEBUG
         uint flags = getByteFlags(ivec3(data.lastVoxel));
-        bool doShadow = SHADOW_STRENGTH > 0.0 && ((flags & G_NO_LIGHTING) == 0);
+        bool doShadow = ENABLE_SHADOWS && SHADOW_STRENGTH > 0.0 && ((flags & G_NO_LIGHTING) == 0);
         float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, data.lastVoxel.xy + ivec2(SIMRES.z - data.lastVoxel.z), 0).r : 0.0;
         float shadowMul = (doShadow && data.lastVoxel.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
         float mul = (res.w < 0 || ((flags & G_NO_LIGHTING) != 0) ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
