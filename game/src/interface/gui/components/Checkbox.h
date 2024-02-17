@@ -7,6 +7,8 @@
 #include "./abstract/InteractiveComponent.h"
 #include "../../FontCache.h"
 
+#include <functional>
+
 namespace ui {
     class Checkbox: public InteractiveComponent {
     public:

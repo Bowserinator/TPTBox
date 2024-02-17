@@ -28,7 +28,7 @@ static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
 static Renderer renderer(&sim, &render_camera);
-static ElementMenu element_menu(&brush_renderer);
+static ElementMenu element_menu(&brush_renderer, &renderer);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;

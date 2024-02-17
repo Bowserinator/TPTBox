@@ -3,6 +3,7 @@
 #include "../simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
+#include "../interface/settings/data/GraphicsSettingsData.h"
 
 #include "../util/math.h"
 #include "../util/graphics.h"
@@ -30,6 +31,7 @@ Renderer::~Renderer() {
     glDeleteTextures(BUFFER_COUNT, ao_tex);
     glDeleteTextures(BUFFER_COUNT, shadow_tex);
     delete[] ao_data;
+    delete settings_writer;
 }
 
 void Renderer::init() {
@@ -144,27 +146,42 @@ void Renderer::init() {
     {
         glGenBuffers(1, &ubo_settings);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_settings);
-        UBOWriter settings_writer(part_shader.id, ubo_settings, "Settings");
-        glBufferData(GL_UNIFORM_BUFFER, settings_writer.size(), NULL, GL_STATIC_DRAW);
+        settings_writer = new UBOWriter(part_shader.id, ubo_settings, "Settings");
+        glBufferData(GL_UNIFORM_BUFFER, settings_writer->size(), NULL, GL_STATIC_DRAW);
 
         float BG_COLOR[] = { BACKGROUND_COLOR.r / 255.0f, BACKGROUND_COLOR.g / 255.0f, BACKGROUND_COLOR.b / 255.0f };
         float SH_COLOR[] = { SHADOW_COLOR.r / 255.0f, SHADOW_COLOR.g / 255.0f, SHADOW_COLOR.b / 255.0f };
-        settings_writer.write_member("MAX_RAY_STEPS", 256 * 2);
-        settings_writer.write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
-        settings_writer.write_member("AO_STRENGTH", 0.6f);
-        settings_writer.write_member("BACKGROUND_COLOR", BG_COLOR);
-        settings_writer.write_member("SHADOW_STRENGTH", 0.35f);
-        settings_writer.write_member("SHADOW_COLOR", SH_COLOR);
+        settings_writer->write_member("MAX_RAY_STEPS", 256 * 2);
+        settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
+        settings_writer->write_member("AO_STRENGTH", 0.6f);
+        settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
+        settings_writer->write_member("SHADOW_STRENGTH", 0.35f);
+        settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
 
-        settings_writer.write_member("ENABLE_TRANSPARENCY", 1);
-        settings_writer.write_member("ENABLE_REFLECTION", 1);
-        settings_writer.write_member("ENABLE_REFRACTION", 1);
-        settings_writer.write_member("ENABLE_BLUR", 1);
-        settings_writer.write_member("ENABLE_GLOW", 1);
-        settings_writer.write_member("ENABLE_AO", 1);
+        settings_writer->write_member("ENABLE_TRANSPARENCY", 1);
+        settings_writer->write_member("ENABLE_REFLECTION", 1);
+        settings_writer->write_member("ENABLE_REFRACTION", 1);
+        settings_writer->write_member("ENABLE_BLUR", 1);
+        settings_writer->write_member("ENABLE_GLOW", 1);
+        settings_writer->write_member("ENABLE_AO", 1);
 
-        settings_writer.upload();
+        settings_writer->upload();
     }
+}
+
+void Renderer::update_settings(settings::Graphics * settings) {
+    show_octree = settings->showOctree;
+    settings_writer->write_member("DEBUG_MODE", (FragDebugMode)settings->renderMode);
+    settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
+    settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);
+
+    settings_writer->write_member("ENABLE_TRANSPARENCY", settings->enableTransparency ? 1 : 0);
+    settings_writer->write_member("ENABLE_REFLECTION", settings->enableReflection ? 1 : 0);
+    settings_writer->write_member("ENABLE_REFRACTION", settings->enableRefraction ? 1 : 0);
+    settings_writer->write_member("ENABLE_BLUR", settings->enableBlur ? 1 : 0);
+    settings_writer->write_member("ENABLE_GLOW", settings->enableGlow ? 1 : 0);
+    settings_writer->write_member("ENABLE_AO", settings->enableAO ? 1 : 0);
+    settings_writer->upload();
 }
 
 void Renderer::update_colors_and_lod() {
@@ -216,6 +233,7 @@ void Renderer::update_colors_and_lod() {
 }
 
 void Renderer::draw_octree_debug() {
+    BeginMode3D(cam->camera);
     for (std::size_t i = 0; i < sim->graphics.octree_blocks.size(); i++) {
         if (!sim->graphics.octree_blocks[i].data[0]) continue;
         int blockX = i % X_BLOCKS;
@@ -241,11 +259,13 @@ void Renderer::draw_octree_debug() {
             }
         }}}}
     }
+    EndMode3D();
 }
 
 void Renderer::draw() {
     update_colors_and_lod();
-    // draw_octree_debug();
+    if (show_octree)
+        draw_octree_debug();
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };

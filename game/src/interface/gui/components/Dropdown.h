@@ -24,6 +24,8 @@ namespace ui {
 
         void draw(const Vector2 &screenPos) override;
         void onMouseClick(Vector2 localPos, unsigned button) override;
+
+        int selected() const { return selectedOption; }
     
         Dropdown * switchToOption(int option);
         Dropdown * switchToOption(const std::string &option);

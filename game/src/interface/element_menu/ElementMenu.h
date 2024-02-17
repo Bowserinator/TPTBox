@@ -8,15 +8,18 @@
 #include <vector>
 
 class BrushRenderer;
+class Renderer;
 
 class ElementMenu : public ui::Scene {
 public:
-    ElementMenu(BrushRenderer * brushRenderer);
+    ElementMenu(BrushRenderer * brushRenderer, Renderer * renderer);
 
     void init() override;
     void update() override;
 private:
     BrushRenderer * brushRenderer;
+    Renderer * renderer;
+
     ui::Label * elementDescLabel = nullptr;
     ui::Panel * mainPanel = nullptr;
 

@@ -18,6 +18,9 @@ constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
 
 class Simulation;
 class RenderCamera;
+class UBOWriter;
+namespace settings { class Graphics; }
+
 class Renderer {
 public:
     Renderer(Simulation * sim, RenderCamera * cam): sim(sim), cam(cam), ao_data(nullptr) {}
@@ -27,9 +30,18 @@ public:
     void update_colors_and_lod();
     void draw();
     void draw_octree_debug();
+    void update_settings(settings::Graphics * settings);
+
+    enum class FragDebugMode: uint32_t {
+        NODEBUG = 0,
+        DEBUG_STEPS = 1,
+        DEBUG_NORMALS = 2,
+        DEBUG_AO = 3
+    };
 private:
     Simulation * sim;
     RenderCamera * cam;
+    UBOWriter * settings_writer = nullptr;
 
     Shader part_shader, post_shader, blur_shader;
     int part_shader_res_loc,
@@ -55,13 +67,7 @@ private:
     RenderTexture2D blur1_tex, blur2_tex, blur_tmp_tex;
     MultiTexture base_tex;
     unsigned int frame_count = 0;
-
-    enum class FragDebugMode: uint32_t {
-        NODEBUG = 0,
-        DEBUG_STEPS = 1,
-        DEBUG_NORMALS = 2,
-        DEBUG_AO = 3
-    };
+    bool show_octree = false;
 
     #pragma pack(push, 1)
     // Vec3s are vec4s and big arrays are at the end for packing purposes

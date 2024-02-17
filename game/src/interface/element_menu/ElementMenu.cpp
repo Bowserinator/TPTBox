@@ -2,6 +2,7 @@
 #include "../../simulation/SimulationDef.h"
 #include "../../simulation/ElementClasses.h"
 #include "../brush/Brush.h"
+#include "../../render/Renderer.h"
 
 #include "../gui/components/Panel.h"
 #include "../gui/components/Modal.h"
@@ -12,8 +13,8 @@
 
 #include "../settings/GraphicsSettingsModal.h"
 
-ElementMenu::ElementMenu(BrushRenderer * brushRenderer):
-    brushRenderer(brushRenderer) {}
+ElementMenu::ElementMenu(BrushRenderer * brushRenderer, Renderer * renderer):
+    brushRenderer(brushRenderer), renderer(renderer) {}
 
 void ElementMenu::init() {
     mainPanel = new ui::Panel(
@@ -68,7 +69,7 @@ void ElementMenu::init() {
 
     addChild(mainPanel);
 
-    addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}));
+    addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}, renderer));
 }
 
 void ElementMenu::update() {
