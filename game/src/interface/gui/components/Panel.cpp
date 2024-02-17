@@ -51,6 +51,11 @@ std::size_t ui::Panel::getChildCount() const {
     return children.size();
 }
 
+void ui::Panel::onUnfocus() {
+    for (auto child : children)
+        child->unfocus();
+}
+
 // Propogate rest of the events
 #define PROPOGATE_EVENT(evt) for (auto child : std::ranges::views::reverse(children)) \
         if (child->contains(localPos - child->pos)) { \
@@ -92,7 +97,15 @@ void ui::Panel::onMouseUp(Vector2 localPos, unsigned button) {
     PROPOGATE_EVENT_VAR(onMouseUp, button)
 }
 void ui::Panel::onMouseClick(Vector2 localPos, unsigned button) {
-    PROPOGATE_EVENT_VAR(onMouseClick, button)
+    bool alreadyClicked = false;
+    for (auto child : std::ranges::views::reverse(children)) {
+        if (child->contains(localPos - child->pos) && !alreadyClicked) {
+            child->onMouseClick(localPos - child->pos, button);
+            alreadyClicked = true;
+        } else {
+            child->unfocus();
+        }
+    }
 }
 void ui::Panel::onMouseWheelInside(Vector2 localPos, float d) {
     PROPOGATE_EVENT_VAR(onMouseWheelInside, d)

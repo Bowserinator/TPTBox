@@ -21,7 +21,7 @@ void ui::Component::onUnfocus() {}
 
 void ui::Component::addToParent(ui::Component * child) {
     ui::Component * parent = this->parent;
-    while (parent && parent->parent)
+    while (parent && parent->parent && dynamic_cast<ui::Panel*>(parent) == nullptr)
         parent = parent->parent;
     if (parent)
         ((ui::Panel*)parent)->addChild(child);
@@ -31,7 +31,7 @@ void ui::Component::addToParent(ui::Component * child) {
 
 void ui::Component::removeFromParent(ui::Component * child) {
     ui::Component * parent = this->parent;
-    while (parent && parent->parent)
+    while (parent && parent->parent && dynamic_cast<ui::Panel*>(parent) == nullptr)
         parent = parent->parent;
     if (parent)
         ((ui::Panel*)parent)->removeChild(child);

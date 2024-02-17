@@ -28,6 +28,8 @@ namespace ui {
 		void onMouseWheelInside(Vector2 localPos, float d) override;
 		void updateKeys(bool shift, bool ctrl, bool alt) override;
 
+        void onUnfocus() override;
+
         // @brief Add a child to the component list
         // @param component Component
         void addChild(Component * component);

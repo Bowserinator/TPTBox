@@ -63,7 +63,7 @@ void Scene::update() {
         for (auto key: keys) {
             MOUSE_CLICK_EVT(isMouseButtonPressed, onMouseClick);
             MOUSE_CLICK_EVT(isMouseButtonDown, onMouseDown);
-            MOUSE_CLICK_EVT(isMouseButtonUp, onMouseUp);
+            // MOUSE_CLICK_EVT(isMouseButtonUp, onMouseUp); // TODO
         }
         #undef MOUSE_CLICK_EVT
 

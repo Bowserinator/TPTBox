@@ -33,6 +33,11 @@ public:
         removeFromParent(this);
     }
 
+    void onUnfocus() override {
+        Modal::onUnfocus();
+        removeFromParent(this);
+    }
+
 private:
     std::vector<std::pair<std::string, int>> &options;
     Dropdown * dropdown = nullptr;
