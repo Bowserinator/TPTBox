@@ -1,4 +1,4 @@
-#include "ElementMenu.h"
+#include "SimUI.h"
 #include "../../simulation/SimulationDef.h"
 #include "../../simulation/ElementClasses.h"
 #include "../brush/Brush.h"
@@ -7,16 +7,17 @@
 #include "../gui/components/Panel.h"
 #include "../gui/components/Modal.h"
 #include "../gui/components/TextButton.h"
+#include "../gui/components/IconButton.h"
 #include "../gui/components/Checkbox.h"
 #include "../gui/components/Label.h"
 #include "../gui/styles.h"
 
 #include "../settings/GraphicsSettingsModal.h"
 
-ElementMenu::ElementMenu(BrushRenderer * brushRenderer, Renderer * renderer):
-    brushRenderer(brushRenderer), renderer(renderer) {}
+SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * sim):
+    brushRenderer(brushRenderer), renderer(renderer), sim(sim) {}
 
-void ElementMenu::init() {
+void SimUI::init() {
     mainPanel = new ui::Panel(
         Vector2{ 0, (float)GetScreenHeight() - 130 },
         Vector2{ (float)GetScreenWidth(), 130 }
@@ -69,11 +70,28 @@ void ElementMenu::init() {
 
     addChild(mainPanel);
 
-    addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}, renderer));
+
+    // Bottom setting buttons
+    auto getBottomIconButton = [](int slot, guiIconName icon) {
+        return new ui::IconButton(
+            Vector2{ GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT, GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT },
+            Vector2{styles::SETTINGS_BUTTON_HEIGHT, styles::SETTINGS_BUTTON_HEIGHT},
+            icon);
+    };
+
+    addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
+        addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}, renderer));
+    }));
+    pauseButton = getBottomIconButton(1, ICON_PLAYER_PAUSE);
+    addChild(pauseButton->setClickCallback([this]() { sim->paused = !sim->paused; }));
 }
 
-void ElementMenu::update() {
+void SimUI::update() {
     Scene::update();
+
+    pauseButton->setIcon(sim->paused ? ICON_PLAYER_PLAY : ICON_PLAYER_PAUSE);
+    pauseButton->style.setAllBackgroundColors(sim->paused ? WHITE : BLACK);
+    pauseButton->style.setAllTextColors(!sim->paused ? WHITE : BLACK);
 
     if (elementDescAlpha > 0)
         elementDescAlpha -= 0.01f;

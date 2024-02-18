@@ -3,6 +3,7 @@
 
 #include "simulation/Simulation.h"
 #include "interface/FontCache.h"
+#include "interface/IconManager.h"
 #include "interface/FrameTimeAvg.h"
 #include "interface/EventConsumer.h"
 
@@ -51,6 +52,7 @@ int main(void) {
 
     omp_set_dynamic(false); // Don't allow dynamic scaling of num of threads
     FontCache::ref()->init();
+    IconManager::ref()->init();
     currentScreen->init();
 
 

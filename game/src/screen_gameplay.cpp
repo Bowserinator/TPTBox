@@ -9,7 +9,7 @@
 #include "src/simulation/ElementClasses.h"
 
 #include "src/interface/hud/HUD.h"
-#include "src/interface/element_menu/ElementMenu.h"
+#include "src/interface/sim/SimUI.h"
 #include "src/interface/brush/Brush.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
@@ -28,7 +28,7 @@ static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
 static HUD hud(&sim, &render_camera);
 static Renderer renderer(&sim, &render_camera);
-static ElementMenu element_menu(&brush_renderer, &renderer);
+static SimUI sim_ui(&brush_renderer, &renderer, &sim);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -51,7 +51,7 @@ void ScreenGameplay::init() {
     hud.setState(HUDState::DEBUG_MODE);
 
     renderer.init();
-    element_menu.init();
+    sim_ui.init();
     sim.init();
 
     rlEnableBackfaceCulling();
@@ -138,7 +138,7 @@ void ScreenGameplay::update() {
     FrameTime::ref()->update();
     EventConsumer::ref()->reset();
 
-    element_menu.update();
+    sim_ui.update();
     hud.update_controls(brush_renderer);
     brush_renderer.update();
     render_camera.update();
@@ -190,7 +190,7 @@ void ScreenGameplay::draw() {
         .sim_fps = (float)(1.0f / simTime),
         .brush_renderer = &brush_renderer
     });
-    element_menu.draw();
+    sim_ui.draw();
 
     fps = 1.0f / drawTime;
 }

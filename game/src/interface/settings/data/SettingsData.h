@@ -24,7 +24,7 @@ namespace settings {
             return single;
         };
     private:
-        static data * single;
+        inline static data * single;
     };
 }
 

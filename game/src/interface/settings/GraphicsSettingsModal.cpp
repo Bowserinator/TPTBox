@@ -2,6 +2,7 @@
 #include "../gui/components/TextButton.h"
 #include "../gui/components/Checkbox.h"
 #include "../gui/components/Dropdown.h"
+#include "../gui/components/IconButton.h"
 #include "../gui/components/Label.h"
 #include "../gui/components/HR.h"
 #include "../gui/components/Slider.h"
@@ -111,10 +112,10 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     shadowStrengthSlider = new Slider(Vector2{ size.x / 2, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
     panel->addChild(new Label(Vector2{ 20.0f, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "AO Strength"));
     panel->addChild(new Label(Vector2{ 20.0f, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "Shadow Strength"));
-    // TODO: icon buttons
-    panel->addChild((new TextButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * spacing }, Vector2{ 30.0f, 30 }, "R"))
+
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
         ->setClickCallback([this]() { aoStrengthSlider->setPercent(settings::Graphics::defaultAOStrength); }));
-    panel->addChild((new TextButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * spacing }, Vector2{ 30.0f, 30 }, "R"))
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
         ->setClickCallback([this]() { shadowStrengthSlider->setPercent(settings::Graphics::defaultShadowStrength); }));
 
     panel->addChild(aoStrengthSlider);
@@ -140,5 +141,4 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
     fullscreenCheckbox->setChecked(settings->fullScreen);
     resizableCheckbox->setChecked(settings->allowResizing);
-
 }

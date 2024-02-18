@@ -1,34 +1,32 @@
-#ifndef GUI_TEXT_BUTTON_H
-#define GUI_TEXT_BUTTON_H
+#ifndef GUI_ICON_BUTTON_H
+#define GUI_ICON_BUTTON_H
 
 #include "raylib.h"
 #include "./abstract/Button.h"
 #include "../styles.h"
 #include "../Style.h"
-#include "../../FontCache.h"
 #include "../../../util/vector_op.h"
-#include <string>
+#include "../../IconManager.h"
 
 namespace ui {
     // Button that displays text inside
-    class TextButton : public Button {
+    class IconButton : public Button {
     public:
-        TextButton(
+        IconButton(
             const Vector2 &pos,
             const Vector2 &size,
-            const std::string &text,
+            const guiIconName icon,
             const Style &style = Style::getDefault()
         ):
-            ui::Button(pos, size, style), text(text)
+            ui::Button(pos, size, style), icon(icon)
         {
-            tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
+            setIcon(icon);
+            float minDim = std::min(size.x, size.y) - 10.0f;
+            tsize = Vector2{minDim, minDim};
         };
 
-        virtual ~TextButton() = default;
-
-        void setText(std::string &text) {
-            this->text = text;
-            tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
+        void setIcon(guiIconName icon) {
+            this->icon = icon;
         }
 
         void draw(const Vector2 &screenPos) override {
@@ -40,13 +38,12 @@ namespace ui {
                 style.getBorderColor(this));
 
             const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
-            SetTextLineSpacing(FONT_SIZE);
-            DrawTextEx(FontCache::ref()->main_font, text.c_str(), screenPos + pad, FONT_SIZE, FONT_SPACING,
-                style.getTextColor(this));
+            IconManager::ref()->draw(screenPos.x + pad.x, screenPos.y + pad.y, icon,
+                style.getTextColor(this), tsize.x);
         }
 
     protected:
-        std::string text;
+        guiIconName icon;
         Vector2 tsize;
     };
 }
