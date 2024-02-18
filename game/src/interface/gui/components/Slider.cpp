@@ -36,5 +36,6 @@ void Slider::onMouseClick(Vector2 localPos, unsigned button) {
 
 void Slider::onMouseRelease(Vector2 localPos, unsigned button) {
     InteractiveComponent::onMouseRelease(localPos, button);
-    dragging = false;
+    if (button == MOUSE_BUTTON_LEFT)
+        dragging = false;
 }

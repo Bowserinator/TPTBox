@@ -50,7 +50,8 @@ void ScrollPanel::onMouseClick(Vector2 localPos, unsigned button) {
 
 void ScrollPanel::onMouseRelease(Vector2 localPos, unsigned button) {
     Panel::onMouseRelease(localPos, button);
-    dragging = false;
+    if (button == MOUSE_BUTTON_LEFT)
+        dragging = false;
 }
 
 void ScrollPanel::onMouseWheelInside(Vector2 localPos, float d) {

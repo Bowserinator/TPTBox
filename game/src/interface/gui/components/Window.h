@@ -20,6 +20,7 @@ namespace ui {
             float headerHeight = 40.0f;
             float bottomPadding = 0.0f;
             bool interceptEvents = true;
+            bool draggable = false;
             Color titleColor = styles::WINDOW_TITLE_COLOR;
             std::string title = "";
 
@@ -61,6 +62,29 @@ namespace ui {
             Modal::draw(screenPos);
         }
 
+        // Dragging the header
+        void onMouseClick(Vector2 localPos, unsigned int button) override {
+            Modal::onMouseClick(localPos, button);
+            if (settings.draggable && button == MOUSE_BUTTON_LEFT && localPos.y <= settings.headerHeight) {
+                startDrag = localPos;
+                dragging = true;
+            }
+        }
+        void onMouseMoved(Vector2 localPos) override {
+            Modal::onMouseMoved(localPos);
+            if (dragging) {
+                Vector2 newPos = GetMousePosition() - startDrag;
+                newPos.x = util::clamp(newPos.x, 0.0f, GetScreenWidth() - size.x);
+                newPos.y = util::clamp(newPos.y, 0.0f, GetScreenHeight() - size.y);
+                pos = newPos;
+            }
+        }
+        void onMouseRelease(Vector2 localPos, unsigned int button) override {
+            Modal::onMouseRelease(localPos, button);
+            if (button == MOUSE_BUTTON_LEFT)
+                dragging = false;
+        }
+
         // ESC to exit window
         virtual void updateKeys(bool shift, bool ctrl, bool alt) override {
             if (EventConsumer::ref()->isKeyPressed(KEY_ESCAPE))
@@ -83,6 +107,9 @@ namespace ui {
         std::string title;
         ui::ScrollPanel * panel = nullptr;
         Settings settings;
+
+        bool dragging = false;
+        Vector2 startDrag{0, 0};
     };
 }
 
