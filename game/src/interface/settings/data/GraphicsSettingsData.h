@@ -16,6 +16,9 @@ namespace settings {
         float shadowStrength = 0.35f;
         bool showOctree = false;
 
+        static constexpr float defaultAOStrength = 0.6f;
+        static constexpr float defaultShadowStrength = 0.35f;
+
         bool enableTransparency = true;
         bool enableReflection = true;
         bool enableRefraction = true;

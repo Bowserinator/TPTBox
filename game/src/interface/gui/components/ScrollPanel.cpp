@@ -24,7 +24,7 @@ void ScrollPanel::draw(const Vector2 &pos) {
 
         DrawRectangle(pos.x + size.x - w, pos.y, w, size.y, styles::SCROLL_TRACK_COLOR);
         DrawRectangle(pos.x + size.x - w, pos.y + (size.y - scrollbarHeight) * offsetTop / -(internalSize.y - size.y),
-            w, scrollbarHeight, styles::SCROLL_CURSOR_COLOR);
+            w, scrollbarHeight, styles::SCROLL_THUMB_COLOR);
     }
 }
 

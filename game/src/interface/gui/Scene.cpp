@@ -9,8 +9,10 @@
 using namespace ui;
 
 Scene::~Scene() {
-    for (auto child : children)
+    for (auto &child : children) {
         delete child;
+        child = nullptr;
+    }
 }
 
 void Scene::removeChild(Component * component) {
@@ -85,6 +87,8 @@ void Scene::update() {
     }
     if (mouseConsume)
         EventConsumer::ref()->consumeMouse();
+
+    ui::Scene::processChildrenDeletions(children);
 }
 
 void Scene::draw() {

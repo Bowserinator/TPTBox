@@ -9,8 +9,10 @@
 ui::Panel::Panel(const Vector2 &pos, const Vector2 &size, const Style &style): ui::InteractiveComponent(pos, size, style) {}
 
 ui::Panel::~Panel() {
-    for (auto child : children)
+    for (auto &child : children) {
         delete child;
+        child = nullptr;
+    }
 }
 
 void ui::Panel::tick(float dt) {
@@ -122,4 +124,8 @@ void ui::Panel::onMouseWheel(Vector2 localPos, float d) {
 void ui::Panel::updateKeys(bool shift, bool ctrl, bool alt) {
     for (auto child : std::ranges::views::reverse(children))
         child->updateKeys(shift, ctrl, alt);
+}
+
+void ui::Panel::processDeletion() {
+    ui::Scene::processChildrenDeletions(children);
 }

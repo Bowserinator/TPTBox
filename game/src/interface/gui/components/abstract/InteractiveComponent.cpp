@@ -1,7 +1,7 @@
 #include "InteractiveComponent.h"
 
 void ui::InteractiveComponent::onMouseMoved(Vector2 localPos) {
-    if (!disabled) SetMouseCursor(cursor);
+    if (!disabled && contains(localPos)) SetMouseCursor(cursor);
     hovered = !disabled && contains(localPos);
 }
 void ui::InteractiveComponent::onMouseEnter(Vector2 localPos) { hovered = !disabled; }

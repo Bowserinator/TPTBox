@@ -29,6 +29,7 @@ namespace ui {
 		virtual void updateKeys(bool shift, bool ctrl, bool alt) override;
 
         virtual void onUnfocus() override;
+        virtual void processDeletion() override;
 
         // @brief Add a child to the component list
         // @param component Component

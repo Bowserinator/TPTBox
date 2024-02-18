@@ -4,6 +4,7 @@
 #include "../gui/components/Dropdown.h"
 #include "../gui/components/Label.h"
 #include "../gui/components/HR.h"
+#include "../gui/components/Slider.h"
 #include "../gui/styles.h"
 
 #include "../../render/Renderer.h"
@@ -12,8 +13,13 @@
 using namespace ui;
 
 GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &size, Renderer * renderer):
-    ui::Window(pos, size, "Graphics Settings", Style::getDefault()), renderer(renderer)
+    ui::Window(pos, size, ui::Window::Settings {
+        .bottomPadding = styles::SETTINGS_BUTTON_HEIGHT,
+        .interceptEvents = true,
+        .title = "Graphics Settings"
+    }, Style::getDefault()), renderer(renderer)
 {
+    auto settings = settings::data::ref()->graphics;
     addChild((new TextButton(
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x, styles::SETTINGS_BUTTON_HEIGHT },
@@ -30,9 +36,13 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             settings->enableAO = enableAOCheckbox->checked();
             settings->enableShadows = enableShadowsCheckbox->checked();
 
+            settings->aoStrength = aoStrengthSlider->getPercent();
+            settings->shadowStrength = shadowStrengthSlider->getPercent();
+
             settings->fullScreen = fullscreenCheckbox->checked();
             settings->allowResizing = resizableCheckbox->checked();
             this->renderer->update_settings(settings);
+            tryClose(ui::Window::CloseReason::BUTTON);
         }));
 
     panel->addChild(new Label(
@@ -90,18 +100,32 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     enableBlurCheckbox         = createCheckboxAndAdd(Y + 0 * spacing, "Enable blur effect (i.e. gases)");
     enableGlowCheckbox         = createCheckboxAndAdd(Y + 1 * spacing, "Enable glow effect (i.e. fire)");
     enableShadowsCheckbox      = createCheckboxAndAdd(Y + 2 * spacing, "Enable shadows");
-    enableAOCheckbox           = createCheckboxAndAdd(Y + 3 * spacing, "Enable ambient occlusion");
+    enableAOCheckbox           = createCheckboxAndAdd(Y + 3 * spacing, "Enable ambient occlusion (AO)");
     enableTransparencyCheckbox = createCheckboxAndAdd(Y + 4 * spacing, "Enable transparency");
     enableReflectionsCheckbox  = createCheckboxAndAdd(Y + 5 * spacing, "Enable reflections");
     enableRefractionsCheckbox  = createCheckboxAndAdd(Y + 6 * spacing, "Enable refractions");
     panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 320.0f;
+    aoStrengthSlider     = new Slider(Vector2{ size.x / 2, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
+    shadowStrengthSlider = new Slider(Vector2{ size.x / 2, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
+    panel->addChild(new Label(Vector2{ 20.0f, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "AO Strength"));
+    panel->addChild(new Label(Vector2{ 20.0f, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "Shadow Strength"));
+    // TODO: icon buttons
+    panel->addChild((new TextButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * spacing }, Vector2{ 30.0f, 30 }, "R"))
+        ->setClickCallback([this]() { aoStrengthSlider->setPercent(settings::Graphics::defaultAOStrength); }));
+    panel->addChild((new TextButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * spacing }, Vector2{ 30.0f, 30 }, "R"))
+        ->setClickCallback([this]() { shadowStrengthSlider->setPercent(settings::Graphics::defaultShadowStrength); }));
+
+    panel->addChild(aoStrengthSlider);
+    panel->addChild(shadowStrengthSlider);
+    panel->addChild(new HR(Vector2{ 0, Y + 2.5f * spacing}, Vector2{ size.x, 0 }));
+
+    Y = 400.0f;
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
     resizableCheckbox  = createCheckboxAndAdd(Y + spacing, "Allow window resizing");
 
     // Update values from settings
-    auto settings = settings::data::ref()->graphics;
     renderModeDropdown->switchToOption((int)settings->renderMode);
     showOctreeCheckbox->setChecked(settings->showOctree);
     enableTransparencyCheckbox->setChecked(settings->enableTransparency);
@@ -111,6 +135,8 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     enableGlowCheckbox->setChecked(settings->enableGlow);
     enableShadowsCheckbox->setChecked(settings->enableShadows);
     enableAOCheckbox->setChecked(settings->enableAO);
+    aoStrengthSlider->setPercent(settings->aoStrength);
+    shadowStrengthSlider->setPercent(settings->shadowStrength);
 
     fullscreenCheckbox->setChecked(settings->fullScreen);
     resizableCheckbox->setChecked(settings->allowResizing);

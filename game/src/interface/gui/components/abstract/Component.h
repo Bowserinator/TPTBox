@@ -32,8 +32,15 @@ namespace ui {
 		virtual void setParent(Component * parent) { this->parent = parent; }
 		virtual void setParentScene(Scene * scene) { this->parentScene = scene; }
 
+		// Add component to parent scene or Panel (whichever is nearest parent)
 		void addToParent(Component * child);
+
+		// Remove a given component from the first parent scene or Panel of this
+		// Note: does not remove immediately!
 		void removeFromParent(Component * child);
+
+		// Do cleanup, reserved function (deletes immediately)
+		virtual void processDeletion();
 		
 		// @param pos Local position inside the element
 		inline bool contains(const Vector2 pos) const {
@@ -60,6 +67,7 @@ namespace ui {
 		bool getHidden() const { return hidden; }
 		bool getFocused() const { return focused; }
 		bool getHovered() const { return hovered; }
+		bool toBeDeleted() { return shouldBeDeleted; }
 
 		Style style;
 		int cursor = MOUSE_CURSOR_DEFAULT;
@@ -69,6 +77,7 @@ namespace ui {
         bool hidden = false;
         bool focused = false;
 		bool hovered = false;
+		bool shouldBeDeleted = false;
     };
 }
 

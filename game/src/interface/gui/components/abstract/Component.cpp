@@ -30,11 +30,7 @@ void ui::Component::addToParent(ui::Component * child) {
 }
 
 void ui::Component::removeFromParent(ui::Component * child) {
-    ui::Component * parent = this->parent;
-    while (parent && parent->parent && dynamic_cast<ui::Panel*>(parent) == nullptr)
-        parent = parent->parent;
-    if (parent)
-        ((ui::Panel*)parent)->removeChild(child);
-    else if (parentScene)
-        parentScene->removeChild(child);
+    child->shouldBeDeleted = true;
 }
+
+void ui::Component::processDeletion() {}
