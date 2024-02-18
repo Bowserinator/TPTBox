@@ -27,9 +27,6 @@ void Scene::update() {
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
     for (auto child : std::ranges::views::reverse(children)) {
-        // -- Updates --
-        child->tick(dt);
-
         // -- Input events
         Vector2 localPos = GetMousePosition() - pos;
         Vector2 childLocalPos = localPos - child->pos;
@@ -39,9 +36,8 @@ void Scene::update() {
         if (GetMouseDelta() != Vector2{0, 0}) {
             Vector2 prevLocalPos = GetMousePosition() - GetMouseDelta() - pos;
             bool containsPrevMousePos = child->contains(prevLocalPos - child->pos);
+            child->onMouseMoved(childLocalPos);
 
-            if (containsCurrentMousePos)
-                child->onMouseMoved(childLocalPos);
             if (containsCurrentMousePos && !containsPrevMousePos)
                 child->onMouseEnter(childLocalPos);
             else if (!containsCurrentMousePos && containsPrevMousePos)
@@ -52,9 +48,7 @@ void Scene::update() {
         int keys[] = { MOUSE_BUTTON_LEFT, MOUSE_BUTTON_MIDDLE, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_BACK, MOUSE_BUTTON_FORWARD };
         #define MOUSE_CLICK_EVT(evt, childEvt) \
             if (EventConsumer::ref()->evt(key)) { \
-                if (!containsCurrentMousePos) { \
-                    child->unfocus(); \
-                } else { \
+                if (containsCurrentMousePos) { \
                     child->childEvt(childLocalPos, key); \
                     mouseConsume = true; \
                 } \
@@ -63,7 +57,13 @@ void Scene::update() {
         for (auto key: keys) {
             MOUSE_CLICK_EVT(isMouseButtonPressed, onMouseClick);
             MOUSE_CLICK_EVT(isMouseButtonDown, onMouseDown);
-            // MOUSE_CLICK_EVT(isMouseButtonUp, onMouseUp); // TODO
+            
+            if (EventConsumer::ref()->isMouseButtonReleased(key)) {
+                child->onMouseRelease(childLocalPos, key);
+                mouseConsume = true;
+            }
+            if (EventConsumer::ref()->isMouseButtonReleased(key) && !containsCurrentMousePos)
+                child->unfocus();
         }
         #undef MOUSE_CLICK_EVT
 
@@ -79,6 +79,9 @@ void Scene::update() {
             EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT),
             EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL),
             EventConsumer::ref()->isKeyDown(KEY_LEFT_ALT));
+
+        // -- Updates --
+        child->tick(dt);
     }
     if (mouseConsume)
         EventConsumer::ref()->consumeMouse();

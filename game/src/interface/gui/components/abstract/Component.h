@@ -20,7 +20,7 @@ namespace ui {
 		virtual void onMouseEnter(Vector2 localPos);
 		virtual void onMouseLeave(Vector2 localPos);
 		virtual void onMouseDown(Vector2 localPos, unsigned button);
-		virtual void onMouseUp(Vector2 localPos, unsigned button);
+		virtual void onMouseRelease(Vector2 localPos, unsigned button);
 		virtual void onMouseClick(Vector2 localPos, unsigned button);
 		virtual void onMouseWheel(Vector2 localPos, float d);
 		virtual void onMouseWheelInside(Vector2 localPos, float d);

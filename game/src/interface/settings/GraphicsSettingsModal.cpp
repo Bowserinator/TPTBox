@@ -36,7 +36,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         }));
 
     panel->addChild(new Label(
-        Vector2{ 20.0f, 0.0f },
+        Vector2{ 20.0f, 10.0f },
         Vector2{ size.x, 20.0f },
         "Settings will apply once you hit \"OK\"",
         Style {
@@ -46,7 +46,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     ));
 
     constexpr float spacing = 26.0f;
-    float Y = 30.0f;
+    float Y = 40.0f;
     renderModeDropdown = (new Dropdown(
             Vector2{ size.x - styles::DROPDOWN_SIZE.x - 20.0f, Y },
             Vector2{ styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y })
@@ -69,7 +69,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild(showOctreeCheckbox);
     panel->addChild(new HR(Vector2{ 0, Y + 2.7f * spacing}, Vector2{ size.x, 0 }));
 
-    Y = 110.0f;
+    Y = 120.0f;
     enableBlurCheckbox = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE },
         "Enable blur effect (i.e. gases)");
     enableGlowCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 1 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
@@ -94,13 +94,16 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild(enableRefractionsCheckbox);
     panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
 
-    Y = 310.0f;
+    Y = 320.0f;
     fullscreenCheckbox = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE }, "Fullscreen");
     resizableCheckbox = new LabeledCheckbox(Vector2{ 20, Y + spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
         "Allow window resizing");
 
     panel->addChild(fullscreenCheckbox);
     panel->addChild(resizableCheckbox);
+
+
+    panel->addChild(new Label(Vector2{ 0, Y + 13.3f * spacing}, Vector2{ size.x, 20 }, "lol test"));
 
 
     // Update values from settings

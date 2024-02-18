@@ -15,14 +15,10 @@ namespace ui {
         virtual ~Button() = default;
 
         void draw(const Vector2 &screenPos) override;
-		void onMouseMoved(Vector2 localPos) override { InteractiveComponent::onMouseMoved(localPos); }
 		void onMouseEnter(Vector2 localPos) override {
             InteractiveComponent::onMouseEnter(localPos);
             if (!disabled) enterCallback();
         }
-		void onMouseLeave(Vector2 localPos) override { InteractiveComponent::onMouseLeave(localPos); }
-		void onMouseDown(Vector2 localPos, unsigned button) override { InteractiveComponent::onMouseDown(localPos, button); }
-		void onMouseUp(Vector2 localPos, unsigned button) override { InteractiveComponent::onMouseUp(localPos, button); }
 		void onMouseClick(Vector2 localPos, unsigned button) override {
             InteractiveComponent::onMouseClick(localPos, button);
             if (!disabled) clickCallback();

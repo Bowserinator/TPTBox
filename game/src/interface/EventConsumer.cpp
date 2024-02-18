@@ -45,6 +45,11 @@ bool EventConsumer::isMouseButtonPressed(const int button) {
     return IsMouseButtonPressed(button);
 }
 
+bool EventConsumer::isMouseButtonReleased(const int button) {
+    if (mouseEvtConsumed) return false;
+    return IsMouseButtonReleased(button);
+}
+
 bool EventConsumer::isMouseButtonDown(const int button) {
     if (mouseEvtConsumed) return false;
     return IsMouseButtonDown(button);

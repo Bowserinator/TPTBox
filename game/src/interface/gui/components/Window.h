@@ -4,7 +4,9 @@
 #include "raylib.h"
 #include "../styles.h"
 #include "../Style.h"
+#include "../../EventConsumer.h"
 
+#include "ScrollPanel.h"
 #include "Label.h"
 #include "Modal.h"
 #include "HR.h"
@@ -31,7 +33,9 @@ namespace ui {
             ));
             addChild(new HR(Vector2{ 0, 40.0f }, Vector2{ size.x, 0 }, Style::getDefault()));
 
-            panel = new Panel(Vector2{ 0, 50.0f }, Vector2{ size.x, size.y - styles::SETTINGS_BUTTON_HEIGHT - 50.0f });
+            panel = new ScrollPanel(
+                Vector2{ 0, 40.0f },
+                Vector2{ size.x, size.y - styles::SETTINGS_BUTTON_HEIGHT - 40.0f });
             addChild(panel);
         }
 
@@ -39,9 +43,16 @@ namespace ui {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), styles::WINDOW_FADE_BG_COLOR);
             Modal::draw(screenPos);
         }
+
+        // Intercept all events
+        void tick(float) override {
+            EventConsumer::ref()->consumeKeyboard();
+            EventConsumer::ref()->consumeGamepad();
+            EventConsumer::ref()->consumeMouse();
+        }
     protected:
         std::string title;
-        ui::Panel * panel = nullptr;
+        ui::ScrollPanel * panel = nullptr;
     };
 }
 

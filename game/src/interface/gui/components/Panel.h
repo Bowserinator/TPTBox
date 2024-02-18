@@ -13,30 +13,30 @@ namespace ui {
     class Panel : public InteractiveComponent {
     public:
         Panel(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
-        ~Panel();
+        virtual ~Panel();
 
         void tick(float dt) override;
 		void draw(const Vector2 &pos) override;
 
-		void onMouseMoved(Vector2 localPos) override;
-		void onMouseEnter(Vector2 localPos) override;
-		void onMouseLeave(Vector2 localPos) override;
-		void onMouseDown(Vector2 localPos, unsigned button) override;
-		void onMouseUp(Vector2 localPos, unsigned button) override;
-		void onMouseClick(Vector2 localPos, unsigned button) override;
-		void onMouseWheel(Vector2 localPos, float d) override;
-		void onMouseWheelInside(Vector2 localPos, float d) override;
-		void updateKeys(bool shift, bool ctrl, bool alt) override;
+		virtual void onMouseMoved(Vector2 localPos) override;
+		virtual void onMouseEnter(Vector2 localPos) override;
+		virtual void onMouseLeave(Vector2 localPos) override;
+		virtual void onMouseDown(Vector2 localPos, unsigned button) override;
+		virtual void onMouseClick(Vector2 localPos, unsigned button) override;
+        virtual void onMouseRelease(Vector2 localPos, unsigned button) override;
+		virtual void onMouseWheel(Vector2 localPos, float d) override;
+		virtual void onMouseWheelInside(Vector2 localPos, float d) override;
+		virtual void updateKeys(bool shift, bool ctrl, bool alt) override;
 
-        void onUnfocus() override;
+        virtual void onUnfocus() override;
 
         // @brief Add a child to the component list
         // @param component Component
-        void addChild(Component * component);
+        virtual void addChild(Component * component);
 
         // @brief Remove a child from component list by value
         // @param component 
-        void removeChild(Component * component);
+        virtual void removeChild(Component * component);
 
         // Update parent scene
         // @param scene
@@ -51,7 +51,8 @@ namespace ui {
         // @return number of children
         std::size_t getChildCount() const;
 
-    private:
+    protected:
+        Vector2 eventDelta = Vector2{0, 0}; // Position offset for all events
         std::vector<Component *> children;
     };
 }
