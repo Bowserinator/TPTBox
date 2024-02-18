@@ -64,47 +64,41 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         "Renderer mode"
     ));
 
-    showOctreeCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 1.5f * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Show octree (may be slow)");
-    panel->addChild(showOctreeCheckbox);
+    // Helpers
+    auto addWarningLabel = [this, &size](const float Y, const Color &c, const char * s) {
+        panel->addChild(new Label(Vector2{ 0, Y }, Vector2 {size.x - 20.0f, styles::CHECKBOX_SIZE},
+            s, ui::Style{ .horizontalAlign = ui::Style::Align::Right, .textColor = c }));
+    };
+    auto createCheckboxAndAdd = [this, &size](const float Y, const char * s) {
+        LabeledCheckbox * ptr = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE }, s);
+        panel->addChild(ptr);
+        return ptr;
+    };
+
+    showOctreeCheckbox = createCheckboxAndAdd(Y + 1.5f * spacing, "Show octree (may be slow)");
     panel->addChild(new HR(Vector2{ 0, Y + 2.7f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 120.0f;
-    enableBlurCheckbox = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable blur effect (i.e. gases)");
-    enableGlowCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 1 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable glow effect (i.e. fire)");
-    enableShadowsCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 2 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable shadows");
-    enableAOCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 3 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable ambient occlusion");
-    enableTransparencyCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 4 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable transparency");
-    enableReflectionsCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 5 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable reflections");
-    enableRefractionsCheckbox = new LabeledCheckbox(Vector2{ 20, Y + 6 * spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Enable refractions");
+    addWarningLabel(Y + 0 * spacing, YELLOW, "Medium Impact");
+    addWarningLabel(Y + 1 * spacing, YELLOW, "Medium Impact");
+    addWarningLabel(Y + 2 * spacing, GRAY, "Low Impact");
+    addWarningLabel(Y + 3 * spacing, GRAY, "Low Impact");
+    addWarningLabel(Y + 4 * spacing, RED, "High Impact");
+    addWarningLabel(Y + 5 * spacing, RED, "High Impact");
+    addWarningLabel(Y + 6 * spacing, RED, "High Impact");
 
-    panel->addChild(enableBlurCheckbox);
-    panel->addChild(enableGlowCheckbox);
-    panel->addChild(enableShadowsCheckbox);
-    panel->addChild(enableAOCheckbox);
-    panel->addChild(enableTransparencyCheckbox);
-    panel->addChild(enableReflectionsCheckbox);
-    panel->addChild(enableRefractionsCheckbox);
+    enableBlurCheckbox         = createCheckboxAndAdd(Y + 0 * spacing, "Enable blur effect (i.e. gases)");
+    enableGlowCheckbox         = createCheckboxAndAdd(Y + 1 * spacing, "Enable glow effect (i.e. fire)");
+    enableShadowsCheckbox      = createCheckboxAndAdd(Y + 2 * spacing, "Enable shadows");
+    enableAOCheckbox           = createCheckboxAndAdd(Y + 3 * spacing, "Enable ambient occlusion");
+    enableTransparencyCheckbox = createCheckboxAndAdd(Y + 4 * spacing, "Enable transparency");
+    enableReflectionsCheckbox  = createCheckboxAndAdd(Y + 5 * spacing, "Enable reflections");
+    enableRefractionsCheckbox  = createCheckboxAndAdd(Y + 6 * spacing, "Enable refractions");
     panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 320.0f;
-    fullscreenCheckbox = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE }, "Fullscreen");
-    resizableCheckbox = new LabeledCheckbox(Vector2{ 20, Y + spacing }, Vector2{ size.x, styles::CHECKBOX_SIZE },
-        "Allow window resizing");
-
-    panel->addChild(fullscreenCheckbox);
-    panel->addChild(resizableCheckbox);
-
-
-    panel->addChild(new Label(Vector2{ 0, Y + 13.3f * spacing}, Vector2{ size.x, 20 }, "lol test"));
-
+    fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
+    resizableCheckbox  = createCheckboxAndAdd(Y + spacing, "Allow window resizing");
 
     // Update values from settings
     auto settings = settings::data::ref()->graphics;
