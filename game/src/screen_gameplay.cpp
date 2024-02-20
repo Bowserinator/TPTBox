@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "screens.h"
 #include "rlgl.h"
+#include <glad.h>
 
 #include "src/render/camera/camera.h"
 #include "src/render/Renderer.h"
@@ -37,7 +38,10 @@ static double fps = 1.0f;
 static int currentElementId = 1;
 
 
-#include "src/simulation/SimulationHeat.h"
+#include "src/util/types/persistent_buffer.h"
+float out[200 * 200 * 200];
+float out2[200 * 200 * 200];
+
 
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
@@ -57,13 +61,28 @@ void ScreenGameplay::init() {
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
 
-    SimulationHeat lol;
-    lol.init();
-    lol.dispatch();
+    constexpr int s = 200 * 200 * 200;
+    util::PersistentBuffer tmp(GL_SHADER_STORAGE_BUFFER, s * sizeof(float));
+    for (auto i = 0 ; i < s; i++)
+        ((float*)tmp.ptr)[i] = i;
+    tmp.lock();
+    // glFlush();
+
+    for (int i = 0; i < 1000000000; i++)
+        asm("");
 
     auto a = GetTime();
-    lol.wait_and_get();
+    tmp.wait();
     std::cout << " time: " << (GetTime() - a ) << "\n";
+
+    a = GetTime();
+    memcpy(out, (float*)tmp.ptr, s * sizeof(float) / 4);
+    std::cout << " time: " << (GetTime() - a ) << "\n";
+
+    std::cout << ((float*)tmp.ptr)[s - 1] << " last\n";
+    std::cout << ((float*)tmp.ptr)[20] << " last\n";
+    std::cout << ((float*)tmp.ptr)[10] << " last\n";
+    
 
     // Create staircase
     // for (int x = 0; x < XRES; x++) 
