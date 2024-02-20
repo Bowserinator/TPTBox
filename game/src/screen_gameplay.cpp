@@ -38,11 +38,6 @@ static double fps = 1.0f;
 static int currentElementId = 1;
 
 
-#include "src/util/types/persistent_buffer.h"
-float out[200 * 200 * 200];
-float out2[200 * 200 * 200];
-
-
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position
@@ -61,28 +56,7 @@ void ScreenGameplay::init() {
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
 
-    constexpr int s = 200 * 200 * 200;
-    util::PersistentBuffer tmp(GL_SHADER_STORAGE_BUFFER, s * sizeof(float));
-    for (auto i = 0 ; i < s; i++)
-        ((float*)tmp.ptr)[i] = i;
-    tmp.lock();
-    // glFlush();
 
-    for (int i = 0; i < 1000000000; i++)
-        asm("");
-
-    auto a = GetTime();
-    tmp.wait();
-    std::cout << " time: " << (GetTime() - a ) << "\n";
-
-    a = GetTime();
-    memcpy(out, (float*)tmp.ptr, s * sizeof(float) / 4);
-    std::cout << " time: " << (GetTime() - a ) << "\n";
-
-    std::cout << ((float*)tmp.ptr)[s - 1] << " last\n";
-    std::cout << ((float*)tmp.ptr)[20] << " last\n";
-    std::cout << ((float*)tmp.ptr)[10] << " last\n";
-    
 
     // Create staircase
     // for (int x = 0; x < XRES; x++) 

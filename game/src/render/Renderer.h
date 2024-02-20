@@ -7,6 +7,7 @@
 
 #include "types/multitexture.h"
 #include "types/octree.h"
+#include "../util/types/persistent_buffer.h"
 
 #define EMBED_SHADERS
 
@@ -59,7 +60,9 @@ private:
         blur_shader_dir_loc;
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
-    unsigned int ssbo_colors[BUFFER_COUNT], ssbo_flags[BUFFER_COUNT], ssbo_lod[BUFFER_COUNT];
+    util::PersistentBuffer<BUFFER_COUNT> colorBuf;
+
+    unsigned int ssbo_colors[1], ssbo_flags[BUFFER_COUNT], ssbo_lod[BUFFER_COUNT];
     unsigned int ssbo_constants;
     unsigned int ubo_settings;
     uint8_t * ao_data;

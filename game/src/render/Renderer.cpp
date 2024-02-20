@@ -85,6 +85,8 @@ void Renderer::init() {
     blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
 
+    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), GL_MAP_WRITE_BIT);
+
     // SSBOs for color & octree LOD data
     for (auto i = 0; i < BUFFER_COUNT; i++) {
         ssbo_colors[i] = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
@@ -195,6 +197,8 @@ void Renderer::update_colors_and_lod() {
     const unsigned int ssbo_idx = (frame_count + 1) % BUFFER_COUNT;
     const unsigned int ssbo_bit = 1 << ssbo_idx;
 
+    colorBuf.wait();
+
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->graphics.color_data_modified[i] & ssbo_bit) {
             // Since the chunks might overestimate actual color count
@@ -203,10 +207,10 @@ void Renderer::update_colors_and_lod() {
                 sim->graphics.color_data.size() - i * COLOR_DATA_CHUNK_SIZE :
                 COLOR_DATA_CHUNK_SIZE;
 
-            rlUpdateShaderBuffer(ssbo_colors[ssbo_idx],
-                &sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
-                chunk_len * sizeof(uint32_t),
-                i * COLOR_DATA_CHUNK_SIZE * sizeof(uint32_t));
+            std::copy(&sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_data[(i + 1) * COLOR_DATA_CHUNK_SIZE],
+                &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
+
             rlUpdateShaderBuffer(ssbo_flags[ssbo_idx],
                 &sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
                 chunk_len * sizeof(uint8_t),
@@ -215,6 +219,8 @@ void Renderer::update_colors_and_lod() {
             sim->graphics.color_data_modified[i] &= ~ssbo_bit;
         }
     }
+
+    colorBuf.lock();
 
     for (std::size_t i = 0; i < sim->graphics.octree_blocks.size(); i++) {
         if (sim->graphics.octree_blocks[i].modified & ssbo_bit) {
@@ -300,9 +306,12 @@ void Renderer::draw() {
     // First actual pass
     // --------------------------------------
     const unsigned int ssbo_idx = frame_count % BUFFER_COUNT;
-    rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
+    // rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
+    rlBindShaderBuffer(colorBuf.getId(0), 0);
     rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
     rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
+
+    colorBuf.advance_cycle();
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
