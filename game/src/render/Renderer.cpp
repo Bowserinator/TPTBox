@@ -22,9 +22,6 @@ Renderer::~Renderer() {
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
-    glDeleteBuffers(BUFFER_COUNT, ssbo_colors);
-    glDeleteBuffers(BUFFER_COUNT, ssbo_flags);
-    glDeleteBuffers(BUFFER_COUNT, ssbo_lod);
 
     glDeleteBuffers(1, &ssbo_constants);
     glDeleteBuffers(1, &ubo_settings);
@@ -85,16 +82,12 @@ void Renderer::init() {
     blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
 
-    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), GL_MAP_WRITE_BIT);
-
     // SSBOs for color & octree LOD data
-    for (auto i = 0; i < BUFFER_COUNT; i++) {
-        ssbo_colors[i] = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint32_t), NULL, RL_DYNAMIC_COPY);
-        ssbo_flags[i]  = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(uint8_t), NULL, RL_DYNAMIC_COPY);
-        ssbo_lod[i]    = rlLoadShaderBuffer(sizeof(uint8_t)
-                * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
-                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, NULL, RL_DYNAMIC_COPY);
-    }
+    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), GL_MAP_WRITE_BIT);
+    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint8_t), GL_MAP_WRITE_BIT);
+    lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, 
+                sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
+                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, GL_MAP_WRITE_BIT);
 
     // Ambient occlusion texture, uses texture for free linear filtering
     glGenTextures(BUFFER_COUNT, ao_tex);
@@ -198,6 +191,7 @@ void Renderer::update_colors_and_lod() {
     const unsigned int ssbo_bit = 1 << ssbo_idx;
 
     colorBuf.wait();
+    flagBuf.wait();
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->graphics.color_data_modified[i] & ssbo_bit) {
@@ -211,28 +205,32 @@ void Renderer::update_colors_and_lod() {
                 &sim->graphics.color_data[(i + 1) * COLOR_DATA_CHUNK_SIZE],
                 &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
-            rlUpdateShaderBuffer(ssbo_flags[ssbo_idx],
-                &sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
-                chunk_len * sizeof(uint8_t),
-                i * COLOR_DATA_CHUNK_SIZE * sizeof(uint8_t));
+            std::copy(&sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_flags[(i + 1) * COLOR_DATA_CHUNK_SIZE],
+                &flagBuf.get<uint8_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
             sim->graphics.color_data_modified[i] &= ~ssbo_bit;
         }
     }
 
     colorBuf.lock();
+    flagBuf.lock();
 
+    lodBuf.wait();
     for (std::size_t i = 0; i < sim->graphics.octree_blocks.size(); i++) {
         if (sim->graphics.octree_blocks[i].modified & ssbo_bit) {
             // We do not upload the whole octree here, we upload all layers except
             // the last layer, since the last layer only stores info about the 1x1x1 voxel
             // data which we already have in the form of color_data
-            rlUpdateShaderBuffer(ssbo_lod[ssbo_idx], sim->graphics.octree_blocks[i].data,
-                sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1],
-                i * sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]);
+            std::copy(
+                &sim->graphics.octree_blocks[i].data[0],
+                &sim->graphics.octree_blocks[i].data[OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]],
+                &lodBuf.get<uint8_t>(0)[i * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]]
+            );
             sim->graphics.octree_blocks[i].modified &= ~ssbo_bit;
         }
     }
+    lodBuf.lock();
 
     if (do_ao) {
         glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
@@ -306,12 +304,13 @@ void Renderer::draw() {
     // First actual pass
     // --------------------------------------
     const unsigned int ssbo_idx = frame_count % BUFFER_COUNT;
-    // rlBindShaderBuffer(ssbo_colors[ssbo_idx], 0);
     rlBindShaderBuffer(colorBuf.getId(0), 0);
-    rlBindShaderBuffer(ssbo_flags[ssbo_idx], 1);
-    rlBindShaderBuffer(ssbo_lod[ssbo_idx], 2);
+    rlBindShaderBuffer(flagBuf.getId(0), 1);
+    rlBindShaderBuffer(lodBuf.getId(0), 2);
 
     colorBuf.advance_cycle();
+    flagBuf.advance_cycle();
+    lodBuf.advance_cycle();
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
