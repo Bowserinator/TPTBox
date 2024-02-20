@@ -37,8 +37,8 @@ namespace util {
             std::swap(_size, other._size);
         }
 
-        void lock();
-        void wait();
+        void lock(std::size_t i = 0);
+        void wait(std::size_t i = 0);
 
         // Cycle forward all the ids
         void advance_cycle() { cycle = (cycle + 1) % bufferCount; }
@@ -119,16 +119,18 @@ namespace util {
     }
 
     template <std::size_t bufferCount>
-    void PersistentBuffer<bufferCount>::lock() {
-        if (syncObjs[cycle]) glDeleteSync(syncObjs[cycle]);
-        syncObjs[cycle] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    void PersistentBuffer<bufferCount>::lock(std::size_t i) {
+        i = (cycle + i) % bufferCount;
+        if (syncObjs[i]) glDeleteSync(syncObjs[i]);
+        syncObjs[i] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
 
     template <std::size_t bufferCount>
-    void PersistentBuffer<bufferCount>::wait() {
-        if (!syncObjs[cycle]) return;
+    void PersistentBuffer<bufferCount>::wait(std::size_t i) {
+        i = (cycle + i) % bufferCount;
+        if (!syncObjs[i]) return;
         while (true) {
-            GLenum waitReturn = glClientWaitSync(syncObjs[cycle], GL_SYNC_FLUSH_COMMANDS_BIT, 1);
+            GLenum waitReturn = glClientWaitSync(syncObjs[i], GL_SYNC_FLUSH_COMMANDS_BIT, 1);
             if (waitReturn == GL_ALREADY_SIGNALED || waitReturn == GL_CONDITION_SATISFIED)
                 return;
         }

@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "SimulationDef.h"
 #include "../util/types/color.h"
-#include "../util/types/multibuffer_ssbo.h"
+#include "../util/types/persistent_buffer.h"
 #include <array>
 
 class GOLRule {
@@ -42,7 +42,7 @@ public:
     void wait_and_get();
 private:
     unsigned int ssboRules;
-    util::MultibufferSSBO ssbosData;
+    util::PersistentBuffer<3> ssbosData;
 
     unsigned int golShader;
     unsigned int golProgram;
