@@ -9,7 +9,7 @@ layout(std430, binding = 0) readonly restrict buffer GolRules {
 layout(std430, binding = 1) readonly restrict buffer GolInput {
     uint golBuffer[];
 };
-layout(std430, binding = 2) restrict buffer GolOutput {
+layout(std430, binding = 2) writeonly restrict buffer GolOutput {
     uint golBufferDest[];
 };
 
@@ -23,10 +23,10 @@ uint golIdx(uint x, uint y, uint z) {
 }
 
 // Set gol at x, y, z coordinates to value
-void setGol(uint x, uint y, uint z, uint value) {
+uint setGol(uint x, uint y, uint z, uint value, uint destVal) {
     uint idx = golIdx(x, y, z);
     uint shift = (idx & 3) << 3; // (idx%4) * 8
-    golBufferDest[idx >> 2] = (golBufferDest[idx >> 2] & ~uint(255 << shift)) | uint(value << shift);
+    return destVal | uint(value << shift);
 }
 
 // Return 1 if gol at x, y, z is non-zero, else 0
@@ -46,9 +46,9 @@ uint getGol(uint x, uint y, uint z) {
 void main() {
     uint x, id, neighborCount;
     uvec2 rule;
-
     uint y = gl_GlobalInvocationID.y;
     uint z = gl_GlobalInvocationID.z;
+    uint destVal = 0;
 
     for (int dx = 0; dx < 4; dx++) {
         x = 4 * gl_GlobalInvocationID.x + dx;
@@ -61,7 +61,7 @@ void main() {
         rule = id == 0 ? golRules[1] : golRules[id - 1];
 
         // Moore neighborhood
-        if ((rule.x & uint(1 << 31)) == 0) {
+        if ((rule.x & 2147483648) == 0) { // 1 << 31
             neighborCount += getGol01(x - 1, y - 1, z - 1);
             neighborCount += getGol01(x - 1, y - 1, z + 0);
             neighborCount += getGol01(x - 1, y - 1, z + 1);
@@ -99,10 +99,13 @@ void main() {
 
         uint neighborMask = uint(1 << neighborCount);
         if ((rule.x & neighborMask) != 0)
-            setGol(x, y, z, 2);
+            destVal = setGol(x, y, z, 2, destVal);
         else if ((rule.y & neighborMask) != 0)
-            setGol(x, y, z, id);
+            destVal = setGol(x, y, z, id, destVal);
         else
-            setGol(x, y, z, 0);
+            destVal = setGol(x, y, z, 0, destVal);
     }
+
+    uint idx = golIdx(4 * gl_GlobalInvocationID.x, y, z);
+    golBufferDest[idx >> 2] = destVal;
 }

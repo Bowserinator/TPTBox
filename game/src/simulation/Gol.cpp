@@ -65,12 +65,22 @@ void SimulationGol::dispatch() {
         &ssbosData.get<uint8_t>(0)[0]);
     ssbosData.lock(0);
 
+    // unsigned int query = 0;
+    // glGenQueries(1, &query);
+    // glBeginQuery(GL_TIME_ELAPSED, query);
+
     rlEnableShader(golProgram);
     rlBindShaderBuffer(ssboRules, 0);
     rlBindShaderBuffer(ssbosData.getId(0), 1);
     rlBindShaderBuffer(ssbosData.getId(1), 2);
-    rlComputeShaderDispatch(std::ceil(XRES / 10), std::ceil(YRES / 10), std::ceil(ZRES / 10));
+    rlComputeShaderDispatch(std::ceil(XRES / 40), std::ceil(YRES / 10), std::ceil(ZRES / 10));
     rlDisableShader();
+
+    // glEndQuery(GL_TIME_ELAPSED);
+    // int out;
+    // glGetQueryObjectiv(query, GL_QUERY_RESULT, &out);
+    // std::cout << (out / 1e6) << " ms" << "\n";
+
     ssbosData.lock(1);
 }
 
