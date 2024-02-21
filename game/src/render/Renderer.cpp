@@ -83,11 +83,11 @@ void Renderer::init() {
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
 
     // SSBOs for color & octree LOD data
-    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), GL_MAP_WRITE_BIT);
-    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint8_t), GL_MAP_WRITE_BIT);
+    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), util::PBFlags::WRITE);
+    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint8_t), util::PBFlags::WRITE);
     lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, 
                 sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
-                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, GL_MAP_WRITE_BIT);
+                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, util::PBFlags::WRITE);
 
     // Ambient occlusion texture, uses texture for free linear filtering
     glGenTextures(BUFFER_COUNT, ao_tex);

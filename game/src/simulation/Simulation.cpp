@@ -405,6 +405,7 @@ void Simulation::recalc_free_particles() {
 }
 
 void Simulation::dispatch_compute_shaders() {
+    if (paused) return;
     if (gol.golCount)
         gol.dispatch();
 }

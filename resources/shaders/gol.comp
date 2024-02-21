@@ -1,6 +1,6 @@
 #version 430
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
 
 layout(std430, binding = 0) readonly restrict buffer GolRules {
     ivec4 SIMRES;
@@ -26,12 +26,7 @@ uint golIdx(uint x, uint y, uint z) {
 void setGol(uint x, uint y, uint z, uint value) {
     uint idx = golIdx(x, y, z);
     uint shift = (idx & 3) << 3; // (idx%4) * 8
-    uint orgval, target;
-
-    do {
-        orgval = golBufferDest[idx >> 2];
-        target = (orgval & ~uint(255 << shift)) | uint(value << shift);
-    } while (atomicCompSwap(golBufferDest[idx >> 2], orgval, target) != orgval);
+    golBufferDest[idx >> 2] = (golBufferDest[idx >> 2] & ~uint(255 << shift)) | uint(value << shift);
 }
 
 // Return 1 if gol at x, y, z is non-zero, else 0
@@ -49,58 +44,65 @@ uint getGol(uint x, uint y, uint z) {
 
 
 void main() {
-    uint neighborCount = 0;
-    uint x = gl_GlobalInvocationID.x;
+    uint x, id, neighborCount;
+    uvec2 rule;
+
     uint y = gl_GlobalInvocationID.y;
     uint z = gl_GlobalInvocationID.z;
 
-    if (clamp(ivec3(x, y, z), ivec3(1), SIMRES.xyz - ivec3(2)) != ivec3(x, y, z))
-        return;
+    for (int dx = 0; dx < 4; dx++) {
+        x = 4 * gl_GlobalInvocationID.x + dx;
 
-    uint id = getGol(x, y, z);
-    uvec2 rule = id == 0 ? golRules[1] : golRules[id - 1];
+        if (clamp(ivec3(x, y, z), ivec3(1), SIMRES.xyz - ivec3(2)) != ivec3(x, y, z))
+            continue;
 
-    // Moore neighborhood
-    if ((rule.x & uint(1 << 31)) == 0) {
-        neighborCount += getGol01(x - 1, y - 1, z - 1);
-        neighborCount += getGol01(x - 1, y - 1, z + 0);
-        neighborCount += getGol01(x - 1, y - 1, z + 1);
-        neighborCount += getGol01(x - 1, y + 0, z - 1);
-        neighborCount += getGol01(x - 1, y + 0, z + 0);
-        neighborCount += getGol01(x - 1, y + 0, z + 1);
-        neighborCount += getGol01(x - 1, y + 1, z - 1);
-        neighborCount += getGol01(x - 1, y + 1, z + 0);
-        neighborCount += getGol01(x - 1, y + 1, z + 1);
-        neighborCount += getGol01(x + 0, y - 1, z - 1);
-        neighborCount += getGol01(x + 0, y - 1, z + 0);
-        neighborCount += getGol01(x + 0, y - 1, z + 1);
-        neighborCount += getGol01(x + 0, y + 0, z - 1);
-        neighborCount += getGol01(x + 0, y + 0, z + 1);
-        neighborCount += getGol01(x + 0, y + 1, z - 1);
-        neighborCount += getGol01(x + 0, y + 1, z + 0);
-        neighborCount += getGol01(x + 0, y + 1, z + 1);
-        neighborCount += getGol01(x + 1, y - 1, z - 1);
-        neighborCount += getGol01(x + 1, y - 1, z + 0);
-        neighborCount += getGol01(x + 1, y - 1, z + 1);
-        neighborCount += getGol01(x + 1, y + 0, z - 1);
-        neighborCount += getGol01(x + 1, y + 0, z + 0);
-        neighborCount += getGol01(x + 1, y + 0, z + 1);
-        neighborCount += getGol01(x + 1, y + 1, z - 1);
-        neighborCount += getGol01(x + 1, y + 1, z + 0);
-        neighborCount += getGol01(x + 1, y + 1, z + 1);
-    } else { // Neumann neighborhood
-        neighborCount += getGol01(x - 1, y + 0, z + 0);
-        neighborCount += getGol01(x + 0, y - 1, z + 0);
-        neighborCount += getGol01(x + 0, y + 0, z - 1);
-        neighborCount += getGol01(x + 0, y + 0, z + 1);
-        neighborCount += getGol01(x + 0, y + 1, z + 0);
-        neighborCount += getGol01(x + 1, y + 0, z + 0);
+        neighborCount = 0;
+        id = getGol(x, y, z);
+        rule = id == 0 ? golRules[1] : golRules[id - 1];
+
+        // Moore neighborhood
+        if ((rule.x & uint(1 << 31)) == 0) {
+            neighborCount += getGol01(x - 1, y - 1, z - 1);
+            neighborCount += getGol01(x - 1, y - 1, z + 0);
+            neighborCount += getGol01(x - 1, y - 1, z + 1);
+            neighborCount += getGol01(x - 1, y + 0, z - 1);
+            neighborCount += getGol01(x - 1, y + 0, z + 0);
+            neighborCount += getGol01(x - 1, y + 0, z + 1);
+            neighborCount += getGol01(x - 1, y + 1, z - 1);
+            neighborCount += getGol01(x - 1, y + 1, z + 0);
+            neighborCount += getGol01(x - 1, y + 1, z + 1);
+            neighborCount += getGol01(x + 0, y - 1, z - 1);
+            neighborCount += getGol01(x + 0, y - 1, z + 0);
+            neighborCount += getGol01(x + 0, y - 1, z + 1);
+            neighborCount += getGol01(x + 0, y + 0, z - 1);
+            neighborCount += getGol01(x + 0, y + 0, z + 1);
+            neighborCount += getGol01(x + 0, y + 1, z - 1);
+            neighborCount += getGol01(x + 0, y + 1, z + 0);
+            neighborCount += getGol01(x + 0, y + 1, z + 1);
+            neighborCount += getGol01(x + 1, y - 1, z - 1);
+            neighborCount += getGol01(x + 1, y - 1, z + 0);
+            neighborCount += getGol01(x + 1, y - 1, z + 1);
+            neighborCount += getGol01(x + 1, y + 0, z - 1);
+            neighborCount += getGol01(x + 1, y + 0, z + 0);
+            neighborCount += getGol01(x + 1, y + 0, z + 1);
+            neighborCount += getGol01(x + 1, y + 1, z - 1);
+            neighborCount += getGol01(x + 1, y + 1, z + 0);
+            neighborCount += getGol01(x + 1, y + 1, z + 1);
+        } else { // Neumann neighborhood
+            neighborCount += getGol01(x - 1, y + 0, z + 0);
+            neighborCount += getGol01(x + 0, y - 1, z + 0);
+            neighborCount += getGol01(x + 0, y + 0, z - 1);
+            neighborCount += getGol01(x + 0, y + 0, z + 1);
+            neighborCount += getGol01(x + 0, y + 1, z + 0);
+            neighborCount += getGol01(x + 1, y + 0, z + 0);
+        }
+
+        uint neighborMask = uint(1 << neighborCount);
+        if ((rule.x & neighborMask) != 0)
+            setGol(x, y, z, 2);
+        else if ((rule.y & neighborMask) != 0)
+            setGol(x, y, z, id);
+        else
+            setGol(x, y, z, 0);
     }
-
-    if ((rule.x & uint(1 << neighborCount)) != 0)
-        setGol(x, y, z, 2);
-    else if ((rule.y & uint(1 << neighborCount)) != 0)
-        setGol(x, y, z, id);
-    else
-        setGol(x, y, z, 0);
 }

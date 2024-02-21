@@ -8,16 +8,18 @@
 #include <stdexcept>
 
 namespace util {
+    enum class PBFlags { NONE, READ, WRITE, READ_AND_WRITE, WRITE_ALT_READ, READ_ALT_WRITE };
+
     template <std::size_t bufferCount>
     class PersistentBuffer {
     public:
         // Create a persistent buffer
+        // @tparam bufferCount: Number of buffers to use (ie 3 = triple buffering), manually cycle with .cycle()
         // @param target: Target buffer binding ie GL_SHADER_STORAGE_BUFFER
         // @param size: Size of the buffer in bytes
-        // @param rwFlag: Additional flags, usually a combination of GL_MAP_READ_BIT, GL_MAP_WRITE_BIT
-        // @param bufferCount: Number of buffers to use (ie 3 = triple buffering), manually cycle with .cycle()
-        PersistentBuffer(GLenum target, GLsizeiptr size, GLbitfield rwFlag);
-        PersistentBuffer(): PersistentBuffer(0, 0, 0) {};
+        // @param rwFlag: Additional flags, see the Flags enum
+        PersistentBuffer(GLenum target, GLsizeiptr size, PBFlags rwFlag);
+        PersistentBuffer(): PersistentBuffer(0, 0, PBFlags::NONE) {};
         ~PersistentBuffer();
 
         PersistentBuffer(const PersistentBuffer &other) = delete;
@@ -65,7 +67,7 @@ namespace util {
 
     
     template <std::size_t bufferCount>
-    PersistentBuffer<bufferCount>::PersistentBuffer(GLenum target, GLsizeiptr size, GLbitfield rwFlag):
+    PersistentBuffer<bufferCount>::PersistentBuffer(GLenum target, GLsizeiptr size, PBFlags flag):
         target(target), _size(size)
     {
         if (size > 0 && bufferCount > 0) {
@@ -73,9 +75,20 @@ namespace util {
             ptrs = new void*[bufferCount];
             syncObjs = new GLsync[bufferCount];
 
+            GLbitfield rwFlag = 0;
+            if (flag == PBFlags::READ || flag == PBFlags::READ_AND_WRITE)
+                rwFlag |= GL_MAP_READ_BIT;
+            if (flag == PBFlags::WRITE || flag == PBFlags::READ_AND_WRITE)
+                rwFlag |= GL_MAP_WRITE_BIT;
+
             glGenBuffers(bufferCount, buffsId);
 
             for (int i = 0; i < bufferCount; i++) {
+                if (flag == PBFlags::WRITE_ALT_READ)
+                    rwFlag = i % 2 == 0 ? GL_MAP_WRITE_BIT : GL_MAP_READ_BIT;
+                else if (flag == PBFlags::READ_ALT_WRITE)
+                    rwFlag = i % 2 == 1 ? GL_MAP_WRITE_BIT : GL_MAP_READ_BIT;
+
                 glBindBuffer(target, buffsId[i]);
                 auto flags = rwFlag | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 glBufferStorage(target, size, NULL, flags);
