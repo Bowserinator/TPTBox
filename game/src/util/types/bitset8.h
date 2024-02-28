@@ -63,7 +63,6 @@ public:
     void set(std::size_t pos) { data |= 1 << pos; }
     void unset() { data = 0; }
     void unset(std::size_t pos) { data &= ~(1 << pos); }
-    void reset() { reset(); }
 
     operator uint8_t() const { return data; }
 

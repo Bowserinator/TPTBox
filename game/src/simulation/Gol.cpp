@@ -45,7 +45,7 @@ void SimulationGol::init() {
         uint32_t data[GOL_RULE_COUNT * 2];
     } golRuleData;
 
-    ssbosData = util::MultibufferSSBO(2, sizeof(gol_map), RL_DYNAMIC_COPY);
+    ssbosData = util::PersistentBuffer<6>(GL_SHADER_STORAGE_BUFFER, sizeof(gol_map), util::PBFlags::WRITE_ALT_READ);
     ssboRules = rlLoadShaderBuffer(sizeof(golRuleData), NULL, RL_STATIC_READ);
 
     for (auto i = 0; i < GOL_RULE_COUNT; i++) {
@@ -58,18 +58,42 @@ void SimulationGol::init() {
 }
 
 void SimulationGol::dispatch() {
-    rlUpdateShaderBuffer(ssbosData.get(0), gol_map, sizeof(gol_map), 0);
+    ssbosData.wait(0);
+    std::copy(
+        &gol_map[0][0][0],
+        &gol_map[0][0][0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])),
+        &ssbosData.get<uint8_t>(0)[0]);
+    ssbosData.lock(0);
+
+    // unsigned int query = 0;
+    // glGenQueries(1, &query);
+    // glBeginQuery(GL_TIME_ELAPSED, query);
 
     rlEnableShader(golProgram);
     rlBindShaderBuffer(ssboRules, 0);
-    rlBindShaderBuffer(ssbosData.get(0), 1);
-    rlBindShaderBuffer(ssbosData.get(1), 2);
-    rlComputeShaderDispatch(XRES / 8 + 1, YRES / 8 + 1, ZRES / 8 + 1);
+    rlBindShaderBuffer(ssbosData.getId(0), 1);
+    rlBindShaderBuffer(ssbosData.getId(1), 2);
+    // X is 4x as much since each invocation iterates 4 x values
+    rlComputeShaderDispatch(std::ceil(XRES / 40.0), std::ceil(YRES / 10.0), std::ceil(ZRES / 10.0));
     rlDisableShader();
+
+    // glEndQuery(GL_TIME_ELAPSED);
+    // int out;
+    // glGetQueryObjectiv(query, GL_QUERY_RESULT, &out);
+    // std::cout << (out / 1e6) << " ms" << "\n";
+
+    ssbosData.lock(1);
 }
 
 void SimulationGol::wait_and_get() {
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    rlReadShaderBuffer(ssbosData.get(1), gol_map, sizeof(gol_map), 0);
+    ssbosData.wait(1);
+
+    std::copy(
+        &ssbosData.get<uint8_t>(1)[0],
+        &ssbosData.get<uint8_t>(1)[0] + sizeof(gol_map) / sizeof(gol_map[0][0][0]),
+        &gol_map[0][0][0]);
+
+    ssbosData.advance_cycle();
     ssbosData.advance_cycle();
 }
