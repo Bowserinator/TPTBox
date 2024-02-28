@@ -148,7 +148,6 @@ namespace util {
                 return;
         }
     }
-
 }
 
 #endif

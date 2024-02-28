@@ -190,7 +190,7 @@ void Simulation::update_zslice(const coord_t pz) {
         y2 = max_y_per_zslice[pz - 1];
     } else {
         // Dirty rect is expanded by 1 along each axis to allow GOL to propagate
-        y1 = std::min(1, std::max({
+        y1 = std::max(1, std::max({
             min_y_per_zslice[std::min((int)ZRES - 2, pz - 0)] - 1,
             min_y_per_zslice[pz - 1] - 1,
             min_y_per_zslice[std::max(1, pz - 2)] - 1

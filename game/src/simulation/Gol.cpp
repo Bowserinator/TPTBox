@@ -73,7 +73,8 @@ void SimulationGol::dispatch() {
     rlBindShaderBuffer(ssboRules, 0);
     rlBindShaderBuffer(ssbosData.getId(0), 1);
     rlBindShaderBuffer(ssbosData.getId(1), 2);
-    rlComputeShaderDispatch(std::ceil(XRES / 40), std::ceil(YRES / 10), std::ceil(ZRES / 10));
+    // X is 4x as much since each invocation iterates 4 x values
+    rlComputeShaderDispatch(std::ceil(XRES / 40.0), std::ceil(YRES / 10.0), std::ceil(ZRES / 10.0));
     rlDisableShader();
 
     // glEndQuery(GL_TIME_ELAPSED);
