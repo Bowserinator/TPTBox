@@ -4,33 +4,26 @@
 #include <iostream>
 
 SimulationHeat::~SimulationHeat() {
-    rlUnloadShaderBuffer(ssbo_in);
-    rlUnloadShaderBuffer(ssbo_out);
-    rlUnloadShaderProgram(golLogicProgram);
+    rlUnloadShaderProgram(heatProgram);
 }
 
 void SimulationHeat::init() {
-    // Game of Life logic compute shader
-    out = new float[XRES * YRES * ZRES];
+    char * heatCode = LoadFileText("resources/shaders/heat.comp");
+    heatShader = rlCompileShader(heatCode, RL_COMPUTE_SHADER);
+    heatProgram = rlLoadComputeShaderProgram(heatShader);
+    UnloadFileText(heatCode);
 
-    char *golLogicCode = LoadFileText("resources/shaders/heat.comp");
-    golLogicShader = rlCompileShader(golLogicCode, RL_COMPUTE_SHADER);
-    golLogicProgram = rlLoadComputeShaderProgram(golLogicShader);
-    UnloadFileText(golLogicCode);
-
-    ssbo_in  = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(float), NULL, RL_DYNAMIC_COPY);
-    ssbo_out = rlLoadShaderBuffer(XRES * YRES * ZRES * sizeof(float), NULL, RL_DYNAMIC_COPY);
+    ssbosData = util::PersistentBuffer<6>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(float), util::PBFlags::WRITE_ALT_READ);
 }
 
 void SimulationHeat::dispatch() {
-    rlEnableShader(golLogicProgram);
-    rlBindShaderBuffer(ssbo_in, 1);
-    rlBindShaderBuffer(ssbo_out, 1);
+    rlEnableShader(heatProgram);
+    rlBindShaderBuffer(ssbosData.getId(0), 0);
+    rlBindShaderBuffer(ssbosData.getId(1), 1);
     rlComputeShaderDispatch(XRES / 16, YRES / 16, ZRES);
     rlDisableShader();
 }
 
 void SimulationHeat::wait_and_get() {
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    rlReadShaderBuffer(ssbo_in, out, XRES * YRES * ZRES * sizeof(float), 0);
+    
 }

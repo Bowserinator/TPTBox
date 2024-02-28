@@ -8,8 +8,7 @@
 #include "types/multitexture.h"
 #include "types/octree.h"
 #include "../util/types/persistent_buffer.h"
-
-#define EMBED_SHADERS
+#include "constants.h"
 
 constexpr float DOWNSCALE_RATIO = 1.5f;
 constexpr float BLUR_DOWNSCALE_RATIO = 1.5f;

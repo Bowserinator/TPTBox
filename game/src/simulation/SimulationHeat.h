@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
+#include "../util/types/persistent_buffer.h"
 #include "SimulationDef.h"
 
 class SimulationHeat {
@@ -13,9 +14,10 @@ public:
     void dispatch();
     void wait_and_get();
 private:
-    unsigned int ssbo_in, ssbo_out;
-    unsigned int golLogicShader;
-    unsigned int golLogicProgram;
+    util::PersistentBuffer<6> ssbosData;
+
+    unsigned int heatShader;
+    unsigned int heatProgram;
     float * out;
 };
 

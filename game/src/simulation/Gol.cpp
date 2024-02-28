@@ -1,8 +1,11 @@
 #include "Gol.h"
 #include "raylib.h"
 #include "rlgl.h"
+
 #include "../util/graphics.h"
 #include "../util/vector_op.h"
+#include "../util/types/gl_time_query.h"
+#include "../render/constants.h"
 
 #include <cstring>
 #include <glad.h>
@@ -35,10 +38,16 @@ SimulationGol::~SimulationGol() {
 }
 
 void SimulationGol::init() {
-    char *golLogicCode = LoadFileText("resources/shaders/gol.comp");
-    golShader = rlCompileShader(golLogicCode, RL_COMPUTE_SHADER);
+#ifdef EMBED_SHADERS
+    #include "../../resources/shaders/generated/gol.comp.h"
+    golShader = rlCompileShader(gol_comp_source, RL_COMPUTE_SHADER);
     golProgram = rlLoadComputeShaderProgram(golShader);
-    UnloadFileText(golLogicCode);
+#else
+    char * gol_comp_source = LoadFileText("resources/shaders/gol.comp");
+    golShader = rlCompileShader(gol_comp_source, RL_COMPUTE_SHADER);
+    golProgram = rlLoadComputeShaderProgram(golShader);
+    UnloadFileText(gol_comp_source);
+#endif
 
     struct {
         int32_t SIMRES[4] = { (int)XRES, (int)YRES, (int)ZRES };
@@ -65,9 +74,8 @@ void SimulationGol::dispatch() {
         &ssbosData.get<uint8_t>(0)[0]);
     ssbosData.lock(0);
 
-    // unsigned int query = 0;
-    // glGenQueries(1, &query);
-    // glBeginQuery(GL_TIME_ELAPSED, query);
+    // Uncomment the two lines for timing the shader dispatch
+    // util::GlTimeQuery query;
 
     rlEnableShader(golProgram);
     rlBindShaderBuffer(ssboRules, 0);
@@ -77,10 +85,7 @@ void SimulationGol::dispatch() {
     rlComputeShaderDispatch(std::ceil(XRES / 40.0), std::ceil(YRES / 10.0), std::ceil(ZRES / 10.0));
     rlDisableShader();
 
-    // glEndQuery(GL_TIME_ELAPSED);
-    // int out;
-    // glGetQueryObjectiv(query, GL_QUERY_RESULT, &out);
-    // std::cout << (out / 1e6) << " ms" << "\n";
+    // std::cout << query.timeElapsedMs() << " ms" << "\n";
 
     ssbosData.lock(1);
 }
