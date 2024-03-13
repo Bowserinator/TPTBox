@@ -25,7 +25,7 @@ namespace ui {
 
         Vector2 getInternalSize() const { return internalSize; }
 
-    private:
+    protected:
         Vector2 internalSize;
         float offsetTop;
         bool dragging = false;

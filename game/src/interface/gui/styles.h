@@ -4,21 +4,21 @@
 #include "raylib.h"
 
 namespace styles {
-    constexpr Vector2 ELEMENT_BUTTON_SIZE{ 60, 32 };
-    constexpr float CHECKBOX_SIZE = 20.0f;
-    constexpr Vector2 DROPDOWN_SIZE{ 300.0f, 28.0f };
+    extern const Vector2 ELEMENT_BUTTON_SIZE;
+    extern const float CHECKBOX_SIZE;
+    extern const Vector2 DROPDOWN_SIZE;
 
-    constexpr float SETTINGS_BUTTON_HEIGHT = 34.0f;
-    constexpr float SCROLL_BAR_WIDTH = 10.0f;
-    constexpr float SCROLL_PANEL_BOTTOM_PADDING = 20.0f;
-    constexpr float SLIDER_HEIGHT = 3.0f;
-    constexpr float SLIDER_THUMB_RADIUS = 7.0f;
+    extern const float SETTINGS_BUTTON_HEIGHT;
+    extern const float SCROLL_BAR_WIDTH;
+    extern const float SCROLL_PANEL_BOTTOM_PADDING;
+    extern const float SLIDER_HEIGHT;
+    extern const float SLIDER_THUMB_RADIUS;
 
-    constexpr Color WINDOW_FADE_BG_COLOR{0, 0, 0, 128};
-    constexpr Color WINDOW_TITLE_COLOR = BLUE;
-    constexpr Color SCROLL_TRACK_COLOR{ 60, 60, 60, 255 };
-    constexpr Color SCROLL_THUMB_COLOR = WHITE;
-    constexpr Color SLIDER_DEFAULT_BG_COLOR = WHITE;
+    extern const Color WINDOW_FADE_BG_COLOR;
+    extern const Color WINDOW_TITLE_COLOR;
+    extern const Color SCROLL_TRACK_COLOR;
+    extern const Color SCROLL_THUMB_COLOR;
+    extern const Color SLIDER_DEFAULT_BG_COLOR;
 }
 
 #endif
