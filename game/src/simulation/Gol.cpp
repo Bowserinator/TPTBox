@@ -85,7 +85,7 @@ void SimulationGol::dispatch() {
     rlComputeShaderDispatch(std::ceil(XRES / 40.0), std::ceil(YRES / 10.0), std::ceil(ZRES / 10.0));
     rlDisableShader();
 
-    // std::cout << query.timeElapsedMs() << " ms" << "\n";
+    // std::cout << query.timeElapsedMs() << " ms (gol)" << "\n";
 
     ssbosData.lock(1);
 }

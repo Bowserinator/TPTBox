@@ -4,6 +4,7 @@
 #include "Particle.h"
 #include "SimulationDef.h"
 #include "SimulationGraphics.h"
+#include "SimulationHeat.h"
 #include "Gol.h"
 #include "Raycast.h"
 #include "Air.h"
@@ -36,6 +37,7 @@ public:
 
     Air air;
     SimulationGol gol;
+    SimulationHeat heat;
 
     part_id pfree;
     part_id maxId;

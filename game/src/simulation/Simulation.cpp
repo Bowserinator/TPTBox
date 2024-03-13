@@ -30,6 +30,8 @@ Simulation::Simulation():
     frame_count = 0;
     parts_count = 0;
     gravity_mode = GravityMode::VERTICAL;
+    heat.sim = this;
+    heat.uploadedOnce = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
     
@@ -51,6 +53,7 @@ Simulation::~Simulation() {}
 // Called when OpenGL context is initialized
 void Simulation::init() {
     gol.init();
+    heat.init();
 }
 
 void Simulation::_init_can_move() {
@@ -159,6 +162,7 @@ void Simulation::kill_part(const part_id i) {
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
+    heat.heat_map[z][y][x] = -1.0f;
 
     if (i == maxId && i > 0)
         maxId--;
@@ -246,7 +250,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         if (consider_causality && el.Causality > max_ok_causality_range)
             return;
 
-        update_heat_conduct(part);
+        // update_heat_conduct(part); // TODO
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
         // Air acceleration
@@ -325,8 +329,21 @@ void Simulation::update() {
 
     auto t = GetTime();
     if (gol.golCount) gol.wait_and_get();
+    
+    // TODO: move to own function
+    // and explain this if statement is to avoid odwnloading 0s on first pass
+    // before heat values were assigned
+    if (heat.uploadedOnce) {
+        heat.wait_and_get();
+        // TODO: parallelize
+        for (int i = 0; i < maxId; i++)
+            if (parts[i].type && heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx] >= 0.0f) {
+                parts[i].temp = heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx];
+            }
+    }
+
     auto end = (GetTime() - t);
-    // std::cout << end << "\n";
+    std::cout << end << "\n";
 
     // air.update(); // TODO
 
@@ -375,6 +392,9 @@ void Simulation::recalc_free_particles() {
         const coord_t y = part.ry;
         const coord_t z = part.rz;
 
+        // Heat map update
+        heat.heat_map[z][y][x] = part.temp;
+
         // Ambient occlusion and shadow rules
         if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
@@ -399,7 +419,7 @@ void Simulation::recalc_free_particles() {
         }
 
         update_part(i, false);
-        part.temp = part.temp_tmp;
+        // part.temp = part.temp_tmp; // TODO
     }
     maxId = newMaxId + 1;
 }
@@ -408,6 +428,7 @@ void Simulation::dispatch_compute_shaders() {
     if (paused) return;
     if (gol.golCount)
         gol.dispatch();
+    heat.dispatch();
 }
 
 

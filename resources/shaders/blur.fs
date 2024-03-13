@@ -12,7 +12,7 @@ void main() {
     // for (int r = -RADIUS; r <= RADIUS; r++)
     //     color += texture(baseTexture, (gl_FragCoord.xy + direction * r) / resolution) * WEIGHTS[abs(r)];
 
-    color += texture(baseTexture, (gl_FragCoord.xy) / resolution) * 0.030526785252358146;
+    color += texture(baseTexture, (gl_FragCoord.xy) / resolution) * 0.06105357050471629;
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 1) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 1) / resolution)) * 0.030524301077297273;
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 2) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 2) / resolution)) * 0.03051684976497561;
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 3) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 3) / resolution)) * 0.03050443495298911;
@@ -31,5 +31,4 @@ void main() {
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 16) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 16) / resolution)) * 0.02989738952948485;
 
     FragColor = color;
-    FragColor.a *= 2.0;
 }
