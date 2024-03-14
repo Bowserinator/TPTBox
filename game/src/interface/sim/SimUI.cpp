@@ -20,7 +20,8 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
 void SimUI::init() {
     mainPanel = new ui::Panel(
         Vector2{ 0, (float)GetScreenHeight() - 130 },
-        Vector2{ (float)GetScreenWidth(), 130 }
+        Vector2{ (float)GetScreenWidth(), 130 },
+        ui::Style { .backgroundColor = BLACK }
     );
 
     // Label for displaying element descriptions

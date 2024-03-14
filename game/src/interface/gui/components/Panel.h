@@ -12,7 +12,8 @@ namespace ui {
     // A container for multiple child components
     class Panel : public InteractiveComponent {
     public:
-        Panel(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
+        Panel(const Vector2 &pos, const Vector2 &size,
+            const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0}));
         virtual ~Panel();
 
         void tick(float dt) override;

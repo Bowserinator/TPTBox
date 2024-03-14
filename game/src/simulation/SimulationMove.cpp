@@ -197,8 +197,8 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         return;
     }
 
-    auto part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
-    auto old_pmap_val = part_map[oldz][oldy][oldx];
+    auto &part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
+    auto &old_pmap_val = part_map[oldz][oldy][oldx];
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
         behavior = eval_move(idx, x, y, z);
