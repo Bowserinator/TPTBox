@@ -115,7 +115,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
     parts[old_pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
 
-    parts[old_pfree].id = pfree;
+    parts[old_pfree].id = old_pfree;
     parts[old_pfree].type = type;
     parts[old_pfree].x = x;
     parts[old_pfree].y = y;
