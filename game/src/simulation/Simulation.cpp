@@ -84,8 +84,6 @@ void Simulation::cycle_gravity_mode() {
 }
 
 part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
-    util::unique_spinlock _lock(parts_add_remove_lock);
-
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -97,50 +95,55 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     const auto part_map = is_energy ? photons : pmap;
 
     if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
+
+    // Begin PFREE MODIFICATION
+    util::unique_spinlock _lock(parts_add_remove_lock);
+    
     if (pfree >= NPARTS) return PartErr::PARTS_FULL;
     if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
         return PartErr::NOT_ALLOWED;
 
-    // Create new part
-    // Note: should it allow creation off screen? TODO
-    const part_id next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
     const part_id old_pfree = pfree;
+    const part_id next_pfree = parts[old_pfree].id < 0 ? -parts[old_pfree].id : old_pfree + 1;
 
-    parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
-    parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
-    parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
+    maxId = std::max(maxId, old_pfree + 1);
+    pfree = next_pfree;
+    _lock.unlock();
+    // END PFREE MODIFICATION, we now have access to old_pfree
 
-    parts[pfree].id = pfree;
-    parts[pfree].type = type;
-    parts[pfree].x = x;
-    parts[pfree].y = y;
-    parts[pfree].z = z;
-    parts[pfree].rx = x;
-    parts[pfree].ry = y;
-    parts[pfree].rz = z;
-    parts[pfree].vx = 0.0f;
-    parts[pfree].vy = 0.0f;
-    parts[pfree].vz = 0.0f;
-    parts[pfree].assign_with_defaults(el.DefaultProperties);
+    parts[old_pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+    parts[old_pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
+    parts[old_pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
+
+    parts[old_pfree].id = pfree;
+    parts[old_pfree].type = type;
+    parts[old_pfree].x = x;
+    parts[old_pfree].y = y;
+    parts[old_pfree].z = z;
+    parts[old_pfree].rx = x;
+    parts[old_pfree].ry = y;
+    parts[old_pfree].rz = z;
+    parts[old_pfree].vx = 0.0f;
+    parts[old_pfree].vy = 0.0f;
+    parts[old_pfree].vz = 0.0f;
+    parts[old_pfree].assign_with_defaults(el.DefaultProperties);
 
     if (el.OnChangeType)
-        el.OnChangeType(*this, pfree, x, y, z, PT_NONE, type);
+        el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
     if (el.OnCreate)
-        el.OnCreate(*this, pfree, x, y, z, type);
+        el.OnCreate(*this, old_pfree, x, y, z, type);
 
     if (paused) {
-        if (_should_do_lighting(parts[pfree])) {
+        if (_should_do_lighting(parts[old_pfree])) {
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
             _update_shadow_map(x, y, z);
         }
         parts_count++;
     }
 
-    part_map[z][y][x] = PMAP(type, pfree);
-    _set_color_data_at(x, y, z, &parts[pfree]);
+    part_map[z][y][x] = PMAP(type, old_pfree);
+    _set_color_data_at(x, y, z, &parts[old_pfree]);
 
-    maxId = std::max(maxId, pfree + 1);
-    pfree = next_pfree;
     return old_pfree;
 }
 
@@ -148,7 +151,6 @@ void Simulation::kill_part(const part_id i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
 
-    util::unique_spinlock _lock(parts_add_remove_lock);
     coord_t x = part.rx;
     coord_t y = part.ry;
     coord_t z = part.rz;
@@ -165,9 +167,6 @@ void Simulation::kill_part(const part_id i) {
     part.flag[PartFlags::IS_ENERGY] = 0;
     heat.update_temperate(x, y, z, -1.0f);
 
-    if (i == maxId && i > 0)
-        maxId--;
-
     _set_color_data_at(x, y, z, nullptr);
 
     if (paused) {
@@ -176,6 +175,11 @@ void Simulation::kill_part(const part_id i) {
         graphics.shadows_force_update = true;
         parts_count--;
     }
+
+    // Update PFREE pointer in linked list
+    util::unique_spinlock _lock(parts_add_remove_lock);
+    if (i == maxId && i > 0)
+        maxId--;
     part.id = -pfree;
     pfree = i;
 }

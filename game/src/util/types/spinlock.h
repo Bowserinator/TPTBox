@@ -25,7 +25,10 @@ namespace util {
     class unique_spinlock {
     public:
         unique_spinlock(Spinlock &lock): _lock(&lock) { _lock->lock(); }
-        ~unique_spinlock() {
+        ~unique_spinlock() { unlock(); }
+
+        void unlock() {
+            if (!_lock) return;
             _lock->unlock();
             _lock = nullptr;
         }
