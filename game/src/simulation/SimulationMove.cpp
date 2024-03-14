@@ -80,41 +80,44 @@ void Simulation::move_behavior(const part_id idx) {
                     TYP(pmap[z][y][x + 1]) == part.type
                 ) return;
 
-                float dx = rng.uniform(-el.Diffusion, el.Diffusion);
-                float dz = rng.uniform(-el.Diffusion, el.Diffusion);
-                const int newy = is_liquid ? y : y - 1;
+                for (int i = 0; i < el.Diffusion; i++) {
+                    float dx = rng.chance(1, 2) ? -1 : 1;
+                    float dz = rng.chance(1, 2) ? -1 : 1;
+                    const int newy = is_liquid ? y : y - 1;
 
-                if (REVERSE_BOUNDS_CHECK(x + util::ceil_proper(dx), newy, z + util::ceil_proper(dz)))
-                    return;
+                    if (REVERSE_BOUNDS_CHECK(x + util::ceil_proper(dx), newy, z + util::ceil_proper(dz)))
+                        return;
 
-                const float newyf = is_liquid ? part.y : part.y - 1.0f;
-                bool can_move_y_check = is_liquid || (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz)) != PartSwapBehavior::NOOP);
-    
-                if (can_move_y_check) {
-                    // If we raycast and collide with another voxel we can't
-                    // do the naive try_move
-                    bool hit = false;
+                    const float newyf = is_liquid ? part.y : part.y - 1.0f;
+                    bool can_move_y_check = is_liquid || (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz)) != PartSwapBehavior::NOOP);
+        
+                    if (can_move_y_check) {
+                        // If we raycast and collide with another voxel we can't
+                        // do the naive try_move
+                        bool hit = false;
 
-                    if (std::abs(dx) > 1.0f || std::abs(dz) > 1.0f) {
-                        auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> PartSwapBehavior {
-                            if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
-                                return PartSwapBehavior::NOOP;
-                            if (TYP(pmap[loc.z][loc.y][loc.x]) == parts[idx].type)
-                                return PartSwapBehavior::SWAP;
-                            return eval_move(idx, loc.x, loc.y, loc.z);
-                        };
+                        if (std::abs(dx) > 1.0f || std::abs(dz) > 1.0f) {
+                            auto pmapOccupied = [idx, this](const Vector3T<signed_coord_t> &loc) -> PartSwapBehavior {
+                                if (REVERSE_BOUNDS_CHECK(loc.x, loc.y, loc.z))
+                                    return PartSwapBehavior::NOOP;
+                                if (TYP(pmap[loc.z][loc.y][loc.x]) == parts[idx].type)
+                                    return PartSwapBehavior::SWAP;
+                                return eval_move(idx, loc.x, loc.y, loc.z);
+                            };
 
-                        RaycastOutput out;
-                        hit = raycast(RaycastInput {
-                            .x = x, .y = y, .z = z,
-                            .vx = dx, .vy = 0.0f, .vz = dz
-                        }, out, pmapOccupied);
+                            RaycastOutput out;
+                            hit = raycast(RaycastInput {
+                                .x = x, .y = y, .z = z,
+                                .vx = dx, .vy = 0.0f, .vz = dz
+                            }, out, pmapOccupied);
 
-                        if (hit)
-                            try_move(idx, out.x, newyf, out.z, out.move);
+                            if (hit)
+                                try_move(idx, out.x, newyf, out.z, out.move);
+                        }
+                        if (!hit) // Haven't already tried to move in raycast
+                            try_move(idx, part.x + dx, newyf, part.z + dz);
+                        break;
                     }
-                    if (!hit) // Haven't already tried to move in raycast
-                        try_move(idx, part.x + dx, newyf, part.z + dz);
                 }
                 break;
             }
