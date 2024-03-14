@@ -16,6 +16,8 @@
 #include "../util/math.h"
 #include "../util/vector_op.h"
 #include "../render/types/octree.h"
+
+#include <omp.h>
 #include <vector>
 
 enum class GravityMode {
@@ -53,7 +55,7 @@ public:
     unsigned int max_ok_causality_range;
     coord_t min_y_per_zslice[ZRES - 2];
     coord_t max_y_per_zslice[ZRES - 2];
-    RNG rng;
+    std::vector<RNG> rngs;
 
 
     Simulation();
@@ -80,6 +82,8 @@ public:
     void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2,
         const part_id id1, const part_id id2);
+
+    inline RNG& rng() { return rngs[omp_get_thread_num()]; }
 
     // Whether to figure out which faces collided with (true)
     // whether to return space before collision (false) or the position of the particle ray collided with (true)

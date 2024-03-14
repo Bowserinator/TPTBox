@@ -43,6 +43,9 @@ Simulation::Simulation():
     max_ok_causality_range = ZRES / (sim_thread_count * 4);
     actual_thread_count = 0;
 
+    for (auto _ = 0; _ < sim_thread_count; _++)
+        rngs.push_back(RNG());
+
     // TODO: singleton?
     _init_can_move();
 }

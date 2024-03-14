@@ -81,8 +81,8 @@ void Simulation::move_behavior(const part_id idx) {
                 ) return;
 
                 for (int i = 0; i < el.Diffusion; i++) {
-                    float dx = rng.chance(1, 2) ? -1 : 1;
-                    float dz = rng.chance(1, 2) ? -1 : 1;
+                    float dx = rng().chance(1, 2) ? -1 : 1;
+                    float dz = rng().chance(1, 2) ? -1 : 1;
                     const int newy = is_liquid ? y : y - 1;
 
                     if (REVERSE_BOUNDS_CHECK(x + util::ceil_proper(dx), newy, z + util::ceil_proper(dz)))
@@ -137,7 +137,7 @@ void Simulation::move_behavior(const part_id idx) {
                 ) {
                     if (gravity_radial_neighbors_occupied) return;
 
-                    Vector3 randv = rng.rand_perpendicular_vector(gravity_force);
+                    Vector3 randv = rng().rand_perpendicular_vector(gravity_force);
                     randv = el.Diffusion * util::norm_vector(randv);
 
                     auto nx = x + randv.x;
@@ -155,7 +155,7 @@ void Simulation::move_behavior(const part_id idx) {
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        Vector3 randv = rng.rand_norm_vector();
+        Vector3 randv = rng().rand_norm_vector();
         auto nx = x + el.Diffusion * randv.x;
         auto ny = y + el.Diffusion * randv.y;
         auto nz = z + el.Diffusion * randv.z;
