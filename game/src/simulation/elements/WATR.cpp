@@ -13,5 +13,5 @@ void Element::Element_WATR() {
     Gravity = 0.3f;
     Diffusion = 5.0f;
 
-    HeatConduct = 255;
+    HeatConduct = 15;
 };

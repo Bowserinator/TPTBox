@@ -22,7 +22,6 @@ struct Particle {
     coord_t rx, ry, rz; // Rounded coordinates
     float temp;
     uint16_t tmp1, tmp2;
-    float temp_tmp;
     RGBA dcolor{0, 0, 0, 0};
 
     Particle(): type(0), id(0) {}
@@ -33,7 +32,6 @@ struct Particle {
         ctype = def.ctype;
         life = def.life;
         temp = def.temp;
-        temp_tmp = def.temp;
         tmp1 = def.tmp1;
         tmp2 = def.tmp2;
         dcolor = def.dcolor;

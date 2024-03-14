@@ -249,7 +249,6 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         if (consider_causality && el.Causality > max_ok_causality_range)
             return;
 
-        // update_heat_conduct(part); // TODO
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
         // Air acceleration
@@ -283,40 +282,6 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         if (part.vx || part.vy || part.vz)
             _raycast_movement(i, x, y, z); // Apply velocity to displacement
     }
-}
-
-void Simulation::update_heat_conduct(Particle &part) {
-    const auto &el = GetElements()[part.type];
-    if (!el.HeatConduct) return;
-    if (!rng.chance(el.HeatConduct, 255)) return;
-
-    float new_temp_sum = part.temp;
-    unsigned int count = 1;
-
-    auto check_neighbor = [this, &new_temp_sum, &count](Particle &part, pmap_id map[ZRES][YRES][XRES], int dx, int dy, int dz) {
-        if (pmap_id r = map[part.rz + dz][part.ry + dy][part.rx + dx]) {
-            auto heat_conduct = GetElements()[TYP(r)].HeatConduct;
-            if (!heat_conduct || !rng.chance(heat_conduct, 255)) return;
-            new_temp_sum += parts[ID(r)].temp;
-            count++;
-        }
-    };
-
-    check_neighbor(part, pmap, 0, 0, 1);
-    check_neighbor(part, pmap, 0, 0, -1);
-    check_neighbor(part, pmap, 0, 1, 0);
-    check_neighbor(part, pmap, 0, -1, 0);
-    check_neighbor(part, pmap, 1, 0, 0);
-    check_neighbor(part, pmap, -1, 0, 0);
-
-    check_neighbor(part, photons, 0, 0, 1);
-    check_neighbor(part, photons, 0, 0, -1);
-    check_neighbor(part, photons, 0, 1, 0);
-    check_neighbor(part, photons, 0, -1, 0);
-    check_neighbor(part, photons, 1, 0, 0);
-    check_neighbor(part, photons, -1, 0, 0);
-
-    part.temp_tmp = new_temp_sum / count;
 }
 
 void Simulation::update() {
@@ -365,10 +330,16 @@ void Simulation::download_heat_from_gpu() {
     if (heat.uploadedOnce) {
         heat.wait_and_get();
 
-        #pragma parallel for
+        #pragma omp parallel for
         for (int i = 0; i < maxId; i++) {
-            if (parts[i].type && heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx] >= 0.0f)
-                parts[i].temp = heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx];
+            coord_t x = parts[i].rx;
+            coord_t y = parts[i].ry;
+            coord_t z = parts[i].rz;
+
+            if (parts[i].type &&
+                    heat.heat_map[z][y][x] >= 0.0f &&
+                    HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct))
+                parts[i].temp = heat.heat_map[z][y][x];
         }
         heat.reset_dirty_chunks();
     }
@@ -396,7 +367,9 @@ void Simulation::recalc_free_particles() {
         const coord_t z = part.rz;
 
         // Heat map update
-        heat.update_temperate(x, y, z, part.temp);
+        auto heatConduct = GetElements()[part.type].HeatConduct;
+        if (heatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, heatConduct))
+            heat.update_temperate(x, y, z, part.temp);
 
         // Ambient occlusion and shadow rules
         if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
@@ -422,7 +395,6 @@ void Simulation::recalc_free_particles() {
         }
 
         update_part(i, false);
-        // part.temp = part.temp_tmp; // TODO
     }
     maxId = newMaxId + 1;
 }
@@ -490,7 +462,7 @@ void Simulation::_force_update_all_shadows() {
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.shadows_force_update = false;
 
-    #pragma parallel for
+    #pragma omp parallel for
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
