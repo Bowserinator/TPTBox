@@ -19,14 +19,14 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
 
 void SimUI::init() {
     mainPanel = new ui::Panel(
-        Vector2{ 0, (float)GetScreenHeight() - 130 },
-        Vector2{ (float)GetScreenWidth(), 130 },
+        Vector2{ 0, (float)GetScreenHeight() - 90 },
+        Vector2{ (float)GetScreenWidth(), 90 },
         ui::Style { .backgroundColor = BLACK }
     );
 
     // Label for displaying element descriptions
     elementDescLabel = new ui::Label(
-        Vector2{ (float)GetScreenWidth() - 1005, 0 },
+        Vector2{ (float)GetScreenWidth() - 1005, -30.0f },
         Vector2{ 1000.0f, 30.0f },
         "",
         ui::Style {
@@ -44,7 +44,7 @@ void SimUI::init() {
         bg_color.a = 255;
 
         float btnX = mainPanel->size.x - (id % 22) * (styles::ELEMENT_BUTTON_SIZE.x + 5);
-        float btnY = (id > 22 ? styles::ELEMENT_BUTTON_SIZE.y + 5 : 0) + 35;
+        float btnY = (id > 22 ? styles::ELEMENT_BUTTON_SIZE.y + 5 : 0) + 10;
 
         ui::TextButton * btn = new ui::TextButton(
             Vector2{btnX, btnY},
@@ -61,7 +61,8 @@ void SimUI::init() {
                 .setAllTextColors(el.Color.brightness() < 128 ? WHITE : BLACK)
         );
         btn->setClickCallback([this, id]() { brushRenderer->set_selected_element(id); });
-        btn->setEnterCallback([this, &el]() {
+        btn->setEnterCallback([this, id]() {
+            const auto &el = GetElements()[id];
             elementDescLabel->setText(el.Description);
             elementDescAlpha = 1.0f;
         });

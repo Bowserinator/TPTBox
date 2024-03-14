@@ -18,7 +18,7 @@ ScreenGameplay gameplay;
 Screen * currentScreen = &gameplay;
 
 constexpr int screenWidth = 1280;
-constexpr int screenHeight = 720;
+constexpr int screenHeight = 800;
 
 #ifdef DEBUG
 #include <glad.h>
