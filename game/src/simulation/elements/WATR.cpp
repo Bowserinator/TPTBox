@@ -14,4 +14,7 @@ void Element::Element_WATR() {
     Diffusion = 5.0f;
 
     HeatConduct = 15;
+
+    HighTemperature = R_ZERO_C + 100.0f;
+    HighTemperatureTransition = PT_GAS;
 };

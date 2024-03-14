@@ -4,6 +4,7 @@
 
 static int update(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
+static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS);
 
 void Element::Element_GOL() {
     State = ElementState::TYPE_SOLID;
@@ -15,6 +16,7 @@ void Element::Element_GOL() {
     DefaultProperties.tmp1 = 1;
 
     Graphics = &graphics;
+    OnChangeType = &onChangeType;
 };
 
 static int graphics(GRAPHICS_FUNC_ARGS) {
@@ -23,4 +25,14 @@ static int graphics(GRAPHICS_FUNC_ARGS) {
     color = 0xFF0000FF | ((sim.frame_count % 256) << 8);
 
     return 0;
+}
+
+static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS) {
+    if (newType == PT_GOL) {
+        sim.gol.gol_map[z][y][x] = 2;
+        sim.gol.golCount++;
+    } else {
+        sim.gol.gol_map[z][y][x] = 0;
+        sim.gol.golCount--;
+    }
 }

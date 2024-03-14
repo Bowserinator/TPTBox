@@ -67,6 +67,7 @@ public:
 
     part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
     void kill_part(const part_id id);
+    bool part_change_type(const part_id i, const part_type new_type);
 
     void update();
     void dispatch_compute_shaders();

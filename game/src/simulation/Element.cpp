@@ -16,7 +16,7 @@ Element::Element() {
 
     MenuVisible = false;
     MenuSection = 0; // TODO;
-    Enabled = false;
+    Enabled = true;
 	Causality = 0;
 
 	Advection = 0.0f;
@@ -38,11 +38,11 @@ Element::Element() {
 	LowPressure;
 	LowPressureTransition;
 	HighPressure;
-	HighPressureTransition;
-	LowTemperature;
-	LowTemperatureTransition;
-	HighTemperature;
-	HighTemperatureTransition;*/
+	HighPressureTransition;*/
+	LowTemperature = 0.0f;
+	LowTemperatureTransition = Transition::NONE;
+	HighTemperature = 0.0f;
+	HighTemperatureTransition = Transition::NONE;
 
 	DefaultProperties.ctype = 0;
 	DefaultProperties.life = 0;
@@ -53,4 +53,7 @@ Element::Element() {
 
     Update = nullptr;
 	Graphics = nullptr;
+	CreateAllowed = nullptr;
+	OnCreate = nullptr;
+	OnChangeType = nullptr;
 }

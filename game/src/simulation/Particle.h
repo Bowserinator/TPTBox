@@ -12,11 +12,11 @@ namespace PartFlags {
 }
 
 struct Particle {
-    uint16_t type;
+    part_type type;
     part_id id;
     util::Bitset8 flag;
 
-    uint16_t ctype;
+    part_type ctype;
     int16_t life = 0;
     float x, y, z, vx, vy, vz;
     coord_t rx, ry, rz; // Rounded coordinates

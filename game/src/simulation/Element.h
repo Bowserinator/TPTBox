@@ -34,20 +34,23 @@ public:
 	unsigned int LatentHeat;
 
 	float LowPressure;
-	int LowPressureTransition;
+	part_type_s LowPressureTransition;
 	float HighPressure;
-	int HighPressureTransition;
+	part_type_s HighPressureTransition;
 	float LowTemperature;
-	int LowTemperatureTransition;
+	part_type_s LowTemperatureTransition;
 	float HighTemperature;
-	int HighTemperatureTransition;
+	part_type_s HighTemperatureTransition;
 
 	int (*Update)(UPDATE_FUNC_ARGS);
 	int (*Graphics)(GRAPHICS_FUNC_ARGS);
+	bool (*CreateAllowed)(CREATE_ALLOWED_FUNC_ARGS);
+	void (*OnCreate)(ON_CREATE_FUNC_ARGS);
+	void (*OnChangeType)(ON_CHANGE_TYPE_FUNC_ARGS);
 
 	Particle DefaultProperties;
 
-    // TODO: create function, create allowed, change type, ctype draw
+    // TODO ctype draw
 
 	RGBA Color;
 	util::Bitset8 GraphicsFlags;

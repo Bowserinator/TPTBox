@@ -104,6 +104,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     const part_id next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
     const part_id old_pfree = pfree;
 
+    if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
+        return PartErr::NOT_ALLOWED;
+
     parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
     parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
     parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
@@ -121,11 +124,10 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[pfree].vz = 0.0f;
     parts[pfree].assign_with_defaults(el.DefaultProperties);
 
-    if (type == PT_GOL) {
-        // TODO
-        gol.gol_map[z][y][x] = 2; // TODO: have 2nd compute shader to upload or something or track diffs
-        gol.golCount++;
-    }
+    if (el.OnChangeType)
+        el.OnChangeType(*this, pfree, x, y, z, PT_NONE, type);
+    if (el.OnCreate)
+        el.OnCreate(*this, pfree, x, y, z, type);
 
     if (paused) {
         if (_should_do_lighting(parts[pfree])) {
@@ -157,10 +159,8 @@ void Simulation::kill_part(const part_id i) {
     else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
         photons[z][y][x] = 0;
 
-    if (part.type == PT_GOL) {
-        gol.gol_map[z][y][x] = 0;
-        gol.golCount--;
-    }
+    if (GetElements()[part.type].OnChangeType)
+        GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
@@ -179,6 +179,54 @@ void Simulation::kill_part(const part_id i) {
     }
     part.id = -pfree;
     pfree = i;
+}
+
+bool Simulation::part_change_type(const part_id i, const part_type new_type) {
+    const auto &el = GetElements()[new_type];
+    if (!el.Enabled || new_type == PT_NONE) {
+		kill_part(i);
+		return true;
+	}
+
+    const part_type prev_part_type = parts[i].type;
+    const coord_t x = parts[i].rx;
+    const coord_t y = parts[i].ry;
+    const coord_t z = parts[i].rz;
+    const bool is_energy = el.State == ElementState::TYPE_ENERGY;
+    
+    if (el.CreateAllowed && !el.CreateAllowed(*this, i, x, y, z, new_type))
+        return false;
+    if (GetElements()[parts[i].type].OnChangeType)
+        GetElements()[parts[i].type].OnChangeType(*this, i, x, y, z, parts[i].type, new_type);
+    if (el.OnChangeType)
+        el.OnChangeType(*this, i, x, y, z, parts[i].type, new_type);
+
+    if (paused && _should_do_lighting(parts[i]))
+        graphics.shadows_force_update = true;
+
+    parts[i].type = new_type;
+
+	if (is_energy) {
+		photons[z][y][x] = PMAP(new_type, i);
+		if (pmap[z][y][x] && ID(pmap[z][y][x]) == i)
+			pmap[z][y][x] = 0;
+	}
+	else {
+		pmap[z][y][x] = PMAP(new_type, i);
+		if (photons[z][y][x] && ID(photons[z][y][x]) == i)
+			photons[z][y][x] = 0;
+	}
+
+    parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+    parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
+    parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
+
+    if (paused && _should_do_lighting(parts[i])) // Do this check again since type changed
+        graphics.shadows_force_update = true;
+
+    _set_color_data_at(x, y, z, &parts[i]);
+
+	return true;
 }
 
 void Simulation::update_zslice(const coord_t pz) {
@@ -341,8 +389,16 @@ void Simulation::download_heat_from_gpu() {
 
             if (parts[i].type &&
                     heat.heat_map[z][y][x] >= 0.0f &&
-                    HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct))
+                    HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)) {
                 parts[i].temp = heat.heat_map[z][y][x];
+                
+                // Heat transition
+                const auto &el = GetElements()[parts[i].type];
+                if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature)
+                    part_change_type(i, el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighTemperatureTransition);
+                else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature)
+                    part_change_type(i, el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowTemperatureTransition);
+            }
         }
         heat.reset_dirty_chunks();
     }

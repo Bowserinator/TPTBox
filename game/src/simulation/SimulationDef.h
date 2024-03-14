@@ -12,6 +12,10 @@ using ElementType = unsigned int;
 using part_id = int32_t;
 using pmap_id = int32_t; // This is ID and type merged into 1 32 bit value
 
+// Unsigned
+using part_type = uint16_t;
+using part_type_s = int32_t; // Must be larger than part_type
+
 // Pmap and photons store positive ids in this format:
 // [TYP 10 bits][ID 22 bits]
 constexpr uint32_t PMAP_ID_BITS = 22;
@@ -66,6 +70,12 @@ enum class PartSwapBehavior: uint8_t {
 namespace PartErr {
     constexpr part_id ALREADY_OCCUPIED = -1;
     constexpr part_id PARTS_FULL = -3;
+    constexpr part_id NOT_ALLOWED = -4;
+};
+
+namespace Transition {
+    constexpr part_type_s NONE = -1;
+    constexpr part_type_s TO_CTYPE = -2;
 };
 
 #endif
