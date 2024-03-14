@@ -215,8 +215,8 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
 
             _set_color_data_at(x, y, z, &parts[idx]);
             _set_color_data_at(oldx, oldy, oldz, nullptr);
-            heat.heat_map[z][y][x] = heat.heat_map[oldz][oldy][oldx];
-            heat.heat_map[oldz][oldy][oldx] = -1.0f;
+            heat.update_temperate(x, y, z, heat.heat_map[oldz][oldy][oldx]);
+            heat.update_temperate(oldx, oldy, oldz, -1.0f);
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -243,7 +243,10 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
     _set_color_data_at(x1, y1, z1, id2 ? &parts[id2] : nullptr);
     _set_color_data_at(x2, y2, z2, id1 ? &parts[id1] : nullptr);
+
     std::swap(heat.heat_map[z1][y1][x1], heat.heat_map[z2][y2][x2]);
+    heat.flag_temp_update(x1, y1, z1);
+    heat.flag_temp_update(x2, y2, z2);
 
     std::swap(parts[id1].x, parts[id2].x);
     std::swap(parts[id1].y, parts[id2].y);

@@ -11,6 +11,9 @@ layout(std430, binding = 1) writeonly restrict buffer HeatOutput {
 };
 layout(std430, binding = 2) readonly restrict buffer Constants {
     ivec4 SIMRES;
+    ivec4 COMPUTE_BLOCKS;
+    uint DIRTY_INDEX_COUNT;
+    uint DIRTY_INDICES[];
 };
 
 uint idx(uint x, uint y, uint z) {
@@ -18,17 +21,22 @@ uint idx(uint x, uint y, uint z) {
 }
 
 void main() {
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-    uint z = gl_GlobalInvocationID.z;
+    uint id = DIRTY_INDICES[gl_WorkGroupID.x];
 
-    uint baseIdx = idx(x, y, z);
-    float selfTemp = heatIn[baseIdx];
+    uint z = id / (COMPUTE_BLOCKS.x * COMPUTE_BLOCKS.y);
+    id -= z * (COMPUTE_BLOCKS.x * COMPUTE_BLOCKS.y);
+    uint y = id / COMPUTE_BLOCKS.x;
+    id -= y * COMPUTE_BLOCKS.x;
+    uint x = id;
 
-    if (clamp(ivec3(x, y, z), ivec3(1), SIMRES.xyz - ivec3(2)) != ivec3(x, y, z) || selfTemp < 0.0) {
-        heatOut[baseIdx] = -1.0;
+    uvec3 coords = ivec3(x, y, z) * gl_WorkGroupSize + gl_LocalInvocationID;
+
+    if (clamp(coords, uvec3(1), SIMRES.xyz - uvec3(2)) != coords)
         return;
-    }
+
+    uint baseIdx = idx(coords.x, coords.y, coords.z);
+    float selfTemp = heatIn[baseIdx];
+    if (selfTemp < 0.0) return;
 
     float total = selfTemp;
     int count = 1;

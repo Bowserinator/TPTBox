@@ -68,6 +68,7 @@ public:
 
     void update();
     void dispatch_compute_shaders();
+    void download_heat_from_gpu();
     void update_heat_conduct(Particle &part);
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();

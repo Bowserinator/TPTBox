@@ -30,7 +30,6 @@ Simulation::Simulation():
     frame_count = 0;
     parts_count = 0;
     gravity_mode = GravityMode::VERTICAL;
-    heat.sim = this;
     heat.uploadedOnce = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
@@ -162,7 +161,7 @@ void Simulation::kill_part(const part_id i) {
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
-    heat.heat_map[z][y][x] = -1.0f;
+    heat.update_temperate(x, y, z, -1.0f);
 
     if (i == maxId && i > 0)
         maxId--;
@@ -329,21 +328,10 @@ void Simulation::update() {
 
     auto t = GetTime();
     if (gol.golCount) gol.wait_and_get();
+    download_heat_from_gpu();
     
-    // TODO: move to own function
-    // and explain this if statement is to avoid odwnloading 0s on first pass
-    // before heat values were assigned
-    if (heat.uploadedOnce) {
-        heat.wait_and_get();
-        // TODO: parallelize
-        for (int i = 0; i < maxId; i++)
-            if (parts[i].type && heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx] >= 0.0f) {
-                parts[i].temp = heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx];
-            }
-    }
-
     auto end = (GetTime() - t);
-    std::cout << end << "\n";
+    // std::cout << end << "\n";
 
     // air.update(); // TODO
 
@@ -371,6 +359,21 @@ void Simulation::update() {
     frame_count++;
 }
 
+void Simulation::download_heat_from_gpu() {
+    // Only download if we uploaded heat values at least once otherwise
+    // all we'll get is 0s
+    if (heat.uploadedOnce) {
+        heat.wait_and_get();
+
+        #pragma parallel for
+        for (int i = 0; i < maxId; i++) {
+            if (parts[i].type && heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx] >= 0.0f)
+                parts[i].temp = heat.heat_map[parts[i].rz][parts[i].ry][parts[i].rx];
+        }
+        heat.reset_dirty_chunks();
+    }
+}
+
 void Simulation::recalc_free_particles() {
     parts_count = 0;
     part_id newMaxId = 0;
@@ -393,7 +396,7 @@ void Simulation::recalc_free_particles() {
         const coord_t z = part.rz;
 
         // Heat map update
-        heat.heat_map[z][y][x] = part.temp;
+        heat.update_temperate(x, y, z, part.temp);
 
         // Ambient occlusion and shadow rules
         if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
