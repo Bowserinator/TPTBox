@@ -5,7 +5,9 @@
 #include "SimulationDef.h"
 #include "../util/types/color.h"
 #include "../util/types/persistent_buffer.h"
+
 #include <array>
+#include <atomic>
 
 class GOLRule {
 public:
@@ -34,7 +36,7 @@ public:
     ~SimulationGol();
 
     uint8_t gol_map[ZRES][YRES][XRES]; // Map of GOL Ids (max 255)
-    unsigned int golCount = 0;
+    std::atomic<unsigned int> golCount = 0;
     std::array<bool, ZRES> zsliceHasGol;
 
     void init();

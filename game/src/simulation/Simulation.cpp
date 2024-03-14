@@ -98,14 +98,13 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
 
     if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
     if (pfree >= NPARTS) return PartErr::PARTS_FULL;
+    if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
+        return PartErr::NOT_ALLOWED;
 
     // Create new part
     // Note: should it allow creation off screen? TODO
     const part_id next_pfree = parts[pfree].id < 0 ? -parts[pfree].id : pfree + 1;
     const part_id old_pfree = pfree;
-
-    if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
-        return PartErr::NOT_ALLOWED;
 
     parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
     parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
@@ -243,17 +242,11 @@ void Simulation::update_zslice(const coord_t pz) {
         y1 = min_y_per_zslice[pz - 1];
         y2 = max_y_per_zslice[pz - 1];
     } else {
-        // Dirty rect is expanded by 1 along each axis to allow GOL to propagate
-        y1 = std::max(1, std::max({
-            min_y_per_zslice[std::min((int)ZRES - 2, pz - 0)] - 1,
-            min_y_per_zslice[pz - 1] - 1,
-            min_y_per_zslice[std::max(1, pz - 2)] - 1
-        }));
-        y2 = std::min((int)(YRES - 1), std::max({
-            max_y_per_zslice[pz - 1] + 2,
-            max_y_per_zslice[std::min((int)ZRES - 2, pz - 0)] + 2, // z + 1
-            max_y_per_zslice[std::max(1, pz - 2)] + 2              // z - 1
-        }));
+        // Dirty rect is ignored to allow GOL to propagate
+        // As GOL can wrap around this is the easiest way to prevent
+        // synchronization errors with gol_map (Believe me I tried)
+        y1 = 1;
+        y2 = YRES - 1;
     }
 
     for (coord_t py = y1; py < y2; py++)
@@ -271,8 +264,10 @@ void Simulation::update_zslice(const coord_t pz) {
             }
         }
         else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
-            part_id i = create_part(px, py, pz, PT_GOL); // TODO: assign type, etc..
-            parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
+            part_id i = create_part(px, py, pz, PT_GOL); // TODO: assign type
+            if (i >= 0) {
+                parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
+            }
         }
 
         if (photons[pz][py][px])
@@ -343,7 +338,8 @@ void Simulation::update() {
     }
 
     auto t = GetTime();
-    if (gol.golCount) gol.wait_and_get();
+    // if (gol.golCount)
+    gol.wait_and_get();
     download_heat_from_gpu();
     
     auto end = (GetTime() - t);
@@ -460,8 +456,8 @@ void Simulation::recalc_free_particles() {
 
 void Simulation::dispatch_compute_shaders() {
     if (paused) return;
-    if (gol.golCount)
-        gol.dispatch();
+    // if (gol.golCount) // TODO
+    gol.dispatch();
     heat.dispatch();
 }
 

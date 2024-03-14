@@ -57,6 +57,11 @@ void SimulationGol::init() {
     ssbosData = util::PersistentBuffer<6>(GL_SHADER_STORAGE_BUFFER, sizeof(gol_map), util::PBFlags::WRITE_ALT_READ);
     ssboRules = rlLoadShaderBuffer(sizeof(golRuleData), NULL, RL_STATIC_READ);
 
+    for (int i = 0; i < 6; i++) {
+        std::fill(&ssbosData.get<uint8_t>(i)[0], &ssbosData.get<uint8_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
+        ssbosData.lock(i);
+    }
+
     for (auto i = 0; i < GOL_RULE_COUNT; i++) {
         golRuleData.data[2*i]   = golRules[i].birth | (static_cast<uint64_t>(golRules[i].neighborhood) << 31);
         golRuleData.data[2*i+1] = golRules[i].survive;

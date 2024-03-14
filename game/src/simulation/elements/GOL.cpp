@@ -31,6 +31,7 @@ static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS) {
     if (newType == PT_GOL) {
         sim.gol.gol_map[z][y][x] = 2;
         sim.gol.golCount++;
+        sim.gol.zsliceHasGol[z] = true;
     } else {
         sim.gol.gol_map[z][y][x] = 0;
         sim.gol.golCount--;
