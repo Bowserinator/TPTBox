@@ -21,7 +21,8 @@ void ui::Panel::tick(float dt) {
 }
 
 void ui::Panel::draw(const Vector2 &screenPos) {
-    DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.backgroundColor);
+    if (style.backgroundColor.a)
+        DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.backgroundColor);
 
     InteractiveComponent::draw(screenPos);
     for (auto child : children)

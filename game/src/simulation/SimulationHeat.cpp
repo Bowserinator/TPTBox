@@ -1,6 +1,7 @@
 #include "SimulationHeat.h"
 #include "Simulation.h"
 #include "../util/types/gl_time_query.h"
+#include "../render/constants.h"
 
 #include <cstring>
 #include <glad.h>
@@ -11,11 +12,17 @@ SimulationHeat::~SimulationHeat() {
 }
 
 void SimulationHeat::init() {
+#ifdef EMBED_SHADERS
+    #include "../../resources/shaders/generated/heat.comp.h"
+    heatShader = rlCompileShader(heat_comp_source, RL_COMPUTE_SHADER);
+    heatProgram = rlLoadComputeShaderProgram(heatShader);
+#else
     char * heatCode = LoadFileText("resources/shaders/heat.comp");
     heatShader = rlCompileShader(heatCode, RL_COMPUTE_SHADER);
     heatProgram = rlLoadComputeShaderProgram(heatShader);
     UnloadFileText(heatCode);
-
+#endif
+    
     ssboConstants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
 

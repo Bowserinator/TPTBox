@@ -98,7 +98,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
 
     // Begin PFREE MODIFICATION
     util::unique_spinlock _lock(parts_add_remove_lock);
-    
+
     if (pfree >= NPARTS) return PartErr::PARTS_FULL;
     if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
         return PartErr::NOT_ALLOWED;
@@ -163,18 +163,18 @@ void Simulation::kill_part(const part_id i) {
     if (GetElements()[part.type].OnChangeType)
         GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
-    part.type = PT_NONE;
-    part.flag[PartFlags::IS_ENERGY] = 0;
-    heat.update_temperate(x, y, z, -1.0f);
-
-    _set_color_data_at(x, y, z, nullptr);
-
     if (paused) {
         if (_should_do_lighting(part))
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
         graphics.shadows_force_update = true;
         parts_count--;
     }
+
+    part.type = PT_NONE;
+    part.flag[PartFlags::IS_ENERGY] = 0;
+    heat.update_temperate(x, y, z, -1.0f);
+
+    _set_color_data_at(x, y, z, nullptr);
 
     // Update PFREE pointer in linked list
     util::unique_spinlock _lock(parts_add_remove_lock);
@@ -342,8 +342,7 @@ void Simulation::update() {
     }
 
     auto t = GetTime();
-    // if (gol.golCount)
-    gol.wait_and_get();
+    if (gol.golCount) gol.wait_and_get();
     download_heat_from_gpu();
     
     auto end = (GetTime() - t);
@@ -460,8 +459,7 @@ void Simulation::recalc_free_particles() {
 
 void Simulation::dispatch_compute_shaders() {
     if (paused) return;
-    // if (gol.golCount) // TODO
-    gol.dispatch();
+    if (gol.golCount) gol.dispatch();
     heat.dispatch();
 }
 

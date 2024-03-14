@@ -12,11 +12,10 @@ namespace ui {
         Modal(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault()): Panel(pos, size, style) {}
 
         virtual void draw(const Vector2 &screenPos) override {
-            DrawRectangle(screenPos.x, screenPos.y, size.x, size.y, style.getBackgroundColor(this));
+            Panel::draw(screenPos);
             DrawRectangleLinesEx(Rectangle { screenPos.x, screenPos.y, size.x, size.y },
                 style.borderThickness,
                 style.getBorderColor(this));
-            Panel::draw(screenPos);
         }
     };
 }
