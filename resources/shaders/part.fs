@@ -187,7 +187,7 @@ uint sampleVoxels(ivec3 pos, int level) {
 // result.xyz = block pos
 // result.w = normal (-x -y -z +x +y +z = 0 1 2 3 4 5)
 // Thanks to unnick for writing this code
-ivec4 raymarch(vec3 pos, vec3 dir, out RayCastData data) {
+ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
     vec3 idir = 1.0 / dir;
     bvec3 dirSignBits = signBit(dir);
     ivec3 rayStep = 1 - ivec3(dirSignBits) * 2; // sign(dir)

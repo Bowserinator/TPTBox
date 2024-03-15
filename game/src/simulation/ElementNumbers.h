@@ -1,4 +1,4 @@
-// 254785128
+// 3703344507
 // Do not modify the hash above, it is used for determining
 // if the element list has changed
 
@@ -22,6 +22,7 @@ ELEMENT_DEFINE(WATR,2);
 ELEMENT_DEFINE(GAS,3);
 ELEMENT_DEFINE(GOL,4);
 ELEMENT_DEFINE(PHOT,5);
+ELEMENT_DEFINE(GLAS,6);
 
 
 #undef ELEMENT_DEFINE

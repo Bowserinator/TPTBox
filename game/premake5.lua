@@ -10,6 +10,7 @@ project (workspaceName)
 	buildoptions {
 		"-fopenmp",
 		"-Wall",
+		"-Wno-od",
 		"-Wno-sign-compare",
 		"-flto", -- Link time optimization
 	}

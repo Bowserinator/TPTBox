@@ -81,6 +81,8 @@ void ScreenGameplay::init() {
     for (int y = 1; y < 2; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y, z, PT_WATR);
+
+        sim.create_part(x, y + 50, z, PT_GLAS);
     }
 
     // for (int x = 1; x < XRES - 1; x++) 

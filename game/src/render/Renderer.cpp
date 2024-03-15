@@ -146,7 +146,7 @@ void Renderer::init() {
 
         float BG_COLOR[] = { BACKGROUND_COLOR.r / 255.0f, BACKGROUND_COLOR.g / 255.0f, BACKGROUND_COLOR.b / 255.0f };
         float SH_COLOR[] = { SHADOW_COLOR.r / 255.0f, SHADOW_COLOR.g / 255.0f, SHADOW_COLOR.b / 255.0f };
-        settings_writer->write_member("MAX_RAY_STEPS", 256 * 2);
+        settings_writer->write_member("MAX_RAY_STEPS", 256 * 3);
         settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer->write_member("AO_STRENGTH", 0.6f);
         settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
