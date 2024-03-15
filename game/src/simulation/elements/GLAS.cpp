@@ -13,8 +13,8 @@ void Element::Element_GLAS() {
 
 	LowTemperature = 0.0f;
 	LowTemperatureTransition = Transition::NONE;
-	HighTemperature = R_ZERO_C + 1600.0f;
-	HighTemperatureTransition = Transition::NONE;
+	HighTemperature = 200.0_C;
+	HighTemperatureTransition = PT_LAVA;
 
     Weight = 100;
 };

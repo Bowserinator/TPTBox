@@ -67,6 +67,9 @@ void Simulation::_init_can_move() {
         can_move[movingType][PT_NONE] = PartSwapBehavior::SWAP;
         can_move[PT_NONE][movingType] = PartSwapBehavior::SWAP;
 
+        // Photons can move through:
+        can_move[PT_PHOT][PT_GLAS] = PartSwapBehavior::OCCUPY_SAME;
+
 		for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
             // Heavier elements can swap with lighter ones
 			if (elements[movingType].Weight > elements[destinationType].Weight)

@@ -11,6 +11,7 @@ project (workspaceName)
 		"-fopenmp",
 		"-Wall",
 		"-Wno-odr",
+		"-Wno-od",
 		"-Wno-sign-compare",
 		"-flto", -- Link time optimization
 	}

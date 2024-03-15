@@ -63,7 +63,7 @@ layout (location = 2) out vec4 FragBlurOnly;
 const float FOG_START_PERCENT = 0.75;     // After this percentage of max ray steps begins to fade to black
 const float ALPHA_THRESH = 0.96;          // Above this alpha a ray is considered "stopped"
 const float AIR_INDEX_REFRACTION = 1.0;   // Note: can't be 0
-const float GLASS_INDEX_REFRACTION = 1.1; // What everything that's "refractive" is assigned to
+const float GLASS_INDEX_REFRACTION = 1.05; // What everything that's "refractive" is assigned to
 const vec3 FACE_COLORS = vec3(0.85, 1.0, 0.92);
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const float DEPTH_FAR_AWAY = 10000.0;
