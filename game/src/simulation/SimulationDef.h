@@ -42,6 +42,8 @@ constexpr float R_ZERO_C = 273.15f;
 constexpr float R_TEMP = R_ZERO_C + 22.0f;
 constexpr float MAX_VELOCITY = 50.0f;
 
+constexpr float operator""_C(long double tempC) { return tempC + R_ZERO_C; }
+
 constexpr bool BOUNDS_CHECK(int x, int y, int z) {
     return x > 0 && x < (int)(XRES - 1) && y > 0 && y < (int)(YRES - 1) && z > 0 && z < (int)(ZRES - 1);
 }

@@ -15,6 +15,6 @@ void Element::Element_WATR() {
 
     HeatConduct = 15;
 
-    HighTemperature = R_ZERO_C + 100.0f;
+    HighTemperature = 100.0_C;
     HighTemperatureTransition = PT_GAS;
 };
