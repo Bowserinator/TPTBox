@@ -228,6 +228,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
             throw std::invalid_argument("Particle of type " + std::to_string(parts[idx].type) + " in try_move() has unresolved move behavior of SPECIAL");
             break;
         #endif
+        default: break;
     }
 
     parts[idx].x = tx;

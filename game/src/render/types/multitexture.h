@@ -8,7 +8,7 @@
 class MultiTexture {
 public:
     MultiTexture():
-        frameBuffer(0), width(0), height(0), colorTexture(0),
+        width(0), height(0), frameBuffer(0), colorTexture(0),
         glowOnlyTexture(0), blurOnlyTexture(0), depthTexture(0) {}
     MultiTexture(const unsigned int screenWidth, const unsigned int screenHeight);
     ~MultiTexture();

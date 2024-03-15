@@ -83,7 +83,7 @@ namespace util {
 
             glGenBuffers(bufferCount, buffsId);
 
-            for (int i = 0; i < bufferCount; i++) {
+            for (std::size_t i = 0; i < bufferCount; i++) {
                 if (flag == PBFlags::WRITE_ALT_READ)
                     rwFlag = i % 2 == 0 ? GL_MAP_WRITE_BIT : GL_MAP_READ_BIT;
                 else if (flag == PBFlags::READ_ALT_WRITE)
@@ -105,7 +105,7 @@ namespace util {
     template <std::size_t bufferCount>
     PersistentBuffer<bufferCount>::~PersistentBuffer() {
         if (bufferCount && _size) {
-            for (int i = 0; i < bufferCount; i++) {
+            for (std::size_t i = 0; i < bufferCount; i++) {
                 glBindBuffer(target, buffsId[i]);
                 glUnmapBuffer(target);
             }

@@ -15,7 +15,7 @@ namespace util {
     template <class T, std::size_t N>
     class heap_array {
     public:
-        heap_array(): _size(0), _data(nullptr) {
+        heap_array(): _data(nullptr), _size(0) {
             _data = new T[N];
             _size = N;
         }

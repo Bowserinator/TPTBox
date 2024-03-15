@@ -22,10 +22,11 @@ public:
     Vector3 minBound;
     Vector3 maxBound;
 
-    RenderCamera(): camera{0}, _viewProjMatrixUpdated(false),
-            _isLerping(false), _lerpSteps(0), _hash(0),
+    RenderCamera(): camera{0},
             minBound{(float)INT_MIN, (float)INT_MIN, (float)INT_MIN},
             maxBound{(float)INT_MAX, (float)INT_MAX, (float)INT_MAX},
+            _viewProjMatrixUpdated(false),
+            _isLerping(false), _lerpSteps(0), _hash(0),
             _first_person_locked(false)
     {
         frustum = std::vector<Plane>(6);

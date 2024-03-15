@@ -152,10 +152,10 @@ namespace util {
         mat.m6 /= sy;
         mat.m7 /= sy;
         auto sz = util::hypot(mat.m8, mat.m9, mat.m10, mat.m11);
-        mat.m8 /= sy;
-        mat.m9 /= sy;
-        mat.m10 /= sy;
-        mat.m11 /= sy;
+        mat.m8 /= sz;
+        mat.m9 /= sz;
+        mat.m10 /= sz;
+        mat.m11 /= sz;
     }
 
     /**

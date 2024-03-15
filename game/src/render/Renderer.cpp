@@ -91,7 +91,7 @@ void Renderer::init() {
 
     // Ambient occlusion texture, uses texture for free linear filtering
     glGenTextures(BUFFER_COUNT, ao_tex);
-    for (auto i = 0; i < BUFFER_COUNT; i++) {
+    for (std::size_t i = 0; i < BUFFER_COUNT; i++) {
         glBindTexture(GL_TEXTURE_3D, ao_tex[i]);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -100,7 +100,7 @@ void Renderer::init() {
 
     // Shadow texture
     glGenTextures(BUFFER_COUNT, shadow_tex);
-    for (auto i = 0; i < BUFFER_COUNT; i++) {
+    for (std::size_t i = 0; i < BUFFER_COUNT; i++) {
         glBindTexture(GL_TEXTURE_2D, shadow_tex[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -195,12 +195,6 @@ void Renderer::update_colors_and_lod() {
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->graphics.color_data_modified[i] & ssbo_bit) {
-            // Since the chunks might overestimate actual color count
-            // on last one take # of colors - last chunk boundary
-            const auto chunk_len = (i == COLOR_DATA_CHUNK_COUNT - 1) ?
-                sim->graphics.color_data.size() - i * COLOR_DATA_CHUNK_SIZE :
-                COLOR_DATA_CHUNK_SIZE;
-
             std::copy(&sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
                 &sim->graphics.color_data[(i + 1) * COLOR_DATA_CHUNK_SIZE],
                 &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
@@ -236,7 +230,7 @@ void Renderer::update_colors_and_lod() {
         glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
         constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
         #pragma omp simd
-        for (int i = 0; i < sim->graphics.ao_blocks.size(); i++)
+        for (std::size_t i = 0; i < sim->graphics.ao_blocks.size(); i++)
             ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
         glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
     }
@@ -255,10 +249,10 @@ void Renderer::draw_octree_debug() {
         int blockY = (i / X_BLOCKS) % Y_BLOCKS;
         int blockZ = (i / X_BLOCKS / Y_BLOCKS);
 
-        for (int layer = OCTREE_BLOCK_DEPTH - 3; layer <= OCTREE_BLOCK_DEPTH; layer++) {
-        for (int dz = 0; dz < (OCTREE_BLOCK_DIM >> layer); dz++) {
-        for (int dy = 0; dy < (OCTREE_BLOCK_DIM >> layer); dy++) {
-        for (int dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
+        for (std::size_t layer = OCTREE_BLOCK_DEPTH - 3; layer <= OCTREE_BLOCK_DEPTH; layer++) {
+        for (std::size_t dz = 0; dz < (OCTREE_BLOCK_DIM >> layer); dz++) {
+        for (std::size_t dy = 0; dy < (OCTREE_BLOCK_DIM >> layer); dy++) {
+        for (std::size_t dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
             unsigned int morton = util::morton_decode8(dx, dy, dz);
 
             if (sim->graphics.octree_blocks[i].data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {

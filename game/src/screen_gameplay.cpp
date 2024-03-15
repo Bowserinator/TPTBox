@@ -35,9 +35,6 @@ static double simTime = 0.0f;
 static double drawTime = 0.0f;
 static double fps = 1.0f;
 
-static int currentElementId = 1;
-
-
 void ScreenGameplay::init() {
     render_camera = RenderCamera(); // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position

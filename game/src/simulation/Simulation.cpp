@@ -43,7 +43,7 @@ Simulation::Simulation():
     max_ok_causality_range = ZRES / (sim_thread_count * 4);
     actual_thread_count = 0;
 
-    for (auto _ = 0; _ < sim_thread_count; _++)
+    for (std::size_t _ = 0; _ < sim_thread_count; _++)
         rngs.push_back(RNG());
 
     // TODO: singleton?
@@ -99,7 +99,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     // Begin PFREE MODIFICATION
     util::unique_spinlock _lock(parts_add_remove_lock);
 
-    if (pfree >= NPARTS) return PartErr::PARTS_FULL;
+    if ((unsigned int)pfree >= NPARTS) return PartErr::PARTS_FULL;
     if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
         return PartErr::NOT_ALLOWED;
 
@@ -200,9 +200,9 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
     if (el.CreateAllowed && !el.CreateAllowed(*this, i, x, y, z, new_type))
         return false;
     if (GetElements()[parts[i].type].OnChangeType)
-        GetElements()[parts[i].type].OnChangeType(*this, i, x, y, z, parts[i].type, new_type);
+        GetElements()[parts[i].type].OnChangeType(*this, i, x, y, z, prev_part_type, new_type);
     if (el.OnChangeType)
-        el.OnChangeType(*this, i, x, y, z, parts[i].type, new_type);
+        el.OnChangeType(*this, i, x, y, z, prev_part_type, new_type);
 
     if (paused && _should_do_lighting(parts[i]))
         graphics.shadows_force_update = true;

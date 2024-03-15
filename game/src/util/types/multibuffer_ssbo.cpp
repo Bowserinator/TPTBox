@@ -6,12 +6,12 @@ MultibufferSSBO::MultibufferSSBO(const std::size_t ssboCount, const std::size_t 
     ssboCount(ssboCount), cycle(0)
 {
     ssbos = new unsigned int[ssboCount];
-    for (auto i = 0; i < ssboCount; i++)
+    for (std::size_t i = 0; i < ssboCount; i++)
         ssbos[i] = rlLoadShaderBuffer(bufferSize, NULL, usage);
 }
 
 MultibufferSSBO::~MultibufferSSBO() {
-    for (auto i = 0; i < ssboCount; i++)
+    for (std::size_t i = 0; i < ssboCount; i++)
         rlUnloadShaderBuffer(ssbos[i]);
     delete[] ssbos;
 }

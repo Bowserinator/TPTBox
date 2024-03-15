@@ -63,7 +63,6 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
         _first_person_locked = !_first_person_locked;
 
     if (_first_person_locked && (mouseDelta.x || mouseDelta.y)) {
-        const float dis = Vector3Distance(camera.position, camera.target);
         Vector3 targetPrime = camera.target - camera.position;
 
         // Rotate point in XZ plane (looking left/right)

@@ -9,6 +9,8 @@ project (workspaceName)
 	linkoptions { "-fopenmp" }
 	buildoptions {
 		"-fopenmp",
+		"-Wall",
+		"-Wno-sign-compare",
 		"-flto", -- Link time optimization
 	}
 

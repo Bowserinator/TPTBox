@@ -9,7 +9,7 @@
 namespace util {
     class MultibufferSSBO {
     public:
-        MultibufferSSBO(): ssboCount(0), ssbos(nullptr), cycle(0) {}
+        MultibufferSSBO(): ssbos(nullptr), ssboCount(0), cycle(0) {}
         MultibufferSSBO(const std::size_t size, const std::size_t bufferSize, int usage);
         ~MultibufferSSBO();
 

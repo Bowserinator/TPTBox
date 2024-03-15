@@ -179,8 +179,6 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     const float dy = (ray.y >= 0) ? 1 : -1;
     const float dz = (ray.z >= 0) ? 1 : -1;
 
-    const Vector3 next_voxel_boundary{ in.x + dx, in.y + dy, in.z + dz };
-
     // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
     // the value of t at which the ray crosses the first vertical voxel boundary
     float tMaxX = (ray.x != 0) ? (dx) / ray.x : std::numeric_limits<float>::max();

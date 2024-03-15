@@ -64,7 +64,6 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // LClick to place parts
     if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         consumeMouse = true;
-        const int S = 5;
         const bool delete_mode = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
         const int half_size = size / 2;
 
@@ -121,7 +120,7 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
 
     RaycastOutput out;
     ray.direction *= (XRES + YRES + ZRES);
-    bool hit = sim->raycast<true, true>(RaycastInput {
+    sim->raycast<true, true>(RaycastInput {
         .x = (coord_t)cx, .y = (coord_t)cy, .z = (coord_t)cz,
         .vx = ray.direction.x, .vy = ray.direction.y, .vz = ray.direction.z
     }, out, pmapOccupied);

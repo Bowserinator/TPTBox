@@ -43,10 +43,10 @@ constexpr float R_TEMP = R_ZERO_C + 22.0f;
 constexpr float MAX_VELOCITY = 50.0f;
 
 constexpr bool BOUNDS_CHECK(int x, int y, int z) {
-    return x > 0 && x < XRES - 1 && y > 0 && y < YRES - 1 && z > 0 && z < ZRES - 1;
+    return x > 0 && x < (int)(XRES - 1) && y > 0 && y < (int)(YRES - 1) && z > 0 && z < (int)(ZRES - 1);
 }
 constexpr bool REVERSE_BOUNDS_CHECK(int x, int y, int z) {
-    return x < 1 || x >= XRES - 1 || y < 1 || y >= YRES - 1 || z < 1 || z >= ZRES - 1;
+    return x < 1 || x >= (int)(XRES - 1) || y < 1 || y >= (int)(YRES - 1) || z < 1 || z >= (int)(ZRES - 1);
 }
 constexpr uint32_t FLAT_IDX(coord_t x, coord_t y, coord_t z) {
     return x + y * XRES + z * (XRES * YRES);

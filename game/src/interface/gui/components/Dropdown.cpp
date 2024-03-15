@@ -16,7 +16,7 @@ public:
             Modal(pos, size, Style::getDefault()), options(options), dropdown(dropdown) {
         float optHeight = size.y / options.size();
 
-        for (int i = 0; i < options.size(); i++) {
+        for (std::size_t i = 0; i < options.size(); i++) {
             addChild((new TextButton(
                 Vector2{ 0, i * optHeight },
                 Vector2{ size.x, optHeight },

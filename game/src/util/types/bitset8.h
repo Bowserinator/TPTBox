@@ -29,7 +29,7 @@ public:
 
     std::string to_string() {
         std::string out(size(), ' ');
-        for (int i = 0; i < size(); i++)
+        for (std::size_t i = 0; i < size(); i++)
             out[i] = (*this)[i] ? '1' : '0';
         return out;
     }
