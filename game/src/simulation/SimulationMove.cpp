@@ -193,15 +193,11 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         parts[idx].x = tx;
         parts[idx].y = ty;
         parts[idx].z = tz;
-
-        parts[idx].rx = x;
-        parts[idx].ry = y;
-        parts[idx].rz = z;
         return;
     }
 
     auto &part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
-    auto &old_pmap_val = part_map[oldz][oldy][oldx];
+    pmap_id old_pmap_val = part_map[oldz][oldy][oldx];
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
         behavior = eval_move(idx, x, y, z);
@@ -268,16 +264,23 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
     auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY];
     auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
 
-    if (!part1_is_e && !part2_is_e)
-        std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
-    else if (part1_is_e && part2_is_e)
-        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
+    // Do not simply swap the pmap values here because that will break if we try
+    // to swap a particle that's not at the top of the stack
+    if ((!id1 || !part1_is_e) && (!id2 || !part2_is_e)) {
+        pmap[z1][y1][x1] = PMAP(parts[id2].type, id2);
+        pmap[z2][y2][x2] = PMAP(parts[id1].type, id1);
+    }
+    else if ((!id1 || part1_is_e) && (!id1 || part2_is_e)) {
+        photons[z1][y1][x1] = PMAP(parts[id2].type, id2);
+        photons[z2][y2][x2] = PMAP(parts[id1].type, id1);
+    }
     else {
-        // Swapping energy with regular. May cause problems
+        // Swapping energy with regular. Will cause problems
         // if we displace a pmap onto something that can't normally
         // be displayed, but this option shouldn't be used anyways
-        std::swap(pmap[z1][y1][x1], pmap[z2][y2][x2]);
-        std::swap(photons[z1][y1][x1], photons[z2][y2][x2]);
+        #ifdef DEBUG
+        throw std::runtime_error("Tried swapping energy particle with non-energy particle (not allowed)");
+        #endif
     }
 }
 
@@ -330,7 +333,7 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
         // The little velocity we have left is not enough to move to
         // another voxel, so the next raycast is always no_move, terminate early
         // Not exactly accurate but close enough
-        if (fabsf(part.vy) < 0.1f && fabsf(part.vx) < 0.1f && fabsf(part.vx) < 0.1f) {
+        if (fabsf(part.vy) < 0.1f && fabsf(part.vx) < 0.1f && fabsf(part.vz) < 0.1f) {
             no_move = true;
             break;
         }
@@ -342,9 +345,9 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
 
     if (no_move || !hit) {
         try_move(idx,
-            util::clampf(part.x + part.vx, 1.0f, XRES - 1.0f),
-            util::clampf(part.y + part.vy, 1.0f, YRES - 1.0f),
-            util::clampf(part.z + part.vz, 1.0f, ZRES - 1.0f));
+            util::clampf(part.x + part.vx, 1.0f, XRES - 2.0f),
+            util::clampf(part.y + part.vy, 1.0f, YRES - 2.0f),
+            util::clampf(part.z + part.vz, 1.0f, ZRES - 2.0f));
     } else {
         try_move(idx, out.x, out.y, out.z, out.move);
     }
