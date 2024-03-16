@@ -416,16 +416,24 @@ void Simulation::recalc_free_particles() {
     graphics.ao_blocks.fill(0);
     gol.zsliceHasGol.fill(false);
 
+    // First do all movement updates, which can create new holes in the pmap
+    // Then we fix the holes afterwards
+    for (part_id i = 1; i <= maxId; i++) {
+        auto &part = parts[i];
+        if (!part.type) continue;
+        update_part(i, false);
+    }
+
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
 
-        parts_count++;
-        newMaxId = i;
-
         const coord_t x = part.rx;
         const coord_t y = part.ry;
         const coord_t z = part.rz;
+
+        parts_count++;
+        newMaxId = i;
 
         // Heat map update
         auto heatConduct = GetElements()[part.type].HeatConduct;
@@ -458,9 +466,8 @@ void Simulation::recalc_free_particles() {
             graphics.color_force_update[FLAT_IDX(x, y, z)] = false;
             _set_color_data_at(x, y, z, &part);
         }
-
-        update_part(i, false);
     }
+
     maxId = newMaxId + 1;
 }
 

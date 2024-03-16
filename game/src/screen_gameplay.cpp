@@ -65,8 +65,8 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    for (int x = 10; x < 11; x++) 
-    for (int z = 10; z < 15; z++)
+    for (int x = 10; x < XRES - 1; x++) 
+    for (int z = 10; z < ZRES / 2; z++)
     for (int y = 51; y < 52; y++) {
         int i = sim.create_part(x, y, z, PT_PHOT);
         const float F = 5.4f;
