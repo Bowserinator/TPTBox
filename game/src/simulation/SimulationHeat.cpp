@@ -27,8 +27,16 @@ void SimulationHeat::init() {
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
 
     ssbosData = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(heat_map), util::PBFlags::WRITE_ALT_READ);
+    
+    reset();
+}
+
+void SimulationHeat::reset() {
+    uploadedOnce = false;
+
     std::fill(&heat_map[0][0][0], &heat_map[0][0][0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < ssbosData.getBufferCount(); i++) {
+        ssbosData.wait(i);
         std::fill(&ssbosData.get<float>(i)[0], &ssbosData.get<float>(i)[0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
         ssbosData.lock(i);
     }

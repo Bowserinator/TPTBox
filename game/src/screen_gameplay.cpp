@@ -66,7 +66,7 @@ void ScreenGameplay::init() {
     //     sim.create_part(x, y, z, 3);
 
     for (int x = 10; x < XRES - 1; x++) 
-    for (int z = 10; z < ZRES / 2; z++)
+    for (int z = 10; z < 15; z++)
     for (int y = 51; y < 52; y++) {
         int i = sim.create_part(x, y, z, PT_PHOT);
         const float F = 5.4f;
@@ -81,9 +81,9 @@ void ScreenGameplay::init() {
     for (int z = 1; z < ZRES - 1; z++)
     for (int y = 1; y < 2; y++) {
         // sim.create_part(x, y, z, PT_DUST);
-        //sim.create_part(x, y, z, PT_WATR);
+        sim.create_part(x, y, z, PT_WATR);
 
-        //sim.create_part(x, y + 50, z, PT_GLAS);
+        sim.create_part(x, y + 50, z, PT_GLAS);
     }
 
     // for (int x = 1; x < XRES - 1; x++) 

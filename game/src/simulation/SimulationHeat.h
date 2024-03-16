@@ -31,6 +31,7 @@ public:
     bool uploadedOnce = false;        // Prevent download on first invocation
 
     void init();
+    void reset();
     void dispatch();
     void wait_and_get();
 

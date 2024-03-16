@@ -58,6 +58,27 @@ void Simulation::init() {
     heat.init();
 }
 
+void Simulation::reset() {
+    memset(&pmap[0][0][0], 0, sizeof(pmap));
+    memset(&photons[0][0][0], 0, sizeof(photons));
+
+    std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
+    std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
+
+    for (int i = 1; i < NPARTS; i++)
+        if (parts[i].type) kill_part(i);
+
+    pfree = 1;
+    maxId = 0;
+    frame_count = 0;
+    parts_count = 0;
+    gravity_mode = GravityMode::VERTICAL;
+
+    graphics.reset();
+    heat.reset();
+    gol.reset();
+}
+
 void Simulation::_init_can_move() {
     ElementType movingType, destinationType;
     const auto &elements = GetElements();

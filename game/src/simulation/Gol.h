@@ -40,6 +40,7 @@ public:
     std::array<bool, ZRES> zsliceHasGol;
 
     void init();
+    void reset();
     void dispatch();
     void wait_and_get();
 private:

@@ -62,6 +62,7 @@ public:
     ~Simulation();
 
     void init();
+    void reset();
     void cycle_gravity_mode();
     void set_paused(const bool paused) { this->paused = paused; };
 

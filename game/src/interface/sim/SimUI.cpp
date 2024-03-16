@@ -84,6 +84,10 @@ void SimUI::init() {
     addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
         addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}, renderer));
     }));
+    addChild(getBottomIconButton(4, ICON_FILE)->setClickCallback([this]() {
+        sim->reset();
+    }));
+
     pauseButton = getBottomIconButton(1, ICON_PLAYER_PAUSE);
     addChild(pauseButton->setClickCallback([this]() { sim->paused = !sim->paused; }));
 }

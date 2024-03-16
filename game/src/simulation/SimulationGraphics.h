@@ -61,6 +61,10 @@ struct SimulationGraphics {
     bool shadows_force_update;
 
     SimulationGraphics() {
+        reset();
+    }
+
+    void reset() {
         shadows_force_update = false;
         color_data.fill(0);
         color_flags.fill(0);
