@@ -453,6 +453,10 @@ void Simulation::recalc_free_particles() {
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
             _set_color_data_at(x, y, z, &part);
+            graphics.color_force_update[FLAT_IDX(x, y, z)] = false;
+        } else if (graphics.color_force_update[FLAT_IDX(x, y, z)]) {
+            graphics.color_force_update[FLAT_IDX(x, y, z)] = false;
+            _set_color_data_at(x, y, z, &part);
         }
 
         update_part(i, false);

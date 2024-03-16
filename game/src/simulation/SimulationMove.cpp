@@ -216,6 +216,11 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
             part_map[oldz][oldy][oldx] = 0;
             part_map[z][y][x] = old_pmap_val;
 
+            // Fix for ie, delete photon at old pos but there is glass underneath
+            // The pmap is set to glass already, so if we clear the photons map
+            // the if (pmap is empty) { fill with part } check won't run
+            graphics.color_force_update[FLAT_IDX(oldx, oldy, oldz)] = true;
+
             _set_color_data_at(x, y, z, &parts[idx]);
             _set_color_data_at(oldx, oldy, oldz, nullptr);
             heat.update_temperate(x, y, z, heat.heat_map[oldz][oldy][oldx]);

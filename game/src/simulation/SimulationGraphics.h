@@ -53,6 +53,7 @@ class BitOctreeBlock;
 struct SimulationGraphics {
     std::array<uint32_t, XRES * YRES * ZRES> color_data;
     std::array<uint8_t, XRES * YRES * ZRES> color_flags;
+    std::array<bool, XRES * YRES * ZRES> color_force_update;
     std::array<uint8_t, COLOR_DATA_CHUNK_COUNT> color_data_modified;
     util::heap_array<BitOctreeBlock, X_BLOCKS * Y_BLOCKS * Z_BLOCKS> octree_blocks;
     std::array<int, AO_X_BLOCKS * AO_Y_BLOCKS * AO_Z_BLOCKS> ao_blocks;
@@ -63,6 +64,7 @@ struct SimulationGraphics {
         shadows_force_update = false;
         color_data.fill(0);
         color_flags.fill(0);
+        color_force_update.fill(false);
         ao_blocks.fill(0);
         color_data_modified.fill(0);
         memset(&shadow_map[0][0], 0, sizeof(shadow_map));
