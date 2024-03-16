@@ -54,7 +54,7 @@ void SimulationGol::init() {
         uint32_t data[GOL_RULE_COUNT * 2];
     } golRuleData;
 
-    ssbosData = util::PersistentBuffer<6>(GL_SHADER_STORAGE_BUFFER, sizeof(gol_map), util::PBFlags::WRITE_ALT_READ);
+    ssbosData = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(gol_map), util::PBFlags::WRITE_ALT_READ);
     ssboRules = rlLoadShaderBuffer(sizeof(golRuleData), NULL, RL_STATIC_READ);
 
     for (std::size_t i = 0; i < 6; i++) {

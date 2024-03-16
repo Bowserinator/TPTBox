@@ -38,7 +38,7 @@ public:
     void flag_temp_update(const coord_t x, const coord_t y, const coord_t z);
     void reset_dirty_chunks();
 private:
-    util::PersistentBuffer<6> ssbosData;
+    util::PersistentBuffer<2> ssbosData;
     unsigned int ssboConstants;
     HeatConstants constants;
 

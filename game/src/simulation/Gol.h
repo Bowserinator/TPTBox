@@ -44,7 +44,7 @@ public:
     void wait_and_get();
 private:
     unsigned int ssboRules;
-    util::PersistentBuffer<6> ssbosData;
+    util::PersistentBuffer<2> ssbosData;
 
     unsigned int golShader;
     unsigned int golProgram;
