@@ -12,6 +12,8 @@
 
 #include "rlgl.h"
 #include "stdint.h"
+
+#include <array>
 #include <cstring>
 
 Renderer::~Renderer() {
@@ -56,8 +58,17 @@ void Renderer::init() {
     blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
-    rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
-    rlTextureParameters(blur_tmp_tex.texture.id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    // Prevent blur from wrapping around
+    for (unsigned int texId : std::array<unsigned int, 5>({ 
+        blur_tmp_tex.texture.id,
+        blur1_tex.texture.id,
+        blur2_tex.texture.id,
+        base_tex.glowOnlyTexture,
+        base_tex.blurOnlyTexture
+    })) {
+        rlTextureParameters(texId, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+        rlTextureParameters(texId, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    }
 
     rlEnableShader(part_shader.id);
         rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
@@ -376,14 +387,19 @@ void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 reso
     BeginShaderMode(blur_shader);
     util::set_shader_value(blur_shader, blur_shader_res_loc, resolution);
 
-    // Split into 2 passes: horizontal and vertical
-    for (int i = 0; i < 2; i++) {
-        BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
-            ClearBackground(Color{0, 0, 0, 0});
-            util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
-            rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
-            util::draw_dummy_triangle();
-        EndTextureMode();
+    for (int pass = 0; pass < 4; pass++) {
+        // First pass: use textureInId, rest use output of previous pass
+        if (pass > 0) textureInId = blur_tex.texture.id;
+
+        // Split into 2 subpasses: horizontal and vertical
+        for (int i = 0; i < 2; i++) {
+            BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
+                ClearBackground(Color{0, 0, 0, 0});
+                util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
+                rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
+                util::draw_dummy_triangle();
+            EndTextureMode();
+        }
     }
     EndShaderMode();
 }
