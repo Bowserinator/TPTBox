@@ -12,6 +12,7 @@ void Element::Element_GOL() {
     Name = "GOL";
 
     Weight = 100;
+    Loss = 0.0f;
 
     DefaultProperties.tmp1 = 1;
 

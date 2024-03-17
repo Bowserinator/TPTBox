@@ -152,6 +152,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].vz = 0.0f;
     parts[old_pfree].assign_with_defaults(el.DefaultProperties);
 
+    if (el.HeatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, el.HeatConduct))
+        heat.heat_map[z][y][x] = parts[old_pfree].temp;
+
     if (el.OnChangeType)
         el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
     if (el.OnCreate)
@@ -196,7 +199,7 @@ void Simulation::kill_part(const part_id i) {
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
-    heat.update_temperate(x, y, z, -1.0f);
+    heat.update_temperate(x, y, z, part.temp);
 
     _set_color_data_at(x, y, z, nullptr);
 
@@ -410,7 +413,7 @@ void Simulation::download_heat_from_gpu() {
             coord_t y = parts[i].ry;
             coord_t z = parts[i].rz;
 
-            if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f) {
+            if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
                 // && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)
                 parts[i].temp = heat.heat_map[z][y][x];
                 

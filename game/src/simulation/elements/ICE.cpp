@@ -10,6 +10,7 @@ void Element::Element_ICE() {
 	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
     
 	HeatConduct = 160;
+    Loss = 0.0f;
 
 	LowTemperature = 0.0f;
 	LowTemperatureTransition = Transition::NONE;
