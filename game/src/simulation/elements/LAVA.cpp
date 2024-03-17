@@ -2,6 +2,7 @@
 
 void Element::Element_LAVA() {
     Name = "LAVA";
+    Identifier = "LAVA";
     Description = "Lava.";
     State = ElementState::TYPE_LIQUID;
     Color = 0xFFBA6BFF;

@@ -410,9 +410,8 @@ void Simulation::download_heat_from_gpu() {
             coord_t y = parts[i].ry;
             coord_t z = parts[i].rz;
 
-            if (parts[i].type &&
-                    heat.heat_map[z][y][x] >= 0.0f &&
-                    HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)) {
+            if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f) {
+                // && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)
                 parts[i].temp = heat.heat_map[z][y][x];
                 
                 // Heat transition

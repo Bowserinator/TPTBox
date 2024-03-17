@@ -4,10 +4,13 @@ static void onCreate(ON_CREATE_FUNC_ARGS);
 
 void Element::Element_PHOT() {
     Name = "PHOT";
+    Identifier = "PHOT";
     Description = "Photons.";
     State = ElementState::TYPE_ENERGY;
     Color = 0xFFFFFFFF;
     GraphicsFlags = GraphicsFlags::GLOW | GraphicsFlags::NO_LIGHTING;
+
+    HeatConduct = 255;
 
     Collision = -1.0f;
     OnCreate = &onCreate;

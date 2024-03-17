@@ -2,6 +2,7 @@
 
 void Element::Element_WATR() {
     Name = "WATR";
+    Identifier = "WATR";
     Description = "Water.";
     State = ElementState::TYPE_LIQUID;
     Color = 0x2030D0FF;
@@ -13,8 +14,10 @@ void Element::Element_WATR() {
     Gravity = 0.3f;
     Diffusion = 5.0f;
 
-    HeatConduct = 15;
+    HeatConduct = 150;
 
+    LowTemperature = 0.0_C;
+    LowTemperatureTransition = PT_ICE;
     HighTemperature = 100.0_C;
     HighTemperatureTransition = PT_WTRV;
 };

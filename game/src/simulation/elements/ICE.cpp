@@ -1,11 +1,11 @@
 #include "../ElementClasses.h"
 
-void Element::Element_GLAS() {
+void Element::Element_ICE() {
     State = ElementState::TYPE_SOLID;
-    Color = 0xFFFFFF55;
-    Name = "GLAS";
-    Identifier = "GLAS";
-    Description = "TODO glass";
+    Color = 0xA0C0FFFF;
+    Name = "ICE";
+    Identifier = "ICE";
+    Description = "Ice. TODO";
 
 	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
     
@@ -13,8 +13,10 @@ void Element::Element_GLAS() {
 
 	LowTemperature = 0.0f;
 	LowTemperatureTransition = Transition::NONE;
-	HighTemperature = 200.0_C;
-	HighTemperatureTransition = PT_LAVA;
+	HighTemperature = 0.0_C;
+	HighTemperatureTransition = PT_WATR;
+
+    DefaultProperties.temp = -4.0 + R_ZERO_C;
 
     Weight = 100;
 };
