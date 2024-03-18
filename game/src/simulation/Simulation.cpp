@@ -187,9 +187,7 @@ void Simulation::kill_part(const part_id i) {
     else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
         photons[z][y][x] = 0;
 
-    // Force whatever was below the particle to render now that it's gone
-    graphics.color_force_update[FLAT_IDX(x, y, z)] = true;
-
+    graphics.color_force_update[FLAT_IDX(x, y, z)] = true; // Force whatever was below the particle to render now that it's gone
     if (GetElements()[part.type].OnChangeType)
         GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
@@ -202,7 +200,7 @@ void Simulation::kill_part(const part_id i) {
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
-    heat.update_temperate(x, y, z, part.temp);
+    heat.update_temperate(x, y, z, -1.0f);
 
     _set_color_data_at(x, y, z, nullptr);
 
@@ -426,7 +424,7 @@ void Simulation::download_heat_from_gpu() {
 
             if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
                 // && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)
-                parts[i].temp = heat.heat_map[z][y][x];
+                parts[i].temp = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
                 
                 // Heat transition
                 const auto &el = GetElements()[parts[i].type];
@@ -491,7 +489,7 @@ void Simulation::recalc_free_particles() {
         // Heat map update
         auto heatConduct = GetElements()[part.type].HeatConduct;
         if (heatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, heatConduct))
-            heat.update_temperate(x, y, z, part.temp);
+            heat.update_temperate(x, y, z, util::clampf(part.temp, MIN_TEMP, MAX_TEMP));
 
         // Ambient occlusion and shadow rules
         if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
