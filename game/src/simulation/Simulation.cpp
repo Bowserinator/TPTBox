@@ -430,10 +430,29 @@ void Simulation::download_heat_from_gpu() {
                 
                 // Heat transition
                 const auto &el = GetElements()[parts[i].type];
-                if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature)
-                    part_change_type(i, el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighTemperatureTransition);
-                else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature)
-                    part_change_type(i, el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowTemperatureTransition);
+                const part_type prevType = parts[i].type;
+                part_type toType = PT_NONE;
+                bool transition = false;
+
+                if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature) {
+                    toType = el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighTemperatureTransition;
+                    transition = true;
+                    part_change_type(i, toType);
+                }
+                else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature) {
+                    toType = el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowTemperatureTransition;
+                    transition = true;
+                    part_change_type(i, toType);
+                }
+
+                if (transition) {
+                    // If transitioning to these types, set ctype to original type
+                    if (toType == PT_ICE || toType == PT_LAVA)
+                        parts[i].ctype = prevType;
+                    // And clear ctype if transitioning from these types
+                    else if (prevType == PT_ICE || prevType == PT_LAVA)
+                        parts[i].ctype = PT_NONE;
+                }
             }
         }
         heat.reset_dirty_chunks();

@@ -134,8 +134,18 @@ void HUD::draw(const HUDData &data) {
 
     const char * air_data = TextFormat("Pressure: %.2f",
         sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
+
+    // Ctype
+    std::string ctype_data = "";
+    if (sim->parts[idx].ctype) {
+        if (sim->parts[idx].type == PT_LAVA)
+            ctype_data = " (Molten " + GetElements()[sim->parts[idx].ctype].Name + ')';
+        else
+            ctype_data = " (" + GetElements()[sim->parts[idx].ctype].Name + ')';
+    }
+
     const char * line11 = idx ?
-        TextFormat("%s,  %s", GetElements()[sim->parts[idx].type].Name.c_str(), air_data) :
+        TextFormat("%s%s,  %s", GetElements()[sim->parts[idx].type].Name.c_str(), ctype_data.c_str(), air_data) :
         TextFormat("Empty,  %s", air_data);
 
     const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);

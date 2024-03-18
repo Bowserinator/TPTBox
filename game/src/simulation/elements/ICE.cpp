@@ -12,12 +12,11 @@ void Element::Element_ICE() {
 	HeatConduct = 160;
     Loss = 0.0f;
 
-	LowTemperature = 0.0f;
-	LowTemperatureTransition = Transition::NONE;
 	HighTemperature = 0.0_C;
-	HighTemperatureTransition = PT_WATR;
+	HighTemperatureTransition = Transition::TO_CTYPE;
 
     DefaultProperties.temp = -4.0 + R_ZERO_C;
+    DefaultProperties.ctype = PT_WATR;
 
     Weight = 100;
 };

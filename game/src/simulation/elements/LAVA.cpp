@@ -19,7 +19,8 @@ void Element::Element_LAVA() {
     HeatConduct = 150;
 
     LowTemperature = 200.0_C;
-    LowTemperatureTransition = PT_DUST;
+    LowTemperatureTransition = Transition::TO_CTYPE;
 
     DefaultProperties.temp = 900.0_C;
+    DefaultProperties.ctype = PT_DUST;
 };
