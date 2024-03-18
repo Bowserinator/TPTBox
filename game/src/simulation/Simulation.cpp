@@ -187,6 +187,9 @@ void Simulation::kill_part(const part_id i) {
     else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
         photons[z][y][x] = 0;
 
+    // Force whatever was below the particle to render now that it's gone
+    graphics.color_force_update[FLAT_IDX(x, y, z)] = true;
+
     if (GetElements()[part.type].OnChangeType)
         GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
@@ -327,6 +330,14 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
             return;
 
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
+
+        // Life decrement and kill
+        if (el.Properties & ElementProperties::LIFE_DEC && part.life > 0)
+            part.life--;
+        if (el.Properties & ElementProperties::LIFE_KILL && part.life <= 0) {
+            kill_part(part.id);
+            return;
+        }
 
         // Air acceleration
         part.vx *= el.Loss;

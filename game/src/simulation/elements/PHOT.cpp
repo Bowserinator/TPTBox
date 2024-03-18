@@ -9,11 +9,14 @@ void Element::Element_PHOT() {
     State = ElementState::TYPE_ENERGY;
     Color = 0xFFFFFFFF;
     GraphicsFlags = GraphicsFlags::GLOW | GraphicsFlags::NO_LIGHTING;
+    Properties = ElementProperties::LIFE_DEC_KILL;
 
     HeatConduct = 255;
 
     Collision = -1.0f;
     OnCreate = &onCreate;
+
+    DefaultProperties.life = 1000;
 };
 
 static void onCreate(ON_CREATE_FUNC_ARGS) {
