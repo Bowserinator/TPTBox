@@ -70,7 +70,7 @@ struct SimulationGraphics {
         color_flags.fill(0);
         color_force_update.fill(false);
         ao_blocks.fill(0);
-        color_data_modified.fill(0);
+        color_data_modified.fill(0xFF);
         memset(&shadow_map[0][0], 0, sizeof(shadow_map));
     }
 };
