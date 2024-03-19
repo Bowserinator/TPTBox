@@ -5,10 +5,10 @@ void Element::Element_WTRV() {
     Identifier = "WTRV";
     Description = "Water Vapor.";
     State = ElementState::TYPE_GAS;
-    Color = 0x2030D0CC;
+    Color = 0xA0A0FFCC;
     GraphicsFlags = GraphicsFlags::BLUR | GraphicsFlags::NO_LIGHTING;
 
-    Gravity = 0.005f;
+    Gravity = -0.005f;
     Diffusion = 1.0f;
     HeatConduct = 255;
 

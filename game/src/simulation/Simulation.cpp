@@ -310,6 +310,10 @@ void Simulation::update_zslice(const coord_t pz) {
 void Simulation::update_part(const part_id i, const bool consider_causality) {
     auto &part = parts[i];
 
+    #ifdef DEBUG
+    if (!part.type) throw std::runtime_error("update_part() called on NONE type particle");
+    #endif
+
     // Since a particle might move we might update it again
     // if it moves in the direction of scanning the pmap array
     // To avoid this, it stores the parity of the frame count
@@ -330,9 +334,9 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
         // Life decrement and kill
-        if (el.Properties & ElementProperties::LIFE_DEC && part.life > 0)
+        if ((el.Properties & ElementProperties::LIFE_DEC) && part.life > 0)
             part.life--;
-        if (el.Properties & ElementProperties::LIFE_KILL && part.life <= 0) {
+        if ((el.Properties & ElementProperties::LIFE_KILL) && part.life <= 0) {
             kill_part(part.id);
             return;
         }

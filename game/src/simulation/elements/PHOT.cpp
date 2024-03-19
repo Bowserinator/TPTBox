@@ -16,7 +16,7 @@ void Element::Element_PHOT() {
     Collision = -1.0f;
     OnCreate = &onCreate;
 
-    DefaultProperties.life = 1000;
+    DefaultProperties.life = 200;
 };
 
 static void onCreate(ON_CREATE_FUNC_ARGS) {

@@ -197,7 +197,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
     }
 
     auto &part_map = parts[idx].flag[PartFlags::IS_ENERGY] ? photons : pmap;
-    pmap_id old_pmap_val = part_map[oldz][oldy][oldx];
+    pmap_id old_pmap_val = PMAP(parts[idx].type, idx);
 
     if (behavior == PartSwapBehavior::NOT_EVALED_YET)
         behavior = eval_move(idx, x, y, z);
@@ -207,6 +207,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
             return;
         case PartSwapBehavior::SWAP:
             swap_part(x, y, z, oldx, oldy, oldz, ID(part_map[z][y][x]), idx);
+            graphics.color_force_update[FLAT_IDX(oldx, oldy, oldz)] = true; // Fix overlap case
             break;
         case PartSwapBehavior::OCCUPY_SAME:
             part_map[oldz][oldy][oldx] = 0;
