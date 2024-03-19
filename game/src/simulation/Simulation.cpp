@@ -169,7 +169,8 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     }
 
     part_map[z][y][x] = PMAP(type, old_pfree);
-    _set_color_data_at(x, y, z, &parts[old_pfree]);
+    if (is_energy || !photons[z][y][x]) // Always try to show energy on top
+        _set_color_data_at(x, y, z, &parts[old_pfree]);
 
     return old_pfree;
 }

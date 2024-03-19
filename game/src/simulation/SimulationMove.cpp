@@ -247,9 +247,6 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
  */
 void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
-    _set_color_data_at(x1, y1, z1, id2 ? &parts[id2] : nullptr);
-    _set_color_data_at(x2, y2, z2, id1 ? &parts[id1] : nullptr);
-
     std::swap(heat.heat_map[z1][y1][x1], heat.heat_map[z2][y2][x2]);
     heat.flag_temp_update(x1, y1, z1);
     heat.flag_temp_update(x2, y2, z2);
@@ -264,6 +261,12 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
 
     auto part1_is_e = parts[id1].flag[PartFlags::IS_ENERGY];
     auto part2_is_e = parts[id2].flag[PartFlags::IS_ENERGY];
+
+    // Always try to show energy on top
+    if (part1_is_e || !photons[z1][y1][x1])
+        _set_color_data_at(x1, y1, z1, id2 ? &parts[id2] : nullptr);
+    if (part2_is_e || !photons[z2][y2][x2])
+        _set_color_data_at(x2, y2, z2, id1 ? &parts[id1] : nullptr);
 
     // Do not simply swap the pmap values here because that will break if we try
     // to swap a particle that's not at the top of the stack
