@@ -19,7 +19,7 @@ enum class HUDState { NORMAL, DEBUG_MODE };
 constexpr int FPS_AVG_WINDOW_SIZE = 15;
 constexpr int MAX_TOOLTIP_LENGTH = 128;
 constexpr double TOOLTIP_TIME_SECONDS = 0.7;
-constexpr float GRID_VALUES[] = {0.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f};
+constexpr float GRID_VALUES[] = {0.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f};
 
 struct HUDData {
     float fps;

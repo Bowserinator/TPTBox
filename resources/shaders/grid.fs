@@ -10,11 +10,13 @@ const float lineWidthBase = 0.4;
 const int bigLineEveryNLines = 10;
 
 bool shouldBeBold(float uvX, float lineAA) {
-    return (fract(uvX) < max(0.1, lineAA)) && ((int(round(uvX)) % bigLineEveryNLines) == 0);
+    return (fract(uvX) < max(lineWidthBase / scale, lineAA)) && ((int(round(uvX)) % bigLineEveryNLines) == 0);
 }
 
 // Code is from https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8
 void main() {
+    gl_FragDepth = gl_FragCoord.z + 20.0;
+
     if (scale <= 0.0) {
         FragColor = vec4(0.);
         return;

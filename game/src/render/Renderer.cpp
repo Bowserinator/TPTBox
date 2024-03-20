@@ -87,7 +87,6 @@ Renderer::~Renderer() {
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
-    UnloadRenderTexture(grid_tex);
 
     UnloadModel(grid_model);
 
@@ -127,7 +126,6 @@ void Renderer::init() {
     grid_shader_size_loc = GetShaderLocation(grid_shader, "size");
     grid_shader_scale_loc = GetShaderLocation(grid_shader, "scale");
     grid_model.materials[0].shader = grid_shader;
-    grid_tex = util::load_render_texture_only_color(GetScreenWidth(), GetScreenHeight(), RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     set_grid_size(0.0);
 
     const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
@@ -254,18 +252,9 @@ void Renderer::init() {
     }
 }
 
-void Renderer::update_grid() {
-    BeginTextureMode(grid_tex);
-    ClearBackground(Color{0, 0, 0, 0});
-    BeginMode3D(cam->camera);
-        util::set_shader_value(grid_shader, grid_shader_size_loc, (float)grid_max_dim);
-        DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
-    EndMode3D();
-    EndTextureMode();
-}
-
 void Renderer::set_grid_size(float size) {
     grid_scale = size;
+    util::set_shader_value(grid_shader, grid_shader_size_loc, (float)grid_max_dim);
     util::set_shader_value(grid_shader, grid_shader_scale_loc, size);
 }
 
@@ -379,7 +368,6 @@ void Renderer::draw() {
     update_colors_and_lod();
     if (show_octree)
         draw_octree_debug();
-    update_grid();
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
@@ -450,10 +438,10 @@ void Renderer::draw() {
         blur_tex_id = blur2_tex.texture.id;
     }
 
-    util::draw_render_texture(grid_tex);
-
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
+        DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
+
     BeginShaderMode(post_shader);
 
         rlEnableShader(post_shader.id);
