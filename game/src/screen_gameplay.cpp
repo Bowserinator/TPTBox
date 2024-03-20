@@ -27,8 +27,8 @@
 static RenderCamera render_camera;
 static Simulation sim;
 static BrushRenderer brush_renderer(&sim, &render_camera);
-static HUD hud(&sim, &render_camera);
 static Renderer renderer(&sim, &render_camera);
+static HUD hud(&sim, &render_camera, &renderer);
 static SimUI sim_ui(&brush_renderer, &renderer, &sim);
 
 static double simTime = 0.0f;

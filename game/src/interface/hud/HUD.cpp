@@ -9,6 +9,7 @@
 #include "../../util/math.h"
 #include "../FontCache.h"
 #include "../brush/Brush.h"
+#include "../../render/Renderer.h"
 
 #include <string>
 #include <cstring>
@@ -72,7 +73,9 @@ void HUD::update_controls(const BrushRenderer &brush_renderer) {
         consumeKey = true;
     }
     if (EventConsumer::ref()->isKeyPressed(KEY_G)) { // Grid
-        // TODO
+        grid_type = (grid_type + 1) % (sizeof(GRID_VALUES) / sizeof(float));
+        renderer->set_grid_size(GRID_VALUES[grid_type]);
+        displayTooltip(TextFormat("Grid size: %d", (int)GRID_VALUES[grid_type]));
         consumeKey = true;
     }
     if (EventConsumer::ref()->isKeyPressed(KEY_H)) { // Cycle gravity

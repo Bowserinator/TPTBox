@@ -31,6 +31,8 @@ public:
     void draw();
     void draw_octree_debug();
     void update_settings(settings::Graphics * settings);
+    void update_grid();
+    void set_grid_size(float size);
 
     enum class FragDebugMode: uint32_t {
         NODEBUG = 0,
@@ -75,6 +77,14 @@ private:
     bool do_glow = true;
     bool do_shadows = true;
     bool do_ao = true;
+
+    Shader grid_shader;
+    RenderTexture2D grid_tex;
+    unsigned int grid_shader_size_loc,
+                 grid_shader_scale_loc;
+    unsigned int grid_max_dim;
+    Model grid_model;
+    float grid_scale = 0.0;
 
     #pragma pack(push, 1)
     // Vec3s are vec4s and big arrays are at the end for packing purposes

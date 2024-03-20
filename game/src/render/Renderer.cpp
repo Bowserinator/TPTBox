@@ -12,18 +12,84 @@
 
 #include "rlgl.h"
 #include "stdint.h"
+#include <glad.h>
 
 #include <array>
 #include <cstring>
+
+// Custom cube mesh generation:
+// a) shows only inside faces
+// b) texture UVs are cropped relative to largest dimension
+Mesh GenInvertedMeshCube(const float width, const float height, const float length) {
+    Mesh mesh = { 0 };
+    float vertices[108]; // 3 points * 3 vertices * 12 triangles
+    float texcoords[72]; // 2 points * 3 vertices * 12 triangles
+
+    const float dims[] = { width, height, length };
+    const float largestDim = std::max({ width, height, length });
+
+    constexpr float vertices2D[] = {
+        0, 0, 1, 1, 0, 1,
+        0, 0, 1, 0, 1, 1,
+        0, 0, 0, 1, 1, 1,
+        0, 0, 1, 1, 1, 0
+    };
+
+    int i = 0;
+    int k = 0;
+    for (int axis = 0; axis < 3; axis++) {
+        for (int j = 0; j < 36; j++) {
+            // j >= 18 is when axis = 1, before axis = 0
+            // Except for axis = 1 (Y) which is inverted for some reason
+            float axisValue = j >= 18 ? 1 : 0;
+            if (axis == 1) axisValue = 1.0f - axisValue;
+
+            vertices[i] = (i % 3 == axis) ? axisValue : vertices2D[k % 24];
+            if (i % 3 != axis) {
+                texcoords[k] = vertices2D[k % 24] * dims[i % 3] / largestDim;
+                // Flip y dim because render texture is flipped
+                if (k % 2 == 1) texcoords[k] = 1.0f - texcoords[k];
+                // Get x face to line up for some reason
+                else if (k % 2 == 0 && axis == 0) texcoords[k] = 1.0f - texcoords[k];
+                k++;
+            }
+            i++;
+        }
+    }
+
+    for (std::size_t i = 0; i < sizeof(vertices) / sizeof(float); i += 3) {
+        vertices[i]     = (vertices[i] - 0.5f) * width;
+        vertices[i + 1] = (vertices[i + 1] - 0.5f) * height;
+        vertices[i + 2] = (vertices[i + 2] - 0.5f) * length;
+    }
+
+    mesh.vertices = (float*)malloc(sizeof(vertices));
+    mesh.texcoords = (float*)malloc(sizeof(texcoords));
+
+    memcpy(mesh.vertices, vertices, sizeof(vertices));
+    memcpy(mesh.texcoords, texcoords, sizeof(texcoords));
+
+    // Yeah I ain't dealing with indices enjoy your 12 triangles
+    mesh.vertexCount = sizeof(vertices) / sizeof(float) / 3;
+    mesh.triangleCount = mesh.vertexCount / 3;
+
+    UploadMesh(&mesh, false);
+    return mesh;
+}
+
 
 Renderer::~Renderer() {
     UnloadShader(part_shader);
     UnloadShader(post_shader);
     UnloadShader(blur_shader);
+    UnloadShader(grid_shader);
 
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
+    UnloadRenderTexture(grid_tex);
+
+    UnloadModel(grid_model);
 
     glDeleteBuffers(1, &ssbo_constants);
     glDeleteBuffers(1, &ubo_settings);
@@ -39,18 +105,30 @@ void Renderer::init() {
     #include "../../resources/shaders/generated/part.fs.h"
     #include "../../resources/shaders/generated/post.fs.h"
     #include "../../resources/shaders/generated/blur.fs.h"
+    #include "../../resources/shaders/generated/grid.fs.h"
 
     part_shader = LoadShaderFromMemory(fullscreen_vs_source, part_fs_source);
     post_shader = LoadShaderFromMemory(fullscreen_vs_source, post_fs_source);
     blur_shader = LoadShaderFromMemory(fullscreen_vs_source, blur_fs_source);
+    grid_shader = LoadShaderFromMemory(nullptr, grid_fs_source);
 #else
     part_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/post.fs");
     blur_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/blur.fs");
+    grid_shader = LoadShader(nullptr, "resources/shaders/grid.fs");
 #endif
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+
+    grid_max_dim = std::max({ XRES, YRES, ZRES });
+    Mesh mesh = GenInvertedMeshCube((float)XRES, (float)YRES, (float)ZRES);
+    grid_model = LoadModelFromMesh(mesh);
+    grid_shader_size_loc = GetShaderLocation(grid_shader, "size");
+    grid_shader_scale_loc = GetShaderLocation(grid_shader, "scale");
+    grid_model.materials[0].shader = grid_shader;
+    grid_tex = util::load_render_texture_only_color(GetScreenWidth(), GetScreenHeight(), RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    set_grid_size(0.0);
 
     const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
     const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
@@ -176,6 +254,21 @@ void Renderer::init() {
     }
 }
 
+void Renderer::update_grid() {
+    BeginTextureMode(grid_tex);
+    ClearBackground(Color{0, 0, 0, 0});
+    BeginMode3D(cam->camera);
+        util::set_shader_value(grid_shader, grid_shader_size_loc, (float)grid_max_dim);
+        DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
+    EndMode3D();
+    EndTextureMode();
+}
+
+void Renderer::set_grid_size(float size) {
+    grid_scale = size;
+    util::set_shader_value(grid_shader, grid_shader_scale_loc, size);
+}
+
 void Renderer::update_settings(settings::Graphics * settings) {
     show_octree = settings->showOctree;
     do_blur = settings->enableBlur;
@@ -286,6 +379,7 @@ void Renderer::draw() {
     update_colors_and_lod();
     if (show_octree)
         draw_octree_debug();
+    update_grid();
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
@@ -327,6 +421,7 @@ void Renderer::draw() {
 
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
+    glClearColor(0, 0, 0, 0);
     rlEnableFramebuffer(base_tex.frameBuffer);
     rlClearScreenBuffers();
     BeginMode3D(cam->camera);
@@ -355,6 +450,8 @@ void Renderer::draw() {
         blur_tex_id = blur2_tex.texture.id;
     }
 
+    util::draw_render_texture(grid_tex);
+
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
     BeginShaderMode(post_shader);
@@ -368,6 +465,7 @@ void Renderer::draw() {
 
         util::draw_dummy_triangle();
         glBindTexture(GL_TEXTURE_2D, 0);
+        rlDisableShader();
 
     EndShaderMode();
     EndMode3D();

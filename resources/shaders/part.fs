@@ -314,7 +314,7 @@ void main() {
         rayPos = rayCollideSim(rayPos, rayDir);
     // Outside of box early termination
     if (rayPos.x < 0) {
-        FragColor.rgb = BACKGROUND_COLOR.rgb;
+        FragColor = vec4(0.0);
         gl_FragDepth = DEPTH_FAR_AWAY;
         return;
     }
@@ -347,12 +347,11 @@ void main() {
         bool doShadow = ENABLE_SHADOWS && SHADOW_STRENGTH > 0.0 && ((flags & G_NO_LIGHTING) == 0);
         float shadowZ = doShadow ? 255.0 * texelFetch(shadowMap, data.lastVoxel.xy + ivec2(SIMRES.z - data.lastVoxel.z), 0).r : 0.0;
         float shadowMul = (doShadow && data.lastVoxel.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
-        float mul = (res.w < 0 || ((flags & G_NO_LIGHTING) != 0) ? 1.0 : FACE_COLORS[res.w % 3]) * data.color.a;
+        float mul = (res.w < 0 || ((flags & G_NO_LIGHTING) != 0) ? 1.0 : FACE_COLORS[res.w % 3]);
 
         FragColor.rgb = data.color.rgb * mul * shadowMul
-            + SHADOW_COLOR * mul * (1 - shadowMul)
-            + BACKGROUND_COLOR.rgb * (1 - mul);
-        FragColor.a = data.color.a;
+            + SHADOW_COLOR * mul * (1 - shadowMul);
+        FragColor.a = pow(data.color.a, 0.5); // This alpha is for blending with the grid / bg, not the voxels!
 
         if (ENABLE_GLOW && (flags & G_GLOW) != 0)
             FragGlowOnly = FragColor;

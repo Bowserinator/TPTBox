@@ -16,5 +16,6 @@ void main() {
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 3) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 3) / resolution)) * 0.090909;
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 4) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 4) / resolution)) * 0.090909;
     color += (texture(baseTexture, (gl_FragCoord.xy + direction * 5) / resolution) + texture(baseTexture, (gl_FragCoord.xy - direction * 5) / resolution)) * 0.090909;
+    color.a = 1.0; // Properly set alpha in post or it will be too dim since we repeatedly blur
     FragColor = color;
 }
