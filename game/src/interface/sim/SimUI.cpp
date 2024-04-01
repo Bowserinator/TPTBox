@@ -94,12 +94,15 @@ void SimUI::init() {
         categoryButtons.push_back(categoryBtn);
         sidePanel->addChild(categoryBtn);
     }
+
+    switchCategory((MenuCategory)0);
 }
 
 void SimUI::switchCategory(const MenuCategory category) {
     // Element buttons
     // ------------------
-    mainPanel->clearChildren();
+    for (auto btn : elementButtons)
+        mainPanel->removeChild(btn);
     elementButtons.clear();
 
     int i = 1;

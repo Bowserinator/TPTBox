@@ -5,14 +5,12 @@
 
 #include <ranges>
 #include <algorithm>
+#include <vector>
 
 ui::Panel::Panel(const Vector2 &pos, const Vector2 &size, const Style &style): ui::InteractiveComponent(pos, size, style) {}
 
 ui::Panel::~Panel() {
-    for (auto &child : children) {
-        delete child;
-        child = nullptr;
-    }
+    clearChildren();
 }
 
 void ui::Panel::tick(float dt) {
@@ -43,14 +41,15 @@ void ui::Panel::setParentScene(Scene * scene) {
 }
 
 void ui::Panel::removeChild(Component * component) {
-    auto itr = std::remove(children.begin(), children.end(), component);
-    children.erase(itr, children.end());
-    delete *itr;
+    if (std::erase(children, component))
+        delete component;
 }
 
 void ui::Panel::clearChildren() {
-    for (auto child : children)
+    for (auto &child : children) {
         delete child;
+        child = nullptr;
+    }
     children.clear();
 }
 
