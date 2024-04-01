@@ -48,6 +48,12 @@ void ui::Panel::removeChild(Component * component) {
     delete *itr;
 }
 
+void ui::Panel::clearChildren() {
+    for (auto child : children)
+        delete child;
+    children.clear();
+}
+
 ui::Component * ui::Panel::getChildIdx(std::size_t idx) {
     return children[idx];
 }

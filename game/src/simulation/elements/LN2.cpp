@@ -8,6 +8,8 @@ void Element::Element_LN2() {
     Color = 0x80A0DFFF;
     Weight = 10;
 
+    MenuSection = MenuCategory::LIQUIDS;
+
     Advection = 0.2f;
 
     Loss = 0.96f;

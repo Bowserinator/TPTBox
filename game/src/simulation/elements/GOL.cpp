@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-static int update(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
 static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS);
 
@@ -10,6 +9,8 @@ void Element::Element_GOL() {
     State = ElementState::TYPE_SOLID;
     Color = 0xFF0000AA;
     Name = "GOL";
+
+    MenuSection = MenuCategory::LIFE;
 
     Weight = 100;
     Loss = 0.0f;

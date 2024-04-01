@@ -7,6 +7,8 @@ void Element::Element_GLAS() {
     Identifier = "GLAS";
     Description = "TODO glass";
 
+    MenuSection = MenuCategory::SOLIDS;
+
 	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
     
 	HeatConduct = 160;

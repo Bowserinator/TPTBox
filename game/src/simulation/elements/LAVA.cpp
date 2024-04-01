@@ -8,6 +8,8 @@ void Element::Element_LAVA() {
     Color = 0xFFBA6BFF;
     Weight = 10;
 
+    MenuSection = MenuCategory::LIQUIDS;
+
     GraphicsFlags = GraphicsFlags::GLOW | GraphicsFlags::NO_LIGHTING;
 
     Advection = 0.2f;

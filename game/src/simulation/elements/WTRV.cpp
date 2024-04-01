@@ -8,6 +8,8 @@ void Element::Element_WTRV() {
     Color = 0xA0A0FFCC;
     GraphicsFlags = GraphicsFlags::BLUR | GraphicsFlags::NO_LIGHTING;
 
+    MenuSection = MenuCategory::GASES;
+
     Gravity = -0.005f;
     Diffusion = 1.0f;
     HeatConduct = 255;

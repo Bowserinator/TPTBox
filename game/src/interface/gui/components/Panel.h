@@ -40,6 +40,9 @@ namespace ui {
         // @param component 
         virtual void removeChild(Component * component);
 
+        // @brief Remove all children
+        virtual void clearChildren();
+
         // Update parent scene
         // @param scene
         void setParentScene(Scene * scene) override;

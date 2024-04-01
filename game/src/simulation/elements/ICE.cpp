@@ -7,6 +7,8 @@ void Element::Element_ICE() {
     Identifier = "ICE";
     Description = "Ice. TODO";
 
+    MenuSection = MenuCategory::SOLIDS;
+
 	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
     
 	HeatConduct = 160;

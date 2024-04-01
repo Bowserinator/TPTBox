@@ -15,7 +15,7 @@ Element::Element() {
     Description = "Element not defined";
 
     MenuVisible = false;
-    MenuSection = 0; // TODO;
+    MenuSection = MenuCategory::HIDDEN;
     Enabled = true;
 	Causality = 0;
 

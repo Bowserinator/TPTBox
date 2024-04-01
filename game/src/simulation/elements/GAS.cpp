@@ -8,6 +8,8 @@ void Element::Element_GAS() {
     Color = 0xE0FF20CC;
     GraphicsFlags = GraphicsFlags::BLUR | GraphicsFlags::NO_LIGHTING;
 
+    MenuSection = MenuCategory::GASES;
+
     Gravity = 0.005f;
     Diffusion = 1.0f;
 };

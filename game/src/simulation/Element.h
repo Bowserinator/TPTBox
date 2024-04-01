@@ -4,6 +4,7 @@
 #include <string>
 #include "stdint.h"
 
+#include "MenuCategories.h"
 #include "../util/types/color.h"
 #include "../util/types/bitset8.h"
 #include "ElementDefs.h"
@@ -59,7 +60,7 @@ public:
     std::string Description; // Menu description
 
 	bool MenuVisible;        // Visible in menu if true
-	int MenuSection;  
+	MenuCategory MenuSection;  
 
 
     Element();

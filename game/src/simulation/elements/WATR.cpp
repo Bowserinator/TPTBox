@@ -8,6 +8,8 @@ void Element::Element_WATR() {
     Color = 0x2030D0FF;
     Weight = 10;
 
+    MenuSection = MenuCategory::LIQUIDS;
+
     Advection = 0.2f;
 
     Loss = 0.96f;

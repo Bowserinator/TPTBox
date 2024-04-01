@@ -10,7 +10,7 @@ void Element::Element_DUST() {
     Description = "Dust. Light, flammable powder";
 
     MenuVisible = false;
-    MenuSection = 0; // TODO;
+    MenuSection = MenuCategory::POWDERS;
     Enabled = true;
 	Causality = 0;
 

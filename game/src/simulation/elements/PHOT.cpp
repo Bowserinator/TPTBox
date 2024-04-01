@@ -11,6 +11,8 @@ void Element::Element_PHOT() {
     GraphicsFlags = GraphicsFlags::GLOW | GraphicsFlags::NO_LIGHTING;
     Properties = ElementProperties::LIFE_DEC_KILL;
 
+    MenuSection = MenuCategory::RADIOACTIVE;
+
     HeatConduct = 255;
 
     Collision = -1.0f;
