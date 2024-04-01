@@ -3,7 +3,7 @@
 
 #include "rlgl.h"
 #include "raylib.h"
-#include "iconset.rgi.h"
+#include "icons.h"
 
 class IconManager {
 public:

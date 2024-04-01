@@ -1,7 +1,7 @@
 #ifndef MENU_CATEGORIES_H
 #define MENU_CATEGORIES_H
 
-#include "../interface/iconset.rgi.h"
+#include "../interface/icons.h"
 
 enum class MenuCategory {
     ELECTRONICS,
