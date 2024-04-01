@@ -10,7 +10,7 @@
 
 class RNG {
 public:
-	using State = std::array<uint64_t, 2>;
+	using State = std::array<__uint128_t, 1>;
 
 private:
 	State s;

@@ -19,7 +19,7 @@ namespace ui {
             const std::string &text,
             const Style &style = (Style {
                     .horizontalAlign = Style::Align::Left
-                }).setAllBackgroundColors(Color{0, 0, 0, 0})
+                }).setAllBackgroundColors(BLANK)
         ): Component(pos, size, style), text(text) {
             tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         }

@@ -16,7 +16,7 @@ public:
         SetTextureFilter(texture.texture, RL_TEXTURE_FILTER_LINEAR);
 
         BeginTextureMode(texture);
-        ClearBackground(Color{0, 0, 0, 0});
+        ClearBackground(BLANK);
         for (auto icon = 0; icon < RAYGUI_ICON_MAX_ICONS; icon++) {
             for (int bit = 0; bit < RAYGUI_ICON_SIZE * RAYGUI_ICON_SIZE; bit++) {
                 int i = bit / 32;

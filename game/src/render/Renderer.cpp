@@ -480,7 +480,7 @@ void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 reso
         // Split into 2 subpasses: horizontal and vertical
         for (int i = 0; i < 2; i++) {
             BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
-                ClearBackground(Color{0, 0, 0, 0});
+                ClearBackground(BLANK);
                 util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
                 rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
                 util::draw_dummy_triangle();

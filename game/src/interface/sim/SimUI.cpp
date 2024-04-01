@@ -35,7 +35,7 @@ void SimUI::init() {
         "",
         ui::Style {
             .horizontalAlign = ui::Style::Align::Right,
-            .backgroundColor = Color{0, 0, 0, 0},
+            .backgroundColor = BLANK,
             .textColor = Color{255, 255, 255, 0}
         }
     );
@@ -72,7 +72,7 @@ void SimUI::init() {
     menuTooltip = new ui::Label(
         Vector2{ -710.0f, 0.0f },
         Vector2{ 700.0f, styles::SETTINGS_BUTTON_HEIGHT },
-        "Test",
+        "",
         ui::Style {
             .horizontalAlign = ui::Style::Align::Right,
             .backgroundColor = BLANK,

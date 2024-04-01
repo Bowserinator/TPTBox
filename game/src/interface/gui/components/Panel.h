@@ -13,7 +13,7 @@ namespace ui {
     class Panel : public InteractiveComponent {
     public:
         Panel(const Vector2 &pos, const Vector2 &size,
-            const Style &style = (Style::getDefault()).setAllBackgroundColors(Color{0, 0, 0, 0}));
+            const Style &style = (Style::getDefault()).setAllBackgroundColors(BLANK));
         virtual ~Panel();
 
         void tick(float dt) override;
