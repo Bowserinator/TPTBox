@@ -1,6 +1,7 @@
 #include "SimUI.h"
 #include "../../simulation/SimulationDef.h"
 #include "../../simulation/ElementClasses.h"
+#include "../../simulation/ToolClasses.h"
 #include "../../simulation/MenuCategories.h"
 #include "../brush/Brush.h"
 #include "../../render/Renderer.h"
@@ -99,27 +100,25 @@ void SimUI::init() {
 }
 
 void SimUI::switchCategory(const MenuCategory category) {
-    // Element buttons
+    // Element and tool buttons
     // ------------------
     for (auto btn : elementButtons)
         mainPanel->removeChild(btn);
     elementButtons.clear();
 
     int i = 1;
-    for (auto id = 1; id <= ELEMENT_COUNT; id++) {
-        const auto &el = GetElements()[id];
-        if (!el.Enabled || el.MenuSection != category) continue;
 
-        Color bg_color = el.Color.as_Color();
+    auto getElementButton = [this](const int i, const std::string &name, const RGBA color) {
+        Color bg_color = color.as_Color();
         bg_color.a = 255;
 
         float btnX = mainPanel->size.x - (i % 22) * (styles::ELEMENT_BUTTON_SIZE.x + 5) - SIDE_PANEL_WIDTH - 5.0f;
         float btnY = (i > 22 ? styles::ELEMENT_BUTTON_SIZE.y + 5 : 0) + 10;
 
-        ui::TextButton * btn = new ui::TextButton(
+        return new ui::TextButton(
             Vector2{btnX, btnY},
             styles::ELEMENT_BUTTON_SIZE,
-            el.Name,
+            name,
             (ui::Style {
                 .borderColor = bg_color,
                 .hoverBorderColor = RED,
@@ -128,8 +127,31 @@ void SimUI::switchCategory(const MenuCategory category) {
                 .borderThickness = 2.0f
             })
                 .setAllBackgroundColors(bg_color)
-                .setAllTextColors(el.Color.brightness() < 128 ? WHITE : BLACK)
+                .setAllTextColors(color.brightness() < 128 ? WHITE : BLACK)
         );
+    };
+
+    for (auto id = 1; id <= __GLOBAL_TOOL_COUNT; id++) {
+        const auto &tool = GetTools()[id];
+        if (!tool.Enabled || tool.MenuSection != category) continue;
+        
+        ui::TextButton * btn = getElementButton(i, tool.Name, tool.Color);
+        btn->setClickCallback([this, id]() { brushRenderer->set_selected_tool(id); });
+        btn->setEnterCallback([this, id]() {
+            const auto &tool = GetTools()[id];
+            elementDescLabel->setText(tool.Description);
+            elementDescAlpha = 1.0f;
+        });
+        elementButtons.push_back(btn);
+        mainPanel->addChild(btn);
+        i++;
+    }
+
+    for (auto id = 1; id <= ELEMENT_COUNT; id++) {
+        const auto &el = GetElements()[id];
+        if (!el.Enabled || el.MenuSection != category) continue;
+
+        ui::TextButton * btn = getElementButton(i, el.Name, el.Color);
         btn->setClickCallback([this, id]() { brushRenderer->set_selected_element(id); });
         btn->setEnterCallback([this, id]() {
             const auto &el = GetElements()[id];

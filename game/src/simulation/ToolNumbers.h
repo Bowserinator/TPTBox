@@ -1,0 +1,23 @@
+// 267094018
+// Do not modify the hash above, it is used for determining
+// if the tool list has changed
+
+// Ensure you are modifying the .template version, the
+// .h file is auto-generated and will be overwritten
+// when the tools table is changed. To add/remove
+// tools, edit the premake5.lua in simulation/tools 
+
+#ifdef TOOL_NUMBERS_CALL
+# define TOOL_DEFINE(name, id) tools[id].Tool_ ## name ()
+#endif
+#ifdef TOOL_NUMBERS_DECLARE
+# define TOOL_DEFINE(name, id) void Tool_ ## name ()
+#endif
+#ifdef TOOL_NUMBERS_ENUMERATE
+# define TOOL_DEFINE(name, id) constexpr int TOOL_ ## name = id
+#endif
+
+TOOL_DEFINE(HEAT,1);
+
+
+#undef TOOL_DEFINE

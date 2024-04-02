@@ -1,5 +1,6 @@
 #include "Brush.h"
 #include "../../simulation/Simulation.h"
+#include "../../simulation/ToolClasses.h"
 #include "../../render/camera/camera.h"
 #include "../EventConsumer.h"
 #include "../FrameTimeAvg.h"
@@ -73,8 +74,16 @@ void BrushRenderer::do_controls(Simulation * sim) {
             if (BOUNDS_CHECK(x, y, z)) {
                 if (delete_mode)
                     sim->kill_part(ID(sim->pmap[z][y][x]));
-                else
+                else if (!tool_mode)
                     sim->create_part(x, y, z, selected_element);
+                else {
+                    auto &tool = GetTools()[selected_tool];
+                    if (tool.Perform) {
+                        int i = ID(sim->pmap[z][y][x]);
+                        if (!i) i = ID(sim->photons[z][y][x]);
+                        tool.Perform(*sim, i, x, y, z, sim->parts, sim->pmap, bx, by, bz, size);
+                    }
+                }
             }
     }
 

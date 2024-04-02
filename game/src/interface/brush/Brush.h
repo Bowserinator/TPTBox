@@ -28,7 +28,9 @@ public:
 
     void draw();
     void update();
-    void set_selected_element(int element) { selected_element = element; }
+
+    void set_selected_element(int element) { selected_element = element; tool_mode = false; }
+    void set_selected_tool(int tool) { selected_tool = tool; tool_mode = true; }
 
     bool brush_in_sim() const { return x >= 0 && y >= 0 && z >= 0; }
     Vector3T<int> get_raycast_pos() const { return Vector3T<int>{ x, y, z }; };
@@ -41,7 +43,11 @@ private:
     unsigned int size;
     int x, y, z;    // Intersection point
     int bx, by, bz; // Actual brush pos 
+
     int selected_element;
+    int selected_tool;
+    bool tool_mode = false;
+
     Vector2 prevMousePos;
     Vector3 prevCameraPos;
     unsigned int prevSimFrameCount = -1;
