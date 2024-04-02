@@ -10,7 +10,14 @@ namespace util {
         Spinlock(const Spinlock &) = delete;
         Spinlock& operator=(const Spinlock&) = delete;
 
-        inline void lock() { while (_lock.test_and_set(std::memory_order_acquire)) { /* Spin lock */ } }
+        inline void lock() {
+            while (_lock.test_and_set(std::memory_order_acquire)) {
+            #if defined(__cpp_lib_atomic_flag_test)
+                while (_lock.test(std::memory_order_relaxed)) // C++20, otherwise just busy wait
+                    __builtin_ia32_pause();
+            #endif
+            }
+        }
 
         // Try lock, and return if successful
         inline bool try_lock() { return !_lock.test_and_set(std::memory_order_acquire); }
