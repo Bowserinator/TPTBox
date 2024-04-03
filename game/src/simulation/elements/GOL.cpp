@@ -15,7 +15,10 @@ void Element::Element_GOL() {
     Weight = 100;
     Loss = 0.0f;
 
+    // tmp1: Frames remaining before death
+    // tmp2: GOL ID
     DefaultProperties.tmp1 = 1;
+    DefaultProperties.tmp2 = 2;
 
     Graphics = &graphics;
     OnChangeType = &onChangeType;
@@ -31,7 +34,7 @@ static int graphics(GRAPHICS_FUNC_ARGS) {
 
 static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS) {
     if (newType == PT_GOL) {
-        sim.gol.gol_map[z][y][x] = 2;
+        sim.gol.gol_map[z][y][x] = sim.parts[i].tmp2;
         sim.gol.golCount++;
         sim.gol.zsliceHasGol[z] = true;
     } else {

@@ -45,7 +45,7 @@ uint getGol(uint x, uint y, uint z) {
 
 
 void main() {
-    uint x, id, neighborCount;
+    uint x, id, ruleId, neighborCount;
     uvec2 rule;
     uint y = gl_GlobalInvocationID.y;
     uint z = gl_GlobalInvocationID.z;
@@ -58,8 +58,39 @@ void main() {
             continue;
 
         neighborCount = 0;
-        id = getGol(x, y, z);
-        rule = id == 0 ? golRules[1] : golRules[id - 1];
+        id = ruleId = getGol(x, y, z);
+
+        if (ruleId == 0) {
+            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z - 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z + 1);
+        }
+
+        if (ruleId == 0) continue;
+        rule = golRules[ruleId - 1];
 
         // Moore neighborhood
         if ((rule.x & 2147483648) == 0) { // 1 << 31
@@ -100,10 +131,13 @@ void main() {
 
         uint neighborMask = uint(1 << neighborCount);
         if ((rule.x & neighborMask) != 0)
-            destVal = setGol(x, y, z, 2, destVal);
-        else if ((rule.y & neighborMask) != 0)
+            // Birth
+            destVal = setGol(x, y, z, ruleId, destVal);
+        else if ((rule.y & neighborMask) != 0)\
+            // Survive
             destVal = setGol(x, y, z, id, destVal);
         else
+            // Death
             destVal = setGol(x, y, z, 0, destVal);
     }
 

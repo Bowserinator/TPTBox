@@ -290,15 +290,18 @@ void Simulation::update_zslice(const coord_t pz) {
                 parts[id].tmp1--;
 
                 if (parts[id].tmp1 == 0) kill_part(id);
-                else gol.gol_map[pz][py][px] = 1; // TODO gol type id
+                else gol.gol_map[pz][py][px] = parts[id].tmp2;
             } else {
                 gol.gol_map[pz][py][px] = 0;
                 update_part(ID(pmap[pz][py][px]));
             }
         }
         else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
-            part_id i = create_part(px, py, pz, PT_GOL); // TODO: assign type
+            const int org_gol_type = gol.gol_map[pz][py][px]; // create_part may change GOL map
+            part_id i = create_part(px, py, pz, PT_GOL);
             if (i >= 0) {
+                gol.gol_map[pz][py][px] = org_gol_type;
+                parts[i].tmp2 = org_gol_type;
                 parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
             }
         }
