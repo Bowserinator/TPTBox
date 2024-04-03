@@ -1,4 +1,4 @@
-// 267094018
+// 627224779
 // Do not modify the hash above, it is used for determining
 // if the tool list has changed
 
@@ -14,10 +14,11 @@
 # define TOOL_DEFINE(name, id) void Tool_ ## name ()
 #endif
 #ifdef TOOL_NUMBERS_ENUMERATE
-# define TOOL_DEFINE(name, id) constexpr int TOOL_ ## name = id
+# define TOOL_DEFINE(name, id) constexpr int PT_ ## name = id
 #endif
 
 TOOL_DEFINE(HEAT,1);
+TOOL_DEFINE(COOL,2);
 
 
 #undef TOOL_DEFINE

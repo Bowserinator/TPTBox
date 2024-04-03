@@ -26,6 +26,11 @@ enum class GravityMode {
     RADIAL = 2
 };
 
+struct PartHeatDelta {
+    part_id id;
+    float newTemp;
+};
+
 class Simulation {
 public:
     bool paused;
@@ -36,6 +41,8 @@ public:
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
     util::Spinlock parts_add_remove_lock;
+    
+    std::vector<PartHeatDelta> heat_updates;
 
     Air air;
     SimulationGol gol;

@@ -428,7 +428,6 @@ void Simulation::download_heat_from_gpu() {
             coord_t z = parts[i].rz;
 
             if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
-                // && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, GetElements()[parts[i].type].HeatConduct)
                 parts[i].temp = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
                 
                 // Heat transition
@@ -460,6 +459,12 @@ void Simulation::download_heat_from_gpu() {
         }
         heat.reset_dirty_chunks();
     }
+
+    // Apply out-of-GPU heat updates
+    for (const auto &update : heat_updates)
+        if (parts[update.id].type)
+            parts[update.id].temp = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
+    heat_updates.clear();
 }
 
 void Simulation::recalc_free_particles() {
