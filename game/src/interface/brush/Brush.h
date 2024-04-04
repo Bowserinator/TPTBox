@@ -31,6 +31,7 @@ public:
 
     void set_selected_element(int element) { selected_element = element; tool_mode = false; }
     void set_selected_tool(int tool) { selected_tool = tool; tool_mode = true; }
+    void set_misc_data(int data) { misc_data = data; }
 
     bool brush_in_sim() const { return x >= 0 && y >= 0 && z >= 0; }
     Vector3T<int> get_raycast_pos() const { return Vector3T<int>{ x, y, z }; };
@@ -46,6 +47,7 @@ private:
 
     int selected_element;
     int selected_tool;
+    int misc_data;
     bool tool_mode = false;
 
     Vector2 prevMousePos;

@@ -81,7 +81,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
                     if (tool.Perform) {
                         int i = ID(sim->pmap[z][y][x]);
                         if (!i) i = ID(sim->photons[z][y][x]);
-                        tool.Perform(*sim, i, x, y, z, sim->parts, sim->pmap, bx, by, bz, size);
+                        tool.Perform(*sim, i, x, y, z, sim->parts, sim->pmap, bx, by, bz, size, misc_data);
                     }
                 }
             }

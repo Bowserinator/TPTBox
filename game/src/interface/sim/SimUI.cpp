@@ -3,6 +3,7 @@
 #include "../../simulation/ElementClasses.h"
 #include "../../simulation/ToolClasses.h"
 #include "../../simulation/MenuCategories.h"
+#include "../../simulation/Gol.h"
 #include "../brush/Brush.h"
 #include "../../render/Renderer.h"
 
@@ -131,6 +132,25 @@ void SimUI::switchCategory(const MenuCategory category) {
         );
     };
 
+    // Special: GOL menu
+    if (category == MenuCategory::LIFE) {
+        for (int j = 0; j < GOL_RULE_COUNT; j++) {
+            ui::TextButton * btn = getElementButton(i, golRules[j].name, golRules[j].color);
+            btn->setClickCallback([this, j]() {
+                brushRenderer->set_selected_tool(TOOL_GOL);
+                brushRenderer->set_misc_data(j + 1); // id = index + 1 since 0 is reserved for EMPTY
+            });
+            btn->setEnterCallback([this, j]() {
+                elementDescLabel->setText(golRules[j].description);
+                elementDescAlpha = 1.0f;
+            });
+            elementButtons.push_back(btn);
+            mainPanel->addChild(btn);
+            i++;
+        }
+    }
+
+    // Add regular tools and elements
     for (auto id = 1; id <= __GLOBAL_TOOL_COUNT; id++) {
         const auto &tool = GetTools()[id];
         if (!tool.Enabled || tool.MenuSection != category) continue;

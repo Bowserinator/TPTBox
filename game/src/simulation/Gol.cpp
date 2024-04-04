@@ -22,11 +22,29 @@ constexpr uint32_t gRule(std::initializer_list<unsigned int> list) {
     return out;
 }
 
-const std::size_t GOL_RULE_COUNT = 2;
+const std::size_t GOL_RULE_COUNT = 8;
 
 const GOLRule golRules[GOL_RULE_COUNT] = {
-    GOLRule(gRule({5,6,7}), gRule({6}), RGBA(0xFF0000FF), GOLRule::Neighborhood::MOORE, 1),
-    GOLRule(gRule({0,1,2,3,4,5,6}), gRule({1,3}), RGBA(0xFF0000FF), GOLRule::Neighborhood::NEUMANN, 1),
+    GOLRule("678", "678 678. 6-8/6-8/M/3",
+        gRule({6,7,8}), gRule({6,7,8}), RGBA(0x6002EEFF), GOLRule::Neighborhood::MOORE, 2),
+    GOLRule("445", "4/4/5/M",
+        gRule({4}), gRule({4}), RGBA(0xF44336FF), GOLRule::Neighborhood::MOORE, 1),
+    GOLRule("AMBA", "Amoeba. 9-26/5-7,12,13,15/5/M",
+        gRule({9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
+        gRule({5,6,7,12,13,15}), RGBA(0xAD1457FF), GOLRule::Neighborhood::MOORE, 4),
+    GOLRule("BULD", "Builder. 2,6,9/4,6,8,9/10/M",
+        gRule({2,6,9}), gRule({4,6,8,9}), RGBA(0xAB47BCFF), GOLRule::Neighborhood::MOORE, 9),
+    GOLRule("CLD1", "Clouds 1. 13-26/13-14,17-19/2/M",
+        gRule({13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
+        gRule({13,14,17,18,19}), RGBA(0xE040FBFF), GOLRule::Neighborhood::MOORE, 9),
+    GOLRule("CRYS", "Crystal Growth 1. 0-6/1,3/2/VN",
+        gRule({0,1,2,3,4,5,6}), gRule({1,3}), RGBA(0x1565C0FF), GOLRule::Neighborhood::NEUMANN, 1),
+    GOLRule("PYRO", "Pyroclastic. 4-7/6-8/10/M",
+        gRule({4,5,6,7}), gRule({6,7,8}), RGBA(0x00BFA5FF), GOLRule::Neighborhood::MOORE, 9),
+    GOLRule("SLOW", "Slow Decay. 1,4,8,11,13-26/13-26/5/M",
+        gRule({1,4,8,11,13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
+        gRule({13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
+        RGBA(0x76FF03FF), GOLRule::Neighborhood::MOORE, 4),
 };
 
 

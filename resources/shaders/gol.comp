@@ -60,6 +60,7 @@ void main() {
         neighborCount = 0;
         id = ruleId = getGol(x, y, z);
 
+        // TODO: faster
         if (ruleId == 0) {
             if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z - 1);
             if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 0);

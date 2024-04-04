@@ -285,13 +285,19 @@ void Simulation::update_zslice(const coord_t pz) {
     for (coord_t py = y1; py < y2; py++)
     for (coord_t px = 1; px < XRES - 1; px++) {
         if (pmap[pz][py][px]) {
-            if (TYP(pmap[pz][py][px]) == PT_GOL && !gol.gol_map[pz][py][px]) { // Kill GOL that should die
+            if (TYP(pmap[pz][py][px]) == PT_GOL) {
                 auto id = ID(pmap[pz][py][px]);
-                parts[id].tmp1--;
 
-                if (parts[id].tmp1 == 0) kill_part(id);
-                else gol.gol_map[pz][py][px] = parts[id].tmp2;
+                // Kill GOL that should die, dying GOL are considered dead
+                if (!gol.gol_map[pz][py][px] || parts[id].tmp1) {
+                    parts[id].life--;
+                    parts[id].tmp1 = 1;
+                    gol.gol_map[pz][py][px] = 0;
+                    if (parts[id].life <= 0)
+                        kill_part(id);
+                }
             } else {
+                // Not a GOL part, update as normal
                 gol.gol_map[pz][py][px] = 0;
                 update_part(ID(pmap[pz][py][px]));
             }
@@ -302,6 +308,7 @@ void Simulation::update_zslice(const coord_t pz) {
             if (i >= 0) {
                 gol.gol_map[pz][py][px] = org_gol_type;
                 parts[i].tmp2 = org_gol_type;
+                parts[i].life = golRules[org_gol_type - 1].decayTime;
                 parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
             }
         }

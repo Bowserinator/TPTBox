@@ -147,8 +147,13 @@ void HUD::draw(const HUDData &data) {
             ctype_data = " (" + GetElements()[sim->parts[idx].ctype].Name + ')';
     }
 
+    // Names
+    std::string name = GetElements()[sim->parts[idx].type].Name;
+    if (sim->parts[idx].type == PT_GOL)
+        name = golRules[util::clamp(sim->parts[idx].tmp2 - 1, 0, GOL_RULE_COUNT - 1)].name;
+
     const char * line11 = idx ?
-        TextFormat("%s%s,  %s", GetElements()[sim->parts[idx].type].Name.c_str(), ctype_data.c_str(), air_data) :
+        TextFormat("%s%s,  %s", name.c_str(), ctype_data.c_str(), air_data) :
         TextFormat("Empty,  %s", air_data);
 
     const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
