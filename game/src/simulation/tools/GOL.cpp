@@ -21,5 +21,6 @@ static void PerformFunc(PERFORM_FUNC_ARGS) {
         parts[id].tmp2 = miscData;
         parts[id].life = golRules[miscData - 1].decayTime;
         sim.gol.gol_map[z][y][x] = miscData;
+        sim._set_color_data_at(x, y, z, &parts[id]); // Force color update for type
     }
 }

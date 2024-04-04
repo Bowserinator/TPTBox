@@ -112,12 +112,13 @@ public:
         }
         return "Unknown";
     }
-private:
-    void _init_can_move();
-    void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
+
     void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part);
     void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
     bool _should_do_lighting(const Particle &part);
+private:
+    void _init_can_move();
+    void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
     void _force_update_all_shadows();
 };
 
