@@ -59,6 +59,7 @@ void Simulation::init() {
 }
 
 void Simulation::reset() {
+    util::unique_spinlock _lock(parts_add_remove_lock);
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
@@ -66,7 +67,9 @@ void Simulation::reset() {
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
 
     for (int i = 1; i < NPARTS; i++)
-        if (parts[i].type) kill_part(i);
+        if (parts[i].type)
+            kill_part<false>(i);
+    memset(reinterpret_cast<void*>(&parts), 0, sizeof(parts));
 
     pfree = 1;
     maxId = 0;
@@ -175,6 +178,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     return old_pfree;
 }
 
+template <bool use_lock> 
 void Simulation::kill_part(const part_id i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
@@ -206,11 +210,16 @@ void Simulation::kill_part(const part_id i) {
     _set_color_data_at(x, y, z, nullptr);
 
     // Update PFREE pointer in linked list
-    util::unique_spinlock _lock(parts_add_remove_lock);
-    if (i == maxId && i > 0)
-        maxId--;
-    part.id = -pfree;
-    pfree = i;
+    if constexpr(use_lock) {
+        util::unique_spinlock _lock(parts_add_remove_lock);
+        if (i == maxId && i > 0) maxId--;
+        part.id = -pfree;
+        pfree = i;
+    } else {
+        if (i == maxId && i > 0) maxId--;
+        part.id = -pfree;
+        pfree = i;
+    }
 }
 
 bool Simulation::part_change_type(const part_id i, const part_type new_type) {
@@ -567,9 +576,9 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         }
 
         // TODO heat
-        // int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
-        // RGBA tmp(t, t, t, 255);
-        // new_color = tmp.as_ABGR();
+        int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
+        RGBA tmp(t, t, t, 255);
+        new_color = tmp.as_ABGR();
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);
