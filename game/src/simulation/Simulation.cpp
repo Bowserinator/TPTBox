@@ -66,10 +66,6 @@ void Simulation::reset() {
 
     std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
     std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
-
-    for (int i = 1; i < NPARTS; i++)
-        if (parts[i].type)
-            kill_part<false>(i);
     memset(reinterpret_cast<void*>(&parts), 0, sizeof(parts));
 
     pfree = 1;
@@ -179,7 +175,6 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     return old_pfree;
 }
 
-template <bool use_lock> 
 void Simulation::kill_part(const part_id i) {
     auto &part = parts[i];
     if (part.type <= 0) return;
@@ -211,16 +206,10 @@ void Simulation::kill_part(const part_id i) {
     _set_color_data_at(x, y, z, nullptr);
 
     // Update PFREE pointer in linked list
-    if constexpr(use_lock) {
-        util::unique_spinlock _lock(parts_add_remove_lock);
-        if (i == maxId && i > 0) maxId--;
-        part.id = -pfree;
-        pfree = i;
-    } else {
-        if (i == maxId && i > 0) maxId--;
-        part.id = -pfree;
-        pfree = i;
-    }
+    util::unique_spinlock _lock(parts_add_remove_lock);
+    if (i == maxId && i > 0) maxId--;
+    part.id = -pfree;
+    pfree = i;
 }
 
 bool Simulation::part_change_type(const part_id i, const part_type new_type) {
