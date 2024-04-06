@@ -2,6 +2,7 @@
 #define SIM_GRAPHICS_H
 
 #include "SimulationDef.h"
+#include "DisplayMode.h"
 #include "../util/types/heap_array.h"
 #include "../util/types/bitset8.h"
 
@@ -60,8 +61,16 @@ struct SimulationGraphics {
     uint8_t shadow_map[SHADOW_MAP_Y][SHADOW_MAP_X];
     bool shadows_force_update;
 
+    DisplayMode display_mode;
+    bool display_mode_force_update = false;
+
     SimulationGraphics() {
         reset();
+    }
+
+    void set_display_mode(const DisplayMode mode) {
+        display_mode = mode;
+        display_mode_force_update = true;
     }
 
     void reset() {

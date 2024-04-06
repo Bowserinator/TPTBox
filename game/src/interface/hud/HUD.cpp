@@ -88,6 +88,17 @@ void HUD::update_controls(const BrushRenderer &brush_renderer) {
         consumeKey = true;
     }
 
+    // Display modes
+    constexpr int NUM_KEYS[] = { KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE, KEY_ZERO };
+    for (int i = 0; i < std::min(10, (int)DisplayMode::LAST); i++) {
+        if (EventConsumer::ref()->isKeyPressed(NUM_KEYS[i])) {
+            consumeKey = true;
+            sim->graphics.set_display_mode((DisplayMode)i);
+            displayTooltip(TextFormat("Display Mode: %s", displayModeProperties[(std::size_t)sim->graphics.display_mode].name.c_str()));
+            break;
+        }
+    }
+
     if (consumeKey)
         EventConsumer::ref()->consumeKeyboard();
 }

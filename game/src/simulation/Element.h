@@ -5,7 +5,7 @@
 #include "stdint.h"
 
 #include "MenuCategories.h"
-#include "../util/types/color.h"
+#include "../graphics/color.h"
 #include "../util/types/bitset8.h"
 #include "ElementDefs.h"
 

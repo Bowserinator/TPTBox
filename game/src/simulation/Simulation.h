@@ -82,6 +82,7 @@ public:
     void download_heat_from_gpu();
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();
+    void force_graphics_update();
 
     void update_part(const part_id i, const bool consider_causality = true);
 

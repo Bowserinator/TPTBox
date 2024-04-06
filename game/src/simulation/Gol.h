@@ -3,7 +3,7 @@
 
 #include "stdint.h"
 #include "SimulationDef.h"
-#include "../util/types/color.h"
+#include "../graphics/color.h"
 #include "../util/types/persistent_buffer.h"
 
 #include <array>

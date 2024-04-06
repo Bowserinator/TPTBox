@@ -2,7 +2,7 @@
 #define PARTICLE_H
 
 #include "SimulationDef.h"
-#include "../util/types/color.h"
+#include "../graphics/color.h"
 #include "../util/types/bitset8.h"
 
 namespace PartFlags {

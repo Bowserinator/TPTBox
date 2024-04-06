@@ -1,6 +1,7 @@
 #include "Simulation.h"
 #include "ElementClasses.h"
 #include "ElementDefs.h"
+#include "../graphics/gradient.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
 
@@ -398,6 +399,10 @@ void Simulation::update() {
     if (paused) {
         if (graphics.shadows_force_update)
             _force_update_all_shadows();
+        if (graphics.display_mode_force_update) {
+            force_graphics_update();
+            graphics.display_mode_force_update = false;
+        }
         return;
     }
 
@@ -432,6 +437,9 @@ void Simulation::update() {
 
     recalc_free_particles();
     frame_count++;
+
+    if (graphics.display_mode_force_update)
+        graphics.display_mode_force_update = false;
 }
 
 void Simulation::download_heat_from_gpu() {
@@ -536,7 +544,9 @@ void Simulation::recalc_free_particles() {
 
         // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
-        if (GetElements()[part.type].Graphics) // TODO: always update if heat view for example
+        if (GetElements()[part.type].Graphics ||
+                displayModeProperties[(std::size_t)graphics.display_mode].alwaysUpdate ||
+                graphics.display_mode_force_update)
             _set_color_data_at(part.rx, part.ry, part.rz, &part);
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
@@ -557,6 +567,14 @@ void Simulation::dispatch_compute_shaders() {
     heat.dispatch();
 }
 
+void Simulation::force_graphics_update() {
+    for (part_id i = 0; i <= maxId; i++) {
+        auto &part = parts[i];
+        if (!part.type) continue;
+        _set_color_data_at(part.rx, part.ry, part.rz, &part);
+    }
+}
+
 
 // Octree & color data updates
 // ------------------------
@@ -569,16 +587,33 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         new_color = el.Color.as_ABGR();
         new_flags = util::Bitset8(el.GraphicsFlags);
 
-        if (el.Graphics) {
-            RGBA color_out;
-            el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
-            new_color = color_out.as_ABGR();
+        // Color display mode
+        switch (graphics.display_mode) {
+            case DisplayMode::DISPLAY_MODE_HEAT: {
+                auto tmp = (graphics::gradient_get(graphics::gradients::heat_gradient, part->temp / 5000.0f));
+                tmp.a = 255;
+                new_color = tmp.as_ABGR();
+                break;
+            }
+            default:
+                if (el.Graphics) {
+                    RGBA color_out;
+                    el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
+                    new_color = color_out.as_ABGR();
+                }
+                break;
         }
 
-        // TODO heat
-        int t = std::min(255, (int)(255 * (part->temp / 400.0f)));
-        RGBA tmp(t, t, t, 255);
-        new_color = tmp.as_ABGR();
+        // Other colors that remove flags
+        switch (graphics.display_mode) {
+            case DisplayMode::DISPLAY_MODE_NOTHING:
+            case DisplayMode::DISPLAY_MODE_PRESSURE:
+            case DisplayMode::DISPLAY_MODE_HEAT:
+                new_flags[GraphicsFlagsIdx::GLOW] = 0;
+                new_flags[GraphicsFlagsIdx::BLUR] = 0;
+                break;
+            default: break;
+        }
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);

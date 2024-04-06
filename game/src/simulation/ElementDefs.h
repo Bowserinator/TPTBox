@@ -2,7 +2,7 @@
 #define ELEMENT_DEFS_H
 
 #include "stdint.h"
-#include "../util/types/color.h"
+#include "../graphics/color.h"
 #include "../util/types/bitset8.h"
 #include "Simulation.h"
 
