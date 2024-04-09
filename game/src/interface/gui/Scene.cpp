@@ -5,6 +5,7 @@
 
 #include <ranges>
 #include <algorithm>
+#include <vector>
 
 using namespace ui;
 
@@ -16,9 +17,8 @@ Scene::~Scene() {
 }
 
 void Scene::removeChild(Component * component) {
-    auto itr = std::remove(children.begin(), children.end(), component);
-    children.erase(itr, children.end());
-    delete *itr;
+    if (std::erase(children, component))
+        delete component;
 }
 
 void Scene::update() {
@@ -28,7 +28,9 @@ void Scene::update() {
     if (GetMouseDelta() != Vector2{0, 0})
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
-    for (auto child : std::ranges::views::reverse(children)) {
+    // Preserve copy in case callback adds/removes children
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend());
+    for (auto child : childrenCopy) {
         // -- Input events
         Vector2 localPos = GetMousePosition() - pos;
         Vector2 childLocalPos = localPos - child->pos;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 #include "raylib.h"
 #include "./components/abstract/Component.h"

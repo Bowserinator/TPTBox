@@ -31,6 +31,8 @@ struct PartHeatDelta {
     float newTemp;
 };
 
+namespace settings { class Sim; }
+
 class Simulation {
 public:
     bool paused;
@@ -64,6 +66,9 @@ public:
     coord_t max_y_per_zslice[ZRES - 2];
     std::vector<RNG> rngs;
 
+    bool enable_air = true;
+    bool enable_heat = true;
+
 
     Simulation();
     ~Simulation();
@@ -72,6 +77,7 @@ public:
     void reset();
     void cycle_gravity_mode();
     void set_paused(const bool paused) { this->paused = paused; };
+    void update_settings(settings::Sim * settings);
 
     part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
     void kill_part(const part_id id);

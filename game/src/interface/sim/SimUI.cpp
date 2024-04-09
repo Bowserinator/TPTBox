@@ -16,6 +16,7 @@
 #include "../gui/styles.h"
 
 #include "../settings/GraphicsSettingsModal.h"
+#include "../settings/SimSettingsModal.h"
 
 const float SIDE_PANEL_WIDTH = styles::SETTINGS_BUTTON_HEIGHT;
 constexpr float MAIN_PANEL_HEIGHT = 90;
@@ -98,6 +99,9 @@ void SimUI::init() {
     }
 
     switchCategory((MenuCategory)0);
+
+    // TODO
+    addChild(new SimSettingsModal(Vector2{50, 50}, Vector2{500, 500}, sim));
 }
 
 void SimUI::switchCategory(const MenuCategory category) {

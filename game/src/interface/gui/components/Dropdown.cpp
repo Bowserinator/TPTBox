@@ -60,7 +60,7 @@ void Dropdown::draw(const Vector2 &screenPos) {
         style.getBorderColor(this));
 
     if (selectedOptionIndex >= 0) {
-        const auto text = options[selectedOption].first;
+        const auto text = options[selectedOptionIndex].first;
         const auto tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
 

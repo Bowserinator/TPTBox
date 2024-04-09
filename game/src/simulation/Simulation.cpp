@@ -4,6 +4,7 @@
 #include "../graphics/gradient.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
+#include "../interface/settings/data/SimSettingsData.h"
 
 #include <omp.h>
 #include <algorithm>
@@ -37,10 +38,7 @@ Simulation::Simulation():
     
 
     // ---- Threads ------
-    constexpr int MIN_CASUALITY_RADIUS = 4; // Width of each slice = 2 * this
-    constexpr int MAX_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
-
-    sim_thread_count = std::min(omp_get_max_threads(), MAX_THREADS);
+    sim_thread_count = std::min(omp_get_max_threads(), MAX_SIM_THREADS);
     max_ok_causality_range = ZRES / (sim_thread_count * 4);
     actual_thread_count = 0;
 
@@ -77,6 +75,15 @@ void Simulation::reset() {
     graphics.reset();
     heat.reset();
     gol.reset();
+}
+
+void Simulation::update_settings(settings::Sim * settings) {
+    enable_air = settings->enableAir;
+    enable_heat = settings->enableHeat;
+    gravity_mode = settings->gravityMode;
+    sim_thread_count =
+        settings->threadCount > 0 ? settings->threadCount :
+        std::min(omp_get_max_threads(), MAX_SIM_THREADS);
 }
 
 void Simulation::_init_can_move() {
@@ -397,7 +404,7 @@ void Simulation::update() {
 
     auto t = GetTime();
     if (gol.golCount) gol.wait_and_get();
-    download_heat_from_gpu();
+    if (enable_heat) download_heat_from_gpu();
     
     auto end = (GetTime() - t);
     // std::cout << end << "\n";

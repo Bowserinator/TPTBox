@@ -83,4 +83,7 @@ namespace Transition {
     constexpr part_type_s TO_CTYPE = -2;
 };
 
+constexpr int MIN_CASUALITY_RADIUS = 4; // Width of each slice = 2 * this
+constexpr int MAX_SIM_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
+
 #endif

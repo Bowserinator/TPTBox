@@ -46,10 +46,8 @@ void ui::Panel::removeChild(Component * component) {
 }
 
 void ui::Panel::clearChildren() {
-    for (auto &child : children) {
+    for (auto child : children)
         delete child;
-        child = nullptr;
-    }
     children.clear();
 }
 
@@ -67,23 +65,26 @@ void ui::Panel::onUnfocus() {
 }
 
 // Propogate rest of the events
-#define PROPOGATE_EVENT(evt) for (auto child : std::ranges::views::reverse(children)) \
+#define PROPOGATE_EVENT(evt) std::vector<Component *> childrenCopy(children.rbegin(), children.rend()); \
+    for (auto child : childrenCopy) \
         if (child->contains(localPos + eventDelta - child->pos)) { \
             child->evt(localPos + eventDelta - child->pos); \
             break; \
         }
-#define PROPOGATE_EVENT_VAR(evt, var) for (auto child : std::ranges::views::reverse(children)) \
+#define PROPOGATE_EVENT_VAR(evt, var) std::vector<Component *> childrenCopy(children.rbegin(), children.rend()); \
+    for (auto child : childrenCopy) \
         if (child->contains(localPos + eventDelta - child->pos)) { \
             child->evt(localPos + eventDelta - child->pos, var); \
             break; \
         }
 
 void ui::Panel::onMouseMoved(Vector2 localPos) {
-    for (auto child : std::ranges::views::reverse(children))
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend());
+    for (auto child : childrenCopy)
         child->onMouseMoved(localPos + eventDelta - child->pos);
 
     Vector2 prevLocalPos = localPos - GetMouseDelta();
-    for (auto child : std::ranges::views::reverse(children)) { // TODO
+    for (auto child : childrenCopy) {
         bool containsNow = child->contains(localPos + eventDelta - child->pos);
         bool containsPrev = child->contains(prevLocalPos + eventDelta - child->pos); 
 
@@ -98,7 +99,8 @@ void ui::Panel::onMouseEnter(Vector2 localPos) {
 }
 void ui::Panel::onMouseLeave(Vector2 localPos) {
     Vector2 prevLocalPos = localPos - GetMouseDelta();
-    for (auto child : std::ranges::views::reverse(children))
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend());
+    for (auto child : childrenCopy)
         if (child->contains(prevLocalPos + eventDelta - child->pos))
             child->onMouseLeave(localPos + eventDelta - child->pos);
 }
@@ -111,8 +113,10 @@ void ui::Panel::onMouseRelease(Vector2 localPos, unsigned button) {
 }
 void ui::Panel::onMouseClick(Vector2 localPos, unsigned button) {
     bool alreadyClicked = false;
-    for (auto child : std::ranges::views::reverse(children)) {
-        if (child->contains(localPos + eventDelta - child->pos) && !alreadyClicked) {
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend()); // Preserve copy, callback could modify
+
+    for (auto child : childrenCopy) {
+        if (!alreadyClicked && child->contains(localPos + eventDelta - child->pos)) {
             child->onMouseClick(localPos + eventDelta - child->pos, button);
             alreadyClicked = true;
         } else {
@@ -125,12 +129,14 @@ void ui::Panel::onMouseWheelInside(Vector2 localPos, float d) {
 }
 
 void ui::Panel::onMouseWheel(Vector2 localPos, float d) {
-    for (auto child : std::ranges::views::reverse(children))
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend()); // Preserve copy, callback could modify
+    for (auto child : childrenCopy)
         child->onMouseWheel(localPos + eventDelta - child->pos, d);
 }
 
 void ui::Panel::updateKeys(bool shift, bool ctrl, bool alt) {
-    for (auto child : std::ranges::views::reverse(children))
+    std::vector<Component *> childrenCopy(children.rbegin(), children.rend()); // Preserve copy, callback could modify
+    for (auto child : childrenCopy)
         child->updateKeys(shift, ctrl, alt);
 }
 
