@@ -22,7 +22,7 @@ constexpr uint32_t gRule(std::initializer_list<unsigned int> list) {
     return out;
 }
 
-const std::size_t GOL_RULE_COUNT = 8;
+const std::size_t GOL_RULE_COUNT = 14;
 
 const GOLRule golRules[GOL_RULE_COUNT] = {
     GOLRule("678", "678 678. 6-8/6-8/M/3",
@@ -39,12 +39,26 @@ const GOLRule golRules[GOL_RULE_COUNT] = {
         gRule({13,14,17,18,19}), RGBA(0xE040FBFF), GOLRule::Neighborhood::MOORE, 9),
     GOLRule("CRYS", "Crystal Growth 1. 0-6/1,3/2/VN",
         gRule({0,1,2,3,4,5,6}), gRule({1,3}), RGBA(0x1565C0FF), GOLRule::Neighborhood::NEUMANN, 1),
+    GOLRule("CRY2", "Crystal Growth 2. 1-2/1,3/5/VN",
+        gRule({1,2}), gRule({1,3}), RGBA(0xFFA726FF), GOLRule::Neighborhood::NEUMANN, 4),
     GOLRule("PYRO", "Pyroclastic. 4-7/6-8/10/M",
         gRule({4,5,6,7}), gRule({6,7,8}), RGBA(0x00BFA5FF), GOLRule::Neighborhood::MOORE, 9),
     GOLRule("SLOW", "Slow Decay. 1,4,8,11,13-26/13-26/5/M",
         gRule({1,4,8,11,13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
         gRule({13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
         RGBA(0x76FF03FF), GOLRule::Neighborhood::MOORE, 4),
+    GOLRule("MORE", "More Structures. 7-26/4/4/M",
+        gRule({7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26}), gRule({4}),
+        RGBA(0xAFB42BFF), GOLRule::Neighborhood::MOORE, 3),
+    GOLRule("PULS", "Pulse Waves. 3/1-3/10/M",
+        gRule({3}), gRule({1,2,3}),
+        RGBA(0xFFC400FF), GOLRule::Neighborhood::MOORE, 9),
+    GOLRule("REPL", "Single Point Replicator. /1/2/M",
+        gRule({}), gRule({1}), RGBA(0xB0BEC5FF), GOLRule::Neighborhood::MOORE, 1),
+    GOLRule("SYMM", "Symmetry. /2/10/M",
+        gRule({}), gRule({2}), RGBA(0xF57F17FF), GOLRule::Neighborhood::MOORE, 9),
+    GOLRule("VNEU", "Von Neumann Builder. 1-3/1,4-5/5/VN",
+        gRule({1,2,3}), gRule({4,5}), RGBA(0xC6FF00FF), GOLRule::Neighborhood::NEUMANN, 4)
 };
 
 
