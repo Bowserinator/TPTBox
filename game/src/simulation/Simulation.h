@@ -92,6 +92,7 @@ public:
     void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2,
         const part_id id1, const part_id id2);
+    void move_part(const coord_t x1, const coord_t y1, const coord_t z1, const part_id id);
 
     inline RNG& rng() { return rngs[omp_get_thread_num()]; }
 

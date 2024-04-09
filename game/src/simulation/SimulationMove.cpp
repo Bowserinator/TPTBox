@@ -205,10 +205,14 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
     switch (behavior) {
         case PartSwapBehavior::NOOP:
             return;
-        case PartSwapBehavior::SWAP:
-            swap_part(x, y, z, oldx, oldy, oldz, ID(part_map[z][y][x]), idx);
+        case PartSwapBehavior::SWAP: {
+            const auto destId = ID(part_map[z][y][x]);
+            if (destId) swap_part(x, y, z, oldx, oldy, oldz, destId, idx);
+            else        move_part(x, y, z, idx);
+
             graphics.color_force_update[FLAT_IDX(oldx, oldy, oldz)] = true; // Fix overlap case
             break;
+        }
         case PartSwapBehavior::OCCUPY_SAME:
             part_map[oldz][oldy][oldx] = 0;
             part_map[z][y][x] = old_pmap_val;
@@ -243,7 +247,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
 }
 
 /**
- * @brief Spatially swap the particles at the two ids
+ * @brief Spatially swap the particles at the two ids. NEITHER PARTICLE CAN BE NULL
  */
 void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         const coord_t x2, const coord_t y2, const coord_t z2, const part_id id1, const part_id id2) {
@@ -264,17 +268,17 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
 
     // Always try to show energy on top
     if (part1_is_e || !photons[z1][y1][x1])
-        _set_color_data_at(x1, y1, z1, id2 ? &parts[id2] : nullptr);
+        _set_color_data_at(x1, y1, z1, &parts[id2]);
     if (part2_is_e || !photons[z2][y2][x2])
-        _set_color_data_at(x2, y2, z2, id1 ? &parts[id1] : nullptr);
+        _set_color_data_at(x2, y2, z2, &parts[id1]);
 
     // Do not simply swap the pmap values here because that will break if we try
     // to swap a particle that's not at the top of the stack
-    if ((!id1 || !part1_is_e) && (!id2 || !part2_is_e)) {
+    if (!part1_is_e && !part2_is_e) {
         pmap[z1][y1][x1] = PMAP(parts[id2].type, id2);
         pmap[z2][y2][x2] = PMAP(parts[id1].type, id1);
     }
-    else if ((!id1 || part1_is_e) && (!id1 || part2_is_e)) {
+    else if (part1_is_e && part2_is_e) {
         photons[z1][y1][x1] = PMAP(parts[id2].type, id2);
         photons[z2][y2][x2] = PMAP(parts[id1].type, id1);
     }
@@ -285,6 +289,36 @@ void Simulation::swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
         #ifdef DEBUG
         throw std::runtime_error("Tried swapping energy particle with non-energy particle (not allowed)");
         #endif
+    }
+}
+
+/**
+ * @brief Move part id2 to x1, y1, z1. The destination spot MUST BE EMPTY
+ */
+void Simulation::move_part(const coord_t x1, const coord_t y1, const coord_t z1, const part_id id) {
+    const auto oldx = parts[id].rx;
+    const auto oldy = parts[id].ry;
+    const auto oldz = parts[id].rz;
+
+    heat.update_temperate(x1, y1, z1, heat.heat_map[oldz][oldy][oldx]);
+    heat.update_temperate(oldx, oldy, oldz, -1.0f);
+
+    parts[id].x = parts[id].rx = x1;
+    parts[id].y = parts[id].ry = y1;
+    parts[id].z = parts[id].rz = z1;
+
+    auto part_is_e = parts[id].flag[PartFlags::IS_ENERGY];
+     _set_color_data_at(x1, y1, z1, &parts[id]);
+     _set_color_data_at(oldx, oldy, oldz, nullptr);
+
+    // Do not simply swap the pmap values here because that will break if we try
+    // to swap a particle that's not at the top of the stack
+    if (!part_is_e) {
+        pmap[z1][y1][x1]       = PMAP(parts[id].type, id);
+        pmap[oldz][oldy][oldx] = PMAP(0, 0);
+    } else {
+        photons[z1][y1][x1]       = PMAP(parts[id].type, id);
+        photons[oldz][oldy][oldx] = PMAP(0, 0);
     }
 }
 
