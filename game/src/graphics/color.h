@@ -43,11 +43,13 @@ public:
 
     // Blend self with other color (alpha blending). Other is on top of current
     RGBA blend(const RGBA &other) const {
-        const float a_out = other.a + a * (1 - other.a);
+        const float a1 = static_cast<float>(a) / 255.0f;
+        const float a2 = static_cast<float>(other.a) / 255.0f;
+        const float a_out = a2 + a1 * (1 - a2);
         return RGBA(
-            static_cast<uint8_t>((other.r * other.a + r * a * (1 - other.a)) / a_out),
-            static_cast<uint8_t>((other.g * other.a + g * a * (1 - other.a)) / a_out),
-            static_cast<uint8_t>((other.b * other.a + b * a * (1 - other.a)) / a_out),
+            static_cast<uint8_t>((other.r * a2 + r * a1 * (1 - a2)) / a_out),
+            static_cast<uint8_t>((other.g * a2 + g * a1 * (1 - a2)) / a_out),
+            static_cast<uint8_t>((other.b * a2 + b * a1 * (1 - a2)) / a_out),
             a_out
         );
     }

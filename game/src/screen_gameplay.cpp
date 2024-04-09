@@ -65,7 +65,10 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    sim.create_part(10, 10, 10, PT_WATR);
+    for (int x = 10; x < 100; x++) {
+        int i = sim.create_part(x, 10, 10, PT_ICE);
+        sim.parts[i].temp = 10.0f * (x - 10);
+    }
 
     // for (int x = 10; x < XRES - 1; x++) 
     // for (int z = 10; z < 15; z++)
