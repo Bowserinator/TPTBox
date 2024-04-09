@@ -153,7 +153,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].assign_with_defaults(el.DefaultProperties);
 
     if (el.HeatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, el.HeatConduct))
-        heat.heat_map[z][y][x] = parts[old_pfree].temp;
+        heat.update_temperate(x, y, z, parts[old_pfree].temp);
 
     if (el.OnChangeType)
         el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
@@ -474,13 +474,16 @@ void Simulation::download_heat_from_gpu() {
             }
         }
         heat.reset_dirty_chunks();
-    }
 
-    // Apply out-of-GPU heat updates
-    for (const auto &update : heat_updates)
-        if (parts[update.id].type)
-            parts[update.id].temp = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
-    heat_updates.clear();
+        // Apply out-of-GPU heat updates
+        for (const auto &update : heat_updates)
+            if (parts[update.id].type) {
+                auto &part = parts[update.id];
+                part.temp = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
+                heat.update_temperate(part.rx, part.ry, part.rz, part.temp);
+            }
+        heat_updates.clear();
+    }
 }
 
 void Simulation::recalc_free_particles() {

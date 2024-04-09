@@ -103,5 +103,5 @@ void SimulationHeat::update_temperate(const coord_t x, const coord_t y, const co
 }
 
 void SimulationHeat::flag_temp_update(const coord_t x, const coord_t y, const coord_t z) {
-    dirty_chunks[z / SIM_HEAT_ZRES][y / SIM_HEAT_YRES][x / SIM_HEAT_XRES] = true;
+    dirty_chunks[z / SIM_HEAT_DIRTY_BLOCK_SIZE][y / SIM_HEAT_DIRTY_BLOCK_SIZE][x / SIM_HEAT_DIRTY_BLOCK_SIZE] = true;
 }

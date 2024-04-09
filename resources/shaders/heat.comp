@@ -36,7 +36,10 @@ void main() {
 
     uint baseIdx = idx(coords.x, coords.y, coords.z);
     float selfTemp = heatIn[baseIdx];
-    if (selfTemp < 0.0) return;
+    if (selfTemp < 0.0) {
+        heatOut[baseIdx] = -1.0;
+        return;
+    }
 
     float total = selfTemp;
     int count = 1;

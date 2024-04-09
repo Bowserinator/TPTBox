@@ -8,13 +8,10 @@
 
 #include <cmath>
 
-constexpr int SIM_HEAT_XRES = 10;
-constexpr int SIM_HEAT_YRES = 10;
-constexpr int SIM_HEAT_ZRES = 10;
-
-constexpr int SIM_HEAT_ZBLOCKS = (int)std::ceil((float)ZRES / SIM_HEAT_ZRES);
-constexpr int SIM_HEAT_YBLOCKS = (int)std::ceil((float)YRES / SIM_HEAT_YRES);
-constexpr int SIM_HEAT_XBLOCKS = (int)std::ceil((float)XRES / SIM_HEAT_XRES);
+constexpr int SIM_HEAT_DIRTY_BLOCK_SIZE = 10; // For flagging updates
+constexpr int SIM_HEAT_ZBLOCKS = (int)std::ceil((float)ZRES / SIM_HEAT_DIRTY_BLOCK_SIZE);
+constexpr int SIM_HEAT_YBLOCKS = (int)std::ceil((float)YRES / SIM_HEAT_DIRTY_BLOCK_SIZE);
+constexpr int SIM_HEAT_XBLOCKS = (int)std::ceil((float)XRES / SIM_HEAT_DIRTY_BLOCK_SIZE);
 
 struct HeatConstants {
     int32_t SIMRES[4] = { (int)XRES, (int)YRES, (int)ZRES };

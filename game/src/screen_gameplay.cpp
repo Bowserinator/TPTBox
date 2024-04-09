@@ -65,22 +65,24 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    for (int x = 10; x < XRES - 1; x++) 
-    for (int z = 10; z < 15; z++)
-    for (int y = 51; y < 52; y++) {
-        int i = sim.create_part(x, y, z, PT_PHOT);
-        sim.parts[i].vz = 1.0f;
-        sim.parts[i].vx = sim.parts[i].vy = 0.0f;
-    }
+    sim.create_part(10, 10, 10, PT_WATR);
 
-    for (int x = 1; x < XRES - 1; x++) 
-    for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 2; y++) {
-        // sim.create_part(x, y, z, PT_DUST);
-        sim.create_part(x, y, z, PT_WATR);
+    // for (int x = 10; x < XRES - 1; x++) 
+    // for (int z = 10; z < 15; z++)
+    // for (int y = 51; y < 52; y++) {
+    //     int i = sim.create_part(x, y, z, PT_PHOT);
+    //     sim.parts[i].vz = 1.0f;
+    //     sim.parts[i].vx = sim.parts[i].vy = 0.0f;
+    // }
 
-        sim.create_part(x, y + 50, z, PT_GLAS);
-    }
+    // for (int x = 1; x < XRES - 1; x++) 
+    // for (int z = 1; z < ZRES - 1; z++)
+    // for (int y = 1; y < 2; y++) {
+    //     // sim.create_part(x, y, z, PT_DUST);
+    //     sim.create_part(x, y, z, PT_WATR);
+
+    //     sim.create_part(x, y + 50, z, PT_GLAS);
+    // }
 
     // for (int x = 1; x < XRES - 1; x++) 
     // for (int z = 1; z < ZRES - 1; z++)
