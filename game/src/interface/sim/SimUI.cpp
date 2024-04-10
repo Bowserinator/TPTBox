@@ -55,7 +55,10 @@ void SimUI::init() {
     };
 
     addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
-        addChild(new GraphicsSettingsModal(Vector2{50, 50}, Vector2{500, 500}, renderer));
+        addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, 80}, Vector2{500, 500}, renderer));
+    }));
+    addChild(getBottomIconButton(3, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
+        addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, 80}, Vector2{500, 500}, sim));
     }));
     addChild(getBottomIconButton(4, ICON_FILE)->setClickCallback([this]() {
         sim->reset();
@@ -99,9 +102,6 @@ void SimUI::init() {
     }
 
     switchCategory((MenuCategory)0);
-
-    // TODO
-    addChild(new SimSettingsModal(Vector2{50, 50}, Vector2{500, 500}, sim));
 }
 
 void SimUI::switchCategory(const MenuCategory category) {
