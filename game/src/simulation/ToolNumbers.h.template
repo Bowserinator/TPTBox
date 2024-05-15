@@ -13,7 +13,7 @@
 # define TOOL_DEFINE(name, id) void Tool_ ## name ()
 #endif
 #ifdef TOOL_NUMBERS_ENUMERATE
-# define TOOL_DEFINE(name, id) constexpr int PT_ ## name = id
+# define TOOL_DEFINE(name, id) constexpr int TOOL_ ## name = id
 #endif
 
 @tool_defs@
