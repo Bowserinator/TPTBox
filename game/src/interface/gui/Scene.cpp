@@ -25,7 +25,7 @@ void Scene::update() {
     float dt = GetFrameTime();
     bool mouseConsume = false;
 
-    if (GetMouseDelta() != Vector2{0, 0})
+    if (EventConsumer::ref()->getMouseDelta() != Vector2{0, 0})
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
     // Preserve copy in case callback adds/removes children
@@ -37,8 +37,8 @@ void Scene::update() {
         bool containsCurrentMousePos = child->contains(childLocalPos);
 
         // -- Mouse movement ---
-        if (GetMouseDelta() != Vector2{0, 0}) {
-            Vector2 prevLocalPos = GetMousePosition() - GetMouseDelta() - pos;
+        if (EventConsumer::ref()->getMouseDelta() != Vector2{0, 0}) {
+            Vector2 prevLocalPos = GetMousePosition() - EventConsumer::ref()->getMouseDelta() - pos;
             bool containsPrevMousePos = child->contains(prevLocalPos - child->pos);
             child->onMouseMoved(childLocalPos);
 

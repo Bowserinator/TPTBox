@@ -41,7 +41,7 @@ void RenderCamera::update() {
 }
 
 void RenderCamera::updateControlsFirstPerson(const float delta) {
-    Vector2 mouseDelta = GetMouseDelta();
+    Vector2 mouseDelta = EventConsumer::ref()->getMouseDelta();
     const float dm = delta * TARGET_FPS;
 
     // Keyboard WASD to move
@@ -96,7 +96,7 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
 
 
 void RenderCamera::updateControls3DEditor(const float delta) {
-    const Vector2 mouseDelta = GetMouseDelta();
+    const Vector2 mouseDelta = EventConsumer::ref()->getMouseDelta();
     const float dm = delta * TARGET_FPS;
 
     // RMouse drag to rotate
@@ -108,7 +108,7 @@ void RenderCamera::updateControls3DEditor(const float delta) {
 
 
 void RenderCamera::updateControlsShared(const float delta) {
-    const Vector2 mouseDelta = GetMouseDelta();
+    const Vector2 mouseDelta = EventConsumer::ref()->getMouseDelta();
     const float dm = delta * TARGET_FPS;
 
     // Hold middle to pan

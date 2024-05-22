@@ -11,11 +11,6 @@ class Renderer;
 class GraphicsSettingsModal : public ui::Window {
 public:
     GraphicsSettingsModal(const Vector2 &pos, const Vector2 &size, Renderer * renderer);
-
-    virtual void tryClose(CloseReason reason) override {
-        if (reason == ui::Window::CloseReason::BUTTON)
-            close();
-    }
 private:
     Renderer * renderer = nullptr;
 

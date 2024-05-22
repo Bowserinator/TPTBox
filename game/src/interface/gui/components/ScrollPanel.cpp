@@ -1,5 +1,6 @@
 #include "ScrollPanel.h"
 #include "../styles.h"
+#include "../../EventConsumer.h"
 
 using namespace ui;
 
@@ -36,7 +37,7 @@ void ScrollPanel::addChild(Component * component) {
 void ScrollPanel::onMouseMoved(Vector2 localPos) {
     Panel::onMouseMoved(localPos);
     if (dragging) {
-        offsetTop -= GetMouseDelta().y * (internalSize.y / size.y);
+        offsetTop -= EventConsumer::ref()->getMouseDelta().y * (internalSize.y / size.y);
         _limitScroll();
     }
 }

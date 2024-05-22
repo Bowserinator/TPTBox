@@ -220,7 +220,6 @@ void SimUI::update() {
         mainPanel->pos.y = (float)GetScreenHeight() - MAIN_PANEL_HEIGHT;
         sidePanel->pos.x = (float)GetScreenWidth() - SIDE_PANEL_WIDTH;
         sidePanel->pos.y = (float)GetScreenHeight() - sidePanel->size.y;
-        // sidePanel->size.y = (float)GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT;
 
         for (auto [slot, btn] : bottomBarButtons)
             btn->pos = Vector2{

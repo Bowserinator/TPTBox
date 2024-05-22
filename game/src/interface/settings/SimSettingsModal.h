@@ -11,11 +11,6 @@ class Simulation;
 class SimSettingsModal : public ui::Window {
 public:
     SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simulation * sim);
-
-    virtual void tryClose(CloseReason reason) override {
-        if (reason == ui::Window::CloseReason::BUTTON)
-            close();
-    }
 private:
     Simulation * sim = nullptr;
 

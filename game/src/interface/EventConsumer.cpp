@@ -6,11 +6,13 @@ void EventConsumer::reset() {
     keyboardEvtConsumed = false;
     gamepadEvtConsumed = false;
     mouseEvtConsumed = false;
+    mouseDeltaConsumed = false;
 }
 
 void EventConsumer::consumeMouse() { mouseEvtConsumed = true; };
 void EventConsumer::consumeKeyboard() { keyboardEvtConsumed = true; }
 void EventConsumer::consumeGamepad() { gamepadEvtConsumed = true; }
+void EventConsumer::consumeMouseDelta() { mouseDeltaConsumed = true; }
 
 // Input-related functions: keyboard
 bool EventConsumer::isKeyPressed(int key) {
@@ -58,6 +60,11 @@ bool EventConsumer::isMouseButtonDown(const int button) {
 bool EventConsumer::isMouseButtonUp(const int button) {
     if (mouseEvtConsumed) return false;
     return IsMouseButtonUp(button);
+}
+
+Vector2 EventConsumer::getMouseDelta() {
+    if (mouseDeltaConsumed) return Vector2{ 0.0f, 0.0f };
+    return GetMouseDelta();
 }
 
 float EventConsumer::getMouseWheelMove() {

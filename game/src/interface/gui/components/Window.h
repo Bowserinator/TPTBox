@@ -78,6 +78,7 @@ namespace ui {
                 newPos.y = util::clamp(newPos.y, 0.0f, GetScreenHeight() - size.y);
                 pos = newPos;
             }
+            EventConsumer::ref()->consumeMouseDelta();
         }
         void onMouseRelease(Vector2 localPos, unsigned int button) override {
             Modal::onMouseRelease(localPos, button);

@@ -18,6 +18,7 @@ public:
     void consumeMouse();
     void consumeKeyboard();
     void consumeGamepad();
+    void consumeMouseDelta();
 
     // Input-related functions: keyboard
     bool isKeyPressed(int key);
@@ -34,6 +35,7 @@ public:
     bool isMouseButtonDown(const int button);
     bool isMouseButtonUp(const int button);
     float getMouseWheelMove();
+    Vector2 getMouseDelta();
 
     static EventConsumer * ref() {
         if (single == nullptr) [[unlikely]]
@@ -49,6 +51,7 @@ private:
     bool keyboardEvtConsumed;
     bool gamepadEvtConsumed;
     bool mouseEvtConsumed;
+    bool mouseDeltaConsumed;
 
     static EventConsumer * single;
 

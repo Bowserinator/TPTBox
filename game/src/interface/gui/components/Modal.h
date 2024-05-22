@@ -5,6 +5,7 @@
 #include "../styles.h"
 #include "../Style.h"
 #include "Panel.h"
+#include "../../EventConsumer.h"
 
 #include <iostream>
 

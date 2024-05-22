@@ -83,7 +83,7 @@ void ui::Panel::onMouseMoved(Vector2 localPos) {
     for (auto child : childrenCopy)
         child->onMouseMoved(localPos + eventDelta - child->pos);
 
-    Vector2 prevLocalPos = localPos - GetMouseDelta();
+    Vector2 prevLocalPos = localPos - EventConsumer::ref()->getMouseDelta();
     for (auto child : childrenCopy) {
         bool containsNow = child->contains(localPos + eventDelta - child->pos);
         bool containsPrev = child->contains(prevLocalPos + eventDelta - child->pos); 
@@ -98,7 +98,7 @@ void ui::Panel::onMouseEnter(Vector2 localPos) {
     PROPOGATE_EVENT(onMouseEnter)
 }
 void ui::Panel::onMouseLeave(Vector2 localPos) {
-    Vector2 prevLocalPos = localPos - GetMouseDelta();
+    Vector2 prevLocalPos = localPos - EventConsumer::ref()->getMouseDelta();
     std::vector<Component *> childrenCopy(children.rbegin(), children.rend());
     for (auto child : childrenCopy)
         if (child->contains(prevLocalPos + eventDelta - child->pos))
