@@ -27,8 +27,7 @@ private:
         * enableTransparencyCheckbox,
         * enableReflectionsCheckbox,
         * enableRefractionsCheckbox,
-        * fullscreenCheckbox,
-        * resizableCheckbox;
+        * fullscreenCheckbox;
     ui::Dropdown * renderModeDropdown;
     ui::Slider * aoStrengthSlider,
         * shadowStrengthSlider;

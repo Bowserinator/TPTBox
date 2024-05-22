@@ -47,18 +47,22 @@ void SimUI::init() {
 
 
     // Bottom setting buttons
-    auto getBottomIconButton = [](int slot, guiIconName icon) {
-        return new ui::IconButton(
+    auto getBottomIconButton = [this](int slot, guiIconName icon) {
+        auto btn = new ui::IconButton(
             Vector2{ GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT, GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{styles::SETTINGS_BUTTON_HEIGHT, styles::SETTINGS_BUTTON_HEIGHT},
             icon);
+        bottomBarButtons[slot] = btn;
+        return btn;
     };
 
     addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
-        addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, 80}, Vector2{500, 500}, renderer));
+        addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
+        Vector2{500, 500}, renderer));
     }));
     addChild(getBottomIconButton(3, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
-        addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, 80}, Vector2{500, 500}, sim));
+        addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
+        Vector2{500, 500}, sim));
     }));
     addChild(getBottomIconButton(4, ICON_FILE)->setClickCallback([this]() {
         sim->reset();
@@ -209,7 +213,23 @@ void SimUI::switchCategory(const MenuCategory category) {
 
 void SimUI::update() {
     Scene::update();
+    
+    // Update positions on resize
+    if (IsWindowResized()) {
+        mainPanel->pos.x = (float)GetScreenWidth() - mainPanel->size.x;
+        mainPanel->pos.y = (float)GetScreenHeight() - MAIN_PANEL_HEIGHT;
+        sidePanel->pos.x = (float)GetScreenWidth() - SIDE_PANEL_WIDTH;
+        sidePanel->pos.y = (float)GetScreenHeight() - sidePanel->size.y;
+        // sidePanel->size.y = (float)GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT;
 
+        for (auto [slot, btn] : bottomBarButtons)
+            btn->pos = Vector2{
+                GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT,
+                GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT
+            };
+    }
+
+    // Update the rest
     pauseButton->setIcon(sim->paused ? ICON_PLAYER_PLAY : ICON_PLAYER_PAUSE);
     pauseButton->style.setAllBackgroundColors(sim->paused ? WHITE : BLACK);
     pauseButton->style.setAllTextColors(!sim->paused ? WHITE : BLACK);

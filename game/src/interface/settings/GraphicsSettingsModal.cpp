@@ -41,7 +41,6 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             settings->shadowStrength = shadowStrengthSlider->getPercent();
 
             settings->fullScreen = fullscreenCheckbox->checked();
-            settings->allowResizing = resizableCheckbox->checked();
             this->renderer->update_settings(settings);
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
@@ -124,7 +123,6 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
     Y = 400.0f;
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
-    resizableCheckbox  = createCheckboxAndAdd(Y + spacing, "Allow window resizing");
 
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);
@@ -140,5 +138,4 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     shadowStrengthSlider->setPercent(settings->shadowStrength);
 
     fullscreenCheckbox->setChecked(settings->fullScreen);
-    resizableCheckbox->setChecked(settings->allowResizing);
 }

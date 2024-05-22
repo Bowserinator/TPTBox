@@ -69,7 +69,7 @@ private:
     unsigned int ubo_settings;
     uint8_t * ao_data;
 
-    RenderTexture2D blur1_tex, blur2_tex, blur_tmp_tex;
+    RenderTexture2D blur1_tex = {0}, blur2_tex = {0}, blur_tmp_tex = {0};
     MultiTexture base_tex;
     unsigned int frame_count = 0;
     bool show_octree = false;
@@ -105,6 +105,7 @@ private:
     };
     #pragma pack(pop)
 
+    void _generate_render_textures();
     void _blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex);
 };
 

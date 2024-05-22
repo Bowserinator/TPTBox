@@ -6,6 +6,7 @@
 #include "interface/IconManager.h"
 #include "interface/FrameTimeAvg.h"
 #include "interface/EventConsumer.h"
+#include <GLFW/glfw3.h>
 
 #include <omp.h>
 
@@ -40,8 +41,9 @@ MessageCallback(GLenum source,
 #endif
 
 int main(void) {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     InitWindow(screenWidth, screenHeight, "The Powder Box");
-    SetConfigFlags(FLAG_MSAA_4X_HINT); // Enable Multi Sampling Anti Aliasing 4x (if available)
+    SetWindowMinSize(screenWidth, screenHeight);
     InitAudioDevice();
     SetExitKey(KEY_NULL);
 

@@ -7,6 +7,8 @@
 #include "../gui/components/TextButton.h"
 #include "../gui/components/IconButton.h"
 #include "../gui/components/Panel.h"
+
+#include <map>
 #include <vector>
 
 class BrushRenderer;
@@ -36,6 +38,7 @@ private:
     float elementDescAlpha = 0.0f;
     std::vector<ui::TextButton *> elementButtons;
     std::vector<ui::IconButton *> categoryButtons;
+    std::map<int, ui::IconButton *> bottomBarButtons;
 };
 
 #endif

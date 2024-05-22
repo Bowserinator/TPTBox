@@ -98,6 +98,32 @@ Renderer::~Renderer() {
     delete settings_writer;
 }
 
+void Renderer::_generate_render_textures() {
+    UnloadRenderTexture(blur1_tex);
+    UnloadRenderTexture(blur2_tex);
+    UnloadRenderTexture(blur_tmp_tex);
+
+    base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+
+    const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
+    const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
+    blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
+    // Prevent blur from wrapping around
+    for (unsigned int texId : std::array<unsigned int, 5>({ 
+        blur_tmp_tex.texture.id,
+        blur1_tex.texture.id,
+        blur2_tex.texture.id,
+        base_tex.glowOnlyTexture,
+        base_tex.blurOnlyTexture
+    })) {
+        rlTextureParameters(texId, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+        rlTextureParameters(texId, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
+    }
+}
+
 void Renderer::init() {
 #ifdef EMBED_SHADERS
     #include "../../resources/shaders/generated/fullscreen.vs.h"
@@ -118,7 +144,7 @@ void Renderer::init() {
 #endif
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
-    base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+    _generate_render_textures();
 
     grid_max_dim = std::max({ XRES, YRES, ZRES });
     Mesh mesh = GenInvertedMeshCube((float)XRES, (float)YRES, (float)ZRES);
@@ -127,24 +153,6 @@ void Renderer::init() {
     grid_shader_scale_loc = GetShaderLocation(grid_shader, "scale");
     grid_model.materials[0].shader = grid_shader;
     set_grid_size(0.0);
-
-    const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
-    const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
-    blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-
-    // Prevent blur from wrapping around
-    for (unsigned int texId : std::array<unsigned int, 5>({ 
-        blur_tmp_tex.texture.id,
-        blur1_tex.texture.id,
-        blur2_tex.texture.id,
-        base_tex.glowOnlyTexture,
-        base_tex.blurOnlyTexture
-    })) {
-        rlTextureParameters(texId, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
-        rlTextureParameters(texId, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
-    }
 
     rlEnableShader(part_shader.id);
         rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
@@ -377,6 +385,9 @@ void Renderer::draw_octree_debug() {
 }
 
 void Renderer::draw() {
+    if (IsWindowResized())
+        _generate_render_textures();
+
     update_colors_and_lod();
     if (show_octree)
         draw_octree_debug();

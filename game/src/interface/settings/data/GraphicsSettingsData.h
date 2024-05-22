@@ -28,7 +28,6 @@ namespace settings {
         bool enableShadows = true;
 
         bool fullScreen = false;
-        bool allowResizing = false;
     };
 }
 
