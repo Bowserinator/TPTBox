@@ -22,6 +22,9 @@ void Element::Element_PHOT() {
 };
 
 static void onCreate(ON_CREATE_FUNC_ARGS) {
+    if (mode != PartCreateMode::BRUSH)
+        return;
+
     constexpr float DIRECTIONS[][3] = {
         {-1, -1, -1},
         {-1, -1, 0},

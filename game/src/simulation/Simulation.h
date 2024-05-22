@@ -79,7 +79,8 @@ public:
     void set_paused(const bool paused) { this->paused = paused; };
     void update_settings(settings::Sim * settings);
 
-    part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type);
+    part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type,
+        const PartCreateMode mode = PartCreateMode::NORMAL);
     void kill_part(const part_id id);
     bool part_change_type(const part_id i, const part_type new_type);
 

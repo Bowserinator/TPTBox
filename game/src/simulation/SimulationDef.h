@@ -72,6 +72,11 @@ enum class PartSwapBehavior: uint8_t {
     NOT_EVALED_YET = 4 // Sentinel value, do not use in normal cases
 };
 
+// Normal = create if not empty
+// Brush  = normal, with special brush rules
+// Force  = Create regardless if occupied
+enum class PartCreateMode { NORMAL, BRUSH, FORCE };
+
 namespace PartErr {
     constexpr part_id ALREADY_OCCUPIED = -1;
     constexpr part_id PARTS_FULL = -3;

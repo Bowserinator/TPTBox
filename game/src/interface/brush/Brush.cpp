@@ -75,7 +75,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
                 if (delete_mode)
                     sim->kill_part(ID(sim->pmap[z][y][x]));
                 else if (!tool_mode)
-                    sim->create_part(x, y, z, selected_element);
+                    sim->create_part(x, y, z, selected_element, PartCreateMode::BRUSH);
                 else {
                     auto &tool = GetTools()[selected_tool];
                     if (tool.Perform) {

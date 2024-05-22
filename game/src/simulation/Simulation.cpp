@@ -114,7 +114,7 @@ void Simulation::cycle_gravity_mode() {
     gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % 3 );
 }
 
-part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type) {
+part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type, const PartCreateMode mode) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -125,7 +125,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     const auto is_energy = el.State == ElementState::TYPE_ENERGY;
     const auto part_map = is_energy ? photons : pmap;
 
-    if (part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
+    if (mode != PartCreateMode::FORCE && part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
 
     // Begin PFREE MODIFICATION
     util::unique_spinlock _lock(parts_add_remove_lock);
@@ -165,7 +165,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     if (el.OnChangeType)
         el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
     if (el.OnCreate)
-        el.OnCreate(*this, old_pfree, x, y, z, type);
+        el.OnCreate(*this, old_pfree, x, y, z, type, mode);
 
     if (paused) {
         if (_should_do_lighting(parts[old_pfree])) {
