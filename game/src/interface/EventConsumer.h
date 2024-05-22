@@ -20,6 +20,10 @@ public:
     void consumeGamepad();
     void consumeMouseDelta();
 
+    // Gameloop
+    bool shouldExit() const { return _shouldExit; }
+    void flagExit() { _shouldExit = true; }
+
     // Input-related functions: keyboard
     bool isKeyPressed(int key);
     bool isKeyDown(int key);
@@ -52,6 +56,8 @@ private:
     bool gamepadEvtConsumed;
     bool mouseEvtConsumed;
     bool mouseDeltaConsumed;
+
+    bool _shouldExit = false;
 
     static EventConsumer * single;
 

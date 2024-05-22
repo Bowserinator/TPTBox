@@ -63,7 +63,7 @@ int main(void) {
 #else
     SetTargetFPS(TARGET_FPS);
 
-    while (!WindowShouldClose())
+    while (!EventConsumer::ref()->shouldExit())
     {
         // TODO: do this in seperate thread
         currentScreen->update();

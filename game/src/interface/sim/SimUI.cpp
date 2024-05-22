@@ -17,6 +17,7 @@
 
 #include "../settings/GraphicsSettingsModal.h"
 #include "../settings/SimSettingsModal.h"
+#include "../settings/ConfirmExitModal.h"
 
 const float SIDE_PANEL_WIDTH = styles::SETTINGS_BUTTON_HEIGHT;
 constexpr float MAIN_PANEL_HEIGHT = 90;
@@ -226,6 +227,12 @@ void SimUI::update() {
                 GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT,
                 GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT
             };
+    }
+
+    // ESC to exit game (if no current modal)
+    if (EventConsumer::ref()->isKeyPressed(KEY_ESCAPE) || WindowShouldClose()) {
+        addChild(new ConfirmExitModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 50},
+            Vector2{500, 130}));
     }
 
     // Update the rest
