@@ -265,6 +265,18 @@ void Renderer::update_settings(settings::Graphics * settings) {
     do_ao = settings->enableAO;
     do_shadows = settings->enableShadows;
 
+    if (settings->fullScreen != IsWindowFullscreen()) {
+        if (!IsWindowFullscreen()) { // To fullscreen
+            preFullscreenWindowRes = Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() };
+            const int monitor = GetCurrentMonitor();
+            SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+            ToggleFullscreen();
+        } else {
+            ToggleFullscreen();
+            SetWindowSize(preFullscreenWindowRes.x, preFullscreenWindowRes.y);
+        }
+    }
+
     settings_writer->write_member("DEBUG_MODE", (FragDebugMode)settings->renderMode);
     settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
     settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);

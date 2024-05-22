@@ -43,6 +43,7 @@ private:
     Simulation * sim;
     RenderCamera * cam;
     UBOWriter * settings_writer = nullptr;
+    Vector2 preFullscreenWindowRes;
 
     Shader part_shader, post_shader, blur_shader;
     int part_shader_res_loc,
