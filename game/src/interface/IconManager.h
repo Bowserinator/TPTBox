@@ -13,19 +13,17 @@ public:
 
     void init() {
         texture = LoadRenderTexture(RAYGUI_ICON_MAX_ICONS * RAYGUI_ICON_SIZE, RAYGUI_ICON_SIZE);
-        SetTextureFilter(texture.texture, RL_TEXTURE_FILTER_LINEAR);
+
+        Image img = LoadImageFromMemory(".png", icons_png_data, icons_png_size);
+        Texture imTex = LoadTextureFromImage(img);
+        UnloadImage(img);
+        SetTextureFilter(texture.texture, RL_TEXTURE_FILTER_BILINEAR);
 
         BeginTextureMode(texture);
         ClearBackground(BLANK);
-        for (auto icon = 0; icon < RAYGUI_ICON_MAX_ICONS; icon++) {
-            for (int bit = 0; bit < RAYGUI_ICON_SIZE * RAYGUI_ICON_SIZE; bit++) {
-                int i = bit / 32;
-                int j = bit % 32;
-                if (guiIcons[RAYGUI_ICON_DATA_ELEMENTS * icon + i] & (1 << j))
-                    DrawPixel(RAYGUI_ICON_SIZE * icon + bit % RAYGUI_ICON_SIZE, bit / RAYGUI_ICON_SIZE, WHITE);
-            }
-        }
+        DrawTexture(imTex, 0, 0, WHITE);
         EndTextureMode();
+        UnloadTexture(imTex);
     }
 
     void draw(float x, float y, guiIconName icon, Color color = WHITE, float size = RAYGUI_ICON_SIZE) {

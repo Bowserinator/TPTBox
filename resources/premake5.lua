@@ -21,10 +21,10 @@ local function generateEmbeddedShader(fpath)
     end
 
     local newhash = "// " .. string.hash(shader_code)
-    print("Regenerating shader", fpath)
 
     -- Regenerate shader header if changed
     if oldhash ~= newhash then
+        print("Regenerating shader", fpath)
         shader_code = shader_code
             :gsub("//[^\n\r]*", "")
             :gsub("[\n\r]", "")
@@ -54,6 +54,52 @@ local function generateEmbeddedShader(fpath)
 
 end
 
+local function generateEmbeddedImage(filename)
+    local outpath = "generated/" .. path.getname(filename) .. ".h"
+    local bytes = {}
+    local byte_count = 0
+    file = assert(io.open(filename, "rb"))
+
+    while true do
+        local byte = file:read(1)
+        if byte == nil then
+            break
+        else
+            bytes[#bytes + 1] = string.format("0x%x", string.byte(byte))
+            byte_count = byte_count + 1
+        end
+    end
+    file:close()
+    local data_block = table.concat(bytes, ",")
+
+    -- -- Get previous hash of element list
+    f = io.open(outpath, "r")
+    local oldhash = "//";
+    if f ~= nil then
+        oldhash = f:read()
+        f:close()
+    end
+
+    local newhash = "// " .. string.hash(data_block)
+
+    -- Regenerate shader header if changed
+    if oldhash ~= newhash then
+        print("Regenerating image", filename)
+
+        local var_name1 = path.getname(filename):gsub("%.", "_") .. "_data"
+        local var_name2 = path.getname(filename):gsub("%.", "_") .. "_size"
+
+        data_block = newhash .. "\n" ..
+            "// This file is auto-generated! Your edits will not be saved\n" ..
+            "const unsigned char " .. var_name1 .. "[] = {" .. data_block .. "};\n"
+                .. "const unsigned int " .. var_name2 .. " = " .. tostring(byte_count) .. ";\n"
+
+        local f = io.open(outpath, "w")
+        f:write(data_block)
+        f:close()
+    end
+end
+
 local shaders = concatArray(
     os.matchfiles("shaders/**.vs"),
     concatArray(
@@ -65,3 +111,5 @@ local shaders = concatArray(
 for _, filepath in pairs(shaders) do
     generateEmbeddedShader(filepath)
 end
+
+generateEmbeddedImage("icons.png")

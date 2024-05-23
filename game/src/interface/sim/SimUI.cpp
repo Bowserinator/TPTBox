@@ -66,7 +66,7 @@ void SimUI::init() {
         addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, renderer));
     }));
-    addChild(getBottomIconButton(3, ICON_IMAGE_SETTINGS, "Sim Settings")->setClickCallback([this]() {
+    addChild(getBottomIconButton(3, ICON_SIM_SETTINGS, "Sim Settings")->setClickCallback([this]() {
         addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, sim));
     }));
