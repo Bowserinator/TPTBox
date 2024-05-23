@@ -48,29 +48,48 @@ void SimUI::init() {
 
 
     // Bottom setting buttons
-    auto getBottomIconButton = [this](int slot, guiIconName icon) {
+    auto getBottomIconButton = [this](int slot, guiIconName icon, const std::string &tooltip) {
         auto btn = new ui::IconButton(
             Vector2{ GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT, GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{styles::SETTINGS_BUTTON_HEIGHT, styles::SETTINGS_BUTTON_HEIGHT},
             icon);
+        btn->setEnterCallback([this, btn, tooltip]() {
+            bottomTooltip->pos.x = btn->pos.x - 700.0f + styles::SETTINGS_BUTTON_HEIGHT;
+            bottomTooltip->setText(tooltip);
+            tooltipAlphas[BOTTOM_TOOLTIP] = 1.0f;
+        });
         bottomBarButtons[slot] = btn;
         return btn;
     };
 
-    addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
+    addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS, "Graphics Settings")->setClickCallback([this]() {
         addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, renderer));
     }));
-    addChild(getBottomIconButton(3, ICON_IMAGE_SETTINGS)->setClickCallback([this]() {
+    addChild(getBottomIconButton(3, ICON_IMAGE_SETTINGS, "Sim Settings")->setClickCallback([this]() {
         addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, sim));
     }));
-    addChild(getBottomIconButton(4, ICON_FILE)->setClickCallback([this]() {
+    addChild(getBottomIconButton(4, ICON_FILE, "Clear Sim")->setClickCallback([this]() {
         sim->reset();
     }));
 
-    pauseButton = getBottomIconButton(1, ICON_PLAYER_PAUSE);
+    pauseButton = getBottomIconButton(1, ICON_PLAYER_PAUSE, "");
     addChild(pauseButton->setClickCallback([this]() { sim->paused = !sim->paused; }));
+
+    // Tooltip for bottom button
+    bottomTooltip = new ui::Label(
+        Vector2{ 0.0f, GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT * 2 - 5.0f },
+        Vector2{ 700.0f, styles::SETTINGS_BUTTON_HEIGHT },
+        "",
+        ui::Style {
+            .horizontalAlign = ui::Style::Align::Right,
+            .backgroundColor = BLANK,
+            .textColor = Color{255, 255, 255, 0}
+        }
+    );
+    addChild(bottomTooltip);
+
 
     // Side panel
     // -------------------------------
@@ -107,6 +126,8 @@ void SimUI::init() {
     }
 
     switchCategory((MenuCategory)0);
+
+    tooltips = { elementDescLabel, menuTooltip, bottomTooltip };
 }
 
 void SimUI::switchCategory(const MenuCategory category) {
@@ -151,7 +172,7 @@ void SimUI::switchCategory(const MenuCategory category) {
             });
             btn->setEnterCallback([this, j]() {
                 elementDescLabel->setText(golRules[j].description);
-                elementDescAlpha = 1.0f;
+                tooltipAlphas[ELEMENT_DESC_TOOLTIP] = 1.0f;
             });
             elementButtons.push_back(btn);
             mainPanel->addChild(btn);
@@ -169,7 +190,7 @@ void SimUI::switchCategory(const MenuCategory category) {
         btn->setEnterCallback([this, id]() {
             const auto &tool = GetTools()[id];
             elementDescLabel->setText(tool.Description);
-            elementDescAlpha = 1.0f;
+            tooltipAlphas[ELEMENT_DESC_TOOLTIP] = 1.0f;
         });
         elementButtons.push_back(btn);
         mainPanel->addChild(btn);
@@ -185,7 +206,7 @@ void SimUI::switchCategory(const MenuCategory category) {
         btn->setEnterCallback([this, id]() {
             const auto &el = GetElements()[id];
             elementDescLabel->setText(el.Description);
-            elementDescAlpha = 1.0f;
+            tooltipAlphas[ELEMENT_DESC_TOOLTIP] = 1.0f;
         });
         elementButtons.push_back(btn);
         mainPanel->addChild(btn);
@@ -197,7 +218,7 @@ void SimUI::switchCategory(const MenuCategory category) {
     auto categoryBtn = categoryButtons[(int)category];
     categoryBtn->focus();
 
-    menuTooltipAlpha = 1.0f;
+    tooltipAlphas[MENU_TOOLTIP] = 1.0f;
     menuTooltip->setText(CATEGORY_DATA[(int)category].name);
     menuTooltip->pos.y = categoryBtn->pos.y;
 
@@ -240,21 +261,20 @@ void SimUI::update() {
     pauseButton->style.setAllBackgroundColors(sim->paused ? WHITE : BLACK);
     pauseButton->style.setAllTextColors(!sim->paused ? WHITE : BLACK);
 
-    if (elementDescAlpha > 0)
-        elementDescAlpha -= 0.6f * GetFrameTime();
-    if (menuTooltipAlpha > 0)
-        menuTooltipAlpha -= 0.6f * GetFrameTime();
+    for (auto i = 0; i < tooltipAlphas.size(); i++) {
+        auto &alpha = tooltipAlphas[i];
+        auto tooltip = tooltips[i];
+
+        if (alpha > 0) alpha -= 0.6f * GetFrameTime();
+        alpha = std::max(0.0f, alpha);
+
+        tooltip->style.backgroundColor.a = 128 * alpha;
+        tooltip->style.textColor.a = 255 * alpha;
+    }
 
     for (auto child : elementButtons)
         if (child->contains(GetMousePosition() - mainPanel->pos - child->pos)) {
-            elementDescAlpha = 1.0f;
+            tooltipAlphas[ELEMENT_DESC_TOOLTIP] = 1.0f;
             break;
         }
-    elementDescAlpha = std::max(0.0f, elementDescAlpha);
-    elementDescLabel->style.backgroundColor.a = 128 * elementDescAlpha;
-    elementDescLabel->style.textColor.a = 255 * elementDescAlpha;
-
-    menuTooltipAlpha = std::max(0.0f, menuTooltipAlpha);
-    menuTooltip->style.backgroundColor.a = 128 * menuTooltipAlpha;
-    menuTooltip->style.textColor.a = 255 * menuTooltipAlpha;
 }
