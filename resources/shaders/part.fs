@@ -28,6 +28,7 @@ layout(std430, binding = 5) readonly restrict buffer Constants {
     uint MORTON_X_SHIFTS[256];
     uint MORTON_Y_SHIFTS[256];
     uint MORTON_Z_SHIFTS[256];
+    uint HEAT_GRADIENT[1024];
 };
 
 layout(shared, binding = 6) uniform Settings {
@@ -45,6 +46,14 @@ layout(shared, binding = 6) uniform Settings {
     bool ENABLE_GLOW;
     bool ENABLE_AO;
     bool ENABLE_SHADOWS;
+};
+
+layout(std430, binding = 7) readonly restrict buffer DisplayModeSettings {
+    uint DISPLAY_MODE; // See DisplayMode.h
+};
+
+layout(std430, binding = 8) readonly restrict buffer HeatInput {
+    float heatIn[];
 };
 
 uniform vec2 resolution;  // Viewport res
@@ -77,6 +86,15 @@ const uint G_BLUR = 2;
 const uint G_REFRACT = 4;
 const uint G_REFLECT = 8;
 const uint G_NO_LIGHTING = 16;
+
+// Display modes - same as DisplayMode.h enum
+const uint D_MODE_PRESSURE = 0;
+const uint D_MODE_PERSISTENT = 1;
+const uint D_MODE_BLOB = 2;
+const uint D_MODE_HEAT = 3;
+const uint D_MODE_FANCY = 4;
+const uint D_MODE_NOTHING = 5;
+const uint D_MODE_HEAT_GRADIENT = 6;
 
 struct RayCastData {
     bool shouldContinue;
@@ -152,6 +170,12 @@ uint getByteFlags(uvec3 pos) {
     uint remainder = idx & 3; // % 4
     data >>= (remainder << 3);
     return data & 0xFF;
+}
+
+// Get temperature at location
+float getHeat(uvec3 pos) {
+    uint idx = uint(pos.x + SIMRES.x * pos.y + SIMRES.y * SIMRES.x * pos.z);
+    return heatIn[idx];
 }
 
 // If level = 0 returns the color as ARGB uint
@@ -230,8 +254,12 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                 prevVoxelColor = voxelColor;
 
                 // Color is "solid enough", return
-                if (data.color.a > ALPHA_THRESH || !ENABLE_TRANSPARENCY) {
+                if (data.color.a > ALPHA_THRESH || !ENABLE_TRANSPARENCY || DISPLAY_MODE == D_MODE_HEAT) {
                     data.shouldContinue = false;
+
+                    // In heat display mode, render everything at full alpha
+                    if (DISPLAY_MODE == D_MODE_HEAT)
+                        data.color.a = 1.0;
                     return ivec4(voxelPos, prevIdx + int(dirSignBits[prevIdx]) * 3);
                 }
 
@@ -349,13 +377,23 @@ void main() {
         float shadowMul = (doShadow && data.lastVoxel.z < shadowZ - 1.05) ? 1.0 - SHADOW_STRENGTH : 1.0;
         float mul = (res.w < 0 || ((flags & G_NO_LIGHTING) != 0) ? 1.0 : FACE_COLORS[res.w % 3]);
 
+        if (DISPLAY_MODE == D_MODE_HEAT_GRADIENT)
+            mul *= 0.75 + 0.25 * sin(mod(getHeat(data.lastVoxel), 3.14159265));
+        else if (DISPLAY_MODE == D_MODE_HEAT) {
+            uint gradColor = HEAT_GRADIENT[uint( 1023 * clamp(getHeat(data.lastVoxel) / 5000.0, 0.0, 1.0) )];
+            data.color.b = ((gradColor & 0xFF0000) >> 16) / 255.0;
+            data.color.g = ((gradColor & 0xFF00) >> 8) / 255.0;
+            data.color.r = ((gradColor & 0xFF)) / 255.0;
+        }
+
         FragColor.rgb = data.color.rgb * mul * shadowMul
             + SHADOW_COLOR * mul * (1 - shadowMul);
         FragColor.a = pow(data.color.a, 0.5); // This alpha is for blending with the grid / bg, not the voxels!
 
-        if (ENABLE_GLOW && (flags & G_GLOW) != 0)
+        bool isFancyDisplay = DISPLAY_MODE == D_MODE_FANCY; // Check also in Renderer.cpp
+        if (isFancyDisplay && ENABLE_GLOW && (flags & G_GLOW) != 0)
             FragGlowOnly = FragColor;
-        else if (ENABLE_BLUR && (flags & G_BLUR) != 0)
+        else if (isFancyDisplay && ENABLE_BLUR && (flags & G_BLUR) != 0)
             FragBlurOnly = FragColor;
     }
     else if (DEBUG_MODE == 1) { // DEBUG_STEPS

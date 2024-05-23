@@ -23,6 +23,24 @@ namespace util {
     }
 
     /**
+     * @brief Fast approximation to sine
+     * @param x Angle in radians in [-pi, pi]
+     * @return constexpr float 
+     */
+    constexpr float fast_sin(const float x) {
+        return 4.0f * (0.31830988618f * x * (1.0f - std::abs(0.31830988618f * x)));
+    }
+
+    /**
+     * @brief Fast approximation to cosine
+     * @param x Angle in radians in [-pi, pi]
+     * @return constexpr float 
+     */
+    constexpr float fast_cos(const float x) {
+        return 4.0f * (0.5f - 0.31830988618f * x) * (1.0f - std::abs(0.5f - 0.31830988618f * x));
+    }
+
+    /**
      * @brief Clamp a float between two values
      * 
      * @param val Value

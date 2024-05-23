@@ -15,6 +15,7 @@ constexpr float BLUR_DOWNSCALE_RATIO = 1.5f;
 constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte
 constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
 constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
+constexpr std::size_t HEAT_GRADIENT_STEPS = 1024;
 
 class Simulation;
 class RenderCamera;
@@ -67,6 +68,7 @@ private:
 
     unsigned int ssbo_constants;
     unsigned int ubo_settings;
+    unsigned int ssbo_display_mode;
     uint8_t * ao_data;
 
     RenderTexture2D blur1_tex = {0}, blur2_tex = {0}, blur_tmp_tex = {0};
@@ -85,6 +87,8 @@ private:
     Model grid_model;
     float grid_scale = 0.0;
 
+    DisplayMode cached_display_mode = DisplayMode::DISPLAY_MODE_NOTHING;
+
     #pragma pack(push, 1)
     // Vec3s are vec4s and big arrays are at the end for packing purposes
     // std430 packing rules apply
@@ -102,6 +106,13 @@ private:
         uint32_t MORTON_X_SHIFTS[256];
         uint32_t MORTON_Y_SHIFTS[256];
         uint32_t MORTON_Z_SHIFTS[256];
+        uint32_t HEAT_GRADIENT[HEAT_GRADIENT_STEPS];
+    };
+    #pragma pack(pop)
+
+    #pragma pack(push, 1)
+    struct SSBO_DisplayMode_t {
+        uint32_t display_mode;
     };
     #pragma pack(pop)
 

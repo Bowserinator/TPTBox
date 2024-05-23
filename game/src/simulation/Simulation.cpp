@@ -588,12 +588,8 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
 
         // Color display mode
         switch (graphics.display_mode) {
-            case DisplayMode::DISPLAY_MODE_HEAT: {
-                auto tmp = (graphics::gradient_get(graphics::gradients::heat_gradient, part->temp / 5000.0f));
-                tmp.a = 255;
-                new_color = tmp.as_ABGR();
-                break;
-            }
+            case DisplayMode::DISPLAY_MODE_HEAT:
+                break; // Do nothing, overriden with heat color anyways
             default:
                 if (el.Graphics) {
                     RGBA color_out;
@@ -601,17 +597,6 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
                     new_color = color_out.as_ABGR();
                 }
                 break;
-        }
-
-        // Other colors that remove flags
-        switch (graphics.display_mode) {
-            case DisplayMode::DISPLAY_MODE_NOTHING:
-            case DisplayMode::DISPLAY_MODE_PRESSURE:
-            case DisplayMode::DISPLAY_MODE_HEAT:
-                new_flags[GraphicsFlagsIdx::GLOW] = 0;
-                new_flags[GraphicsFlagsIdx::BLUR] = 0;
-                break;
-            default: break;
         }
     }
 

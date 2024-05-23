@@ -35,6 +35,8 @@ public:
     void update_temperate(const coord_t x, const coord_t y, const coord_t z, const float temp);
     void flag_temp_update(const coord_t x, const coord_t y, const coord_t z);
     void reset_dirty_chunks();
+
+    inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
 private:
     util::PersistentBuffer<2> ssbosData;
     unsigned int ssboConstants;

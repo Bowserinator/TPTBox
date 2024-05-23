@@ -3,6 +3,7 @@
 #include "../simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
+#include "../graphics/gradient.h"
 #include "../interface/settings/data/GraphicsSettingsData.h"
 
 #include "../util/math.h"
@@ -92,6 +93,7 @@ Renderer::~Renderer() {
 
     glDeleteBuffers(1, &ssbo_constants);
     glDeleteBuffers(1, &ubo_settings);
+    glDeleteBuffers(1, &ssbo_display_mode);
     glDeleteTextures(BUFFER_COUNT, ao_tex);
     glDeleteTextures(BUFFER_COUNT, shadow_tex);
     delete[] ao_data;
@@ -202,6 +204,13 @@ void Renderer::init() {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, SHADOW_MAP_X, SHADOW_MAP_Y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
     }
 
+    // SSBO display mode
+    {
+        ssbo_display_mode = rlLoadShaderBuffer(sizeof(SSBO_DisplayMode_t), NULL, RL_STATIC_READ);
+        SSBO_DisplayMode_t data { .display_mode = static_cast<uint32_t>(sim->graphics.display_mode) };
+        rlUpdateShaderBuffer(ssbo_display_mode, &data, sizeof(data), 0);
+    }
+
     // SSBO constants
     // These are effectively uniform, however AMD cards default to std140
     // for `shared` layout, so array offsets are broken.
@@ -211,6 +220,8 @@ void Renderer::init() {
     #ifdef DEBUG
         if (cam->camera.fovy == 0.0)
             throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
+        if (HEAT_GRADIENT_STEPS != graphics::gradients::heat_gradient.size())
+            throw std::invalid_argument("Heat gradient step count differs from expected constant");
     #endif
 
         ssbo_constants = rlLoadShaderBuffer(sizeof(SSBO_Constants_t), NULL, RL_STATIC_READ);
@@ -228,6 +239,8 @@ void Renderer::init() {
         memcpy(&data.MORTON_X_SHIFTS, &Morton::X_SHIFTS[0], sizeof(Morton::X_SHIFTS));
         memcpy(&data.MORTON_Y_SHIFTS, &Morton::Y_SHIFTS[0], sizeof(Morton::Y_SHIFTS));
         memcpy(&data.MORTON_Z_SHIFTS, &Morton::Z_SHIFTS[0], sizeof(Morton::Z_SHIFTS));
+        for (int i = 0; i < graphics::gradients::heat_gradient.size(); i++)
+            data.HEAT_GRADIENT[i] = graphics::gradients::heat_gradient[i].as_ABGR();
 
         rlUpdateShaderBuffer(ssbo_constants, &data, sizeof(data), 0);
     }
@@ -352,6 +365,13 @@ void Renderer::update_colors_and_lod() {
         glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
     }
+
+    if (sim->graphics.display_mode != cached_display_mode) {
+        cached_display_mode = sim->graphics.display_mode;
+        ssbo_display_mode = rlLoadShaderBuffer(sizeof(SSBO_DisplayMode_t), NULL, RL_STATIC_READ);
+        SSBO_DisplayMode_t data { .display_mode = static_cast<uint32_t>(sim->graphics.display_mode) };
+        rlUpdateShaderBuffer(ssbo_display_mode, &data, sizeof(data), 0);
+    }
 }
 
 void Renderer::draw_octree_debug() {
@@ -429,6 +449,8 @@ void Renderer::draw() {
 
     rlBindShaderBuffer(ssbo_constants, 5);
     glBindBufferBase(GL_UNIFORM_BUFFER, 6, ubo_settings);
+    rlBindShaderBuffer(ssbo_display_mode, 7);
+    rlBindShaderBuffer(sim->heat.get_heat_in_ssbo(), 8);
 
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
@@ -451,12 +473,13 @@ void Renderer::draw() {
 
     auto glow_tex_id = base_tex.glowOnlyTexture;
     auto blur_tex_id = base_tex.blurOnlyTexture;
+    bool isFancyDisplay = sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_FANCY; // Check also in part.fs
 
-    if (do_glow) {
+    if (do_glow && isFancyDisplay) {
         _blur_render_texture(base_tex.glowOnlyTexture, blur_resolution, blur1_tex);
         glow_tex_id = blur1_tex.texture.id;
     }
-    if (do_blur) {
+    if (do_blur && isFancyDisplay) {
         _blur_render_texture(base_tex.blurOnlyTexture, blur_resolution, blur2_tex);
         blur_tex_id = blur2_tex.texture.id;
     }

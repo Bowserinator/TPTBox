@@ -6,7 +6,7 @@
 #include <array>
 
 enum class DisplayMode {
-    DISPLAY_MODE_PRESSURE,
+    DISPLAY_MODE_PRESSURE = 0,
     DISPLAY_MODE_PERSISTENT,
     DISPLAY_MODE_BLOB,
     DISPLAY_MODE_HEAT,
@@ -28,7 +28,7 @@ const std::array<DisplayModeData, (std::size_t)DisplayMode::LAST> displayModePro
     DisplayModeData{ "Heat Display", true },
     DisplayModeData{ "Fancy Display", false },
     DisplayModeData{ "Nothing Display", false },
-    DisplayModeData{ "Heat Gradient Display", false }
+    DisplayModeData{ "Heat Gradient Display", true }
 }; 
 
 #endif
