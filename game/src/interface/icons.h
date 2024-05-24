@@ -27,6 +27,7 @@ typedef enum {
     ICON_MENU_SPECIAL,
     ICON_MENU_LIFE,
     ICON_MENU_TOOLS,
+    ICON_UI_SETTINGS
 } guiIconName;
 
 #endif

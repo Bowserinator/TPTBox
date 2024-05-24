@@ -16,7 +16,7 @@ enum CUBE_FACES {
 constexpr float DIS_UNIT_CUBE_CENTER_TO_CORNER = 0.8660254038f;
 
 // Camera controls
-constexpr float CAMERA_MOVE_SPEED = 3.0f;
+constexpr float CAMERA_MOVE_SPEED = 1.0f;
 constexpr float CAMERA_MOVE_SPEED_PAN = 4.0f;
 constexpr float CAMERA_ROTATION_SPEED = 0.02f;
 constexpr float CAMERA_FIRST_PERSON_ROTATION_SPEED = 0.003f;

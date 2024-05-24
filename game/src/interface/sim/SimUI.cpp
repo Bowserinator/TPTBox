@@ -15,9 +15,11 @@
 #include "../gui/components/Label.h"
 #include "../gui/styles.h"
 
+#include "../settings/data/SettingsData.h"
 #include "../settings/GraphicsSettingsModal.h"
 #include "../settings/SimSettingsModal.h"
 #include "../settings/ConfirmExitModal.h"
+#include "../settings/UISettingsModal.h"
 
 const float SIDE_PANEL_WIDTH = styles::SETTINGS_BUTTON_HEIGHT;
 constexpr float MAIN_PANEL_HEIGHT = 90;
@@ -70,7 +72,11 @@ void SimUI::init() {
         addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, sim));
     }));
-    addChild(getBottomIconButton(4, ICON_FILE, "Clear Sim")->setClickCallback([this]() {
+    addChild(getBottomIconButton(4, ICON_UI_SETTINGS, "UI Settings")->setClickCallback([this]() {
+        addChild(new UISettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
+        Vector2{500, 500}));
+    }));
+    addChild(getBottomIconButton(5, ICON_FILE, "Clear Sim")->setClickCallback([this]() {
         sim->reset();
     }));
 
@@ -253,8 +259,11 @@ void SimUI::update() {
 
     // ESC to exit game (if no current modal)
     if (EventConsumer::ref()->isKeyPressed(KEY_ESCAPE) || WindowShouldClose()) {
-        addChild(new ConfirmExitModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 50},
-            Vector2{500, 130}));
+        if (!settings::data::ref()->ui->fastQuit)
+            addChild(new ConfirmExitModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 50},
+                Vector2{500, 130}));
+        else
+            EventConsumer::ref()->flagExit();
     }
 
     // Update the rest

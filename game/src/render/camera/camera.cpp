@@ -6,6 +6,7 @@
 #include "../../interface/EventConsumer.h"
 #include "../../interface/FrameTimeAvg.h"
 #include "../../util/math.h"
+#include "../../interface/settings/data/SettingsData.h"
 
 constexpr bool moveInWorldPlane = true;
 constexpr bool rotateAroundTarget = true;
@@ -32,10 +33,16 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
 
 void RenderCamera::update() {
     updateLerp();
-    const float deltaAvg = FrameTime::ref()->getDelta();
+    const float deltaAvg = settings::data::ref()->ui->frameIndependentCam ?
+        FrameTime::ref()->getDelta() :
+        2.0f / TARGET_FPS;
 
-    // updateControlsFirstPerson(deltaAvg);
-    updateControls3DEditor(deltaAvg);
+    auto controlScheme = settings::data::ref()->ui->movementMode;
+    if (controlScheme == settings::UI::MovementMode::FIRST_PERSON)
+        updateControlsFirstPerson(deltaAvg);
+    else if (controlScheme == settings::UI::MovementMode::THREED)
+        updateControls3DEditor(deltaAvg);
+
     updateControlsShared(deltaAvg);
 
 }

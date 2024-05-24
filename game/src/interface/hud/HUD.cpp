@@ -10,6 +10,7 @@
 #include "../FontCache.h"
 #include "../brush/Brush.h"
 #include "../../render/Renderer.h"
+#include "../settings/data/SettingsData.h"
 
 #include <string>
 #include <cstring>
@@ -175,8 +176,27 @@ void HUD::draw(const HUDData &data) {
     if (idx) {
         const char * dcolor = sim->parts[idx].dcolor.as_RGBA() ?
             TextFormat("#%08X", sim->parts[idx].dcolor.as_RGBA()) : "0";
-        drawTextRAlign(TextFormat("Temp: %.2f C  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
-                sim->parts[idx].temp - R_ZERO_C,
+
+        float formattedTemp;
+        char tempUnit;
+        switch (settings::data::ref()->ui->temperatureUnit) {
+            case settings::UI::TemperatureUnit::C:
+                tempUnit = 'C';
+                formattedTemp = sim->parts[idx].temp - R_ZERO_C;
+                break;
+            case settings::UI::TemperatureUnit::F:
+                tempUnit = 'F';
+                formattedTemp = (sim->parts[idx].temp - R_ZERO_C) * 1.8f + 32.0f;
+                break;
+            default:
+                formattedTemp = sim->parts[idx].temp;
+                tempUnit = 'K';
+                break;
+        }
+
+        drawTextRAlign(TextFormat("Temp: %.2f %c  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
+                formattedTemp,
+                tempUnit,
                 sim->parts[idx].life,
                 sim->parts[idx].tmp1,
                 sim->parts[idx].tmp2,
