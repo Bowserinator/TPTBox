@@ -26,8 +26,10 @@ uint idx(uint x, uint y, uint z) {
 }
 
 void markDirty(uint idx) {
-    uint mask = (1 << (8 * (idx & 3))); // 1 at byte idx % 4
-    atomicOr(dirtyOut[idx / 4], mask);
+    // This is slow on some graphics cards:
+    // uint mask = (1 << (8 * (idx & 3))); // 1 at byte idx % 4
+    // atomicOr(dirtyOut[idx / 4], mask);
+    dirtyOut[idx] = 1;
 }
 
 void main() {

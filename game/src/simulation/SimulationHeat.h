@@ -49,7 +49,7 @@ private:
     unsigned int heatProgram;
 
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
-    std::array<uint8_t, ZRES * SIM_HEAT_YBLOCKS> download_dirty;
+    std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> download_dirty;
 };
 
 #endif

@@ -48,7 +48,7 @@ void SimulationHeat::reset() {
 void SimulationHeat::dispatch() {
     uploadedOnce = true;
 
-    memset(&ssbosDownloadDirty.get<uint8_t>(0)[0], 0, sizeof(download_dirty));
+    memset(&ssbosDownloadDirty.get<uint32_t>(0)[0], 0, sizeof(download_dirty));
 
     ssbosData.wait(0);
     std::copy(
@@ -91,8 +91,8 @@ void SimulationHeat::wait_and_get() {
     ssbosDownloadDirty.wait(0);
 
     std::copy(
-        &ssbosDownloadDirty.get<uint8_t>(1)[0],
-        &ssbosDownloadDirty.get<uint8_t>(1)[0] + download_dirty.size(),
+        &ssbosDownloadDirty.get<uint32_t>(1)[0],
+        &ssbosDownloadDirty.get<uint32_t>(1)[0] + download_dirty.size(),
         &download_dirty[0]);
 
     for (auto z = 0; z < ZRES; z++) {
