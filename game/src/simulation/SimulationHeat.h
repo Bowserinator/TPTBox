@@ -41,7 +41,7 @@ public:
     inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
 private:
     util::PersistentBuffer<2> ssbosData;
-    util::PersistentBuffer<1> ssbosDownloadDirty;
+    util::PersistentBuffer<1> ssbosUploadDownloadDirty;
     unsigned int ssboConstants;
     HeatConstants constants;
 
@@ -49,7 +49,7 @@ private:
     unsigned int heatProgram;
 
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
-    std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> download_dirty;
+    std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty;
 };
 
 #endif

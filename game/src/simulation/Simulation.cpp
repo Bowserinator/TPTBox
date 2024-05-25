@@ -563,7 +563,7 @@ void Simulation::recalc_free_particles() {
 void Simulation::dispatch_compute_shaders() {
     if (paused) return;
     if (gol.golCount) gol.dispatch();
-    heat.dispatch();
+    if (enable_heat) heat.dispatch();
 }
 
 void Simulation::force_graphics_update() {
