@@ -12,12 +12,22 @@ layout(std430, binding = 1) writeonly restrict buffer HeatOutput {
 layout(std430, binding = 2) readonly restrict buffer Constants {
     ivec4 SIMRES;
     ivec4 COMPUTE_BLOCKS;
+    uint HEAT_BLOCK_SIZE;
     uint DIRTY_INDEX_COUNT;
     uint DIRTY_INDICES[];
 };
+layout(std430, binding = 3) writeonly restrict buffer DirtyOut {
+    uint dirtyOut[];
+};
+
 
 uint idx(uint x, uint y, uint z) {
     return x + y * SIMRES.x + z * SIMRES.y * SIMRES.x;
+}
+
+void markDirty(uint idx) {
+    uint mask = (1 << (8 * (idx & 3))); // 1 at byte idx % 4
+    atomicOr(dirtyOut[idx / 4], mask);
 }
 
 void main() {
@@ -38,6 +48,8 @@ void main() {
     float selfTemp = heatIn[baseIdx];
     if (selfTemp < 0.0) {
         heatOut[baseIdx] = -1.0;
+        if (heatIn[baseIdx] != -1.0)
+            markDirty(COMPUTE_BLOCKS.y * coords.z + coords.y / HEAT_BLOCK_SIZE);
         return;
     }
 
@@ -50,6 +62,9 @@ void main() {
     tmp = heatIn[baseIdx + SIMRES.x];            if (tmp >= 0.0f) { count++; total += tmp; }
     tmp = heatIn[baseIdx + SIMRES.x * SIMRES.y]; if (tmp >= 0.0f) { count++; total += tmp; } // +- z
     tmp = heatIn[baseIdx - SIMRES.x * SIMRES.y]; if (tmp >= 0.0f) { count++; total += tmp; }
+    tmp = total / float(count);
 
-    heatOut[baseIdx] = total / float(count);
+    if (heatIn[baseIdx] != tmp)
+        markDirty(COMPUTE_BLOCKS.y * coords.z + coords.y / HEAT_BLOCK_SIZE);
+    heatOut[baseIdx] = tmp;
 }

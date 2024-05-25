@@ -6,6 +6,7 @@
 #include "../util/types/persistent_buffer.h"
 #include "SimulationDef.h"
 
+#include <array>
 #include <cmath>
 
 constexpr int SIM_HEAT_DIRTY_BLOCK_SIZE = 10; // For flagging updates
@@ -16,6 +17,7 @@ constexpr int SIM_HEAT_XBLOCKS = (int)std::ceil((float)XRES / SIM_HEAT_DIRTY_BLO
 struct HeatConstants {
     int32_t SIMRES[4] = { (int)XRES, (int)YRES, (int)ZRES };
     int32_t COMPUTE_BLOCKS[4] = { SIM_HEAT_XBLOCKS, SIM_HEAT_YBLOCKS, SIM_HEAT_ZBLOCKS };
+    uint32_t HEAT_BLOCK_SIZE = SIM_HEAT_DIRTY_BLOCK_SIZE;
     uint32_t DIRTY_INDEX_COUNT = 0;
     uint32_t DIRTY_INDICES[SIM_HEAT_ZBLOCKS * SIM_HEAT_YBLOCKS * SIM_HEAT_XBLOCKS];
 };
@@ -39,6 +41,7 @@ public:
     inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
 private:
     util::PersistentBuffer<2> ssbosData;
+    util::PersistentBuffer<1> ssbosDownloadDirty;
     unsigned int ssboConstants;
     HeatConstants constants;
 
@@ -46,6 +49,7 @@ private:
     unsigned int heatProgram;
 
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
+    std::array<uint8_t, ZRES * SIM_HEAT_YBLOCKS> download_dirty;
 };
 
 #endif

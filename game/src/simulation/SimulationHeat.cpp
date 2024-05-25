@@ -26,6 +26,7 @@ void SimulationHeat::init() {
     ssboConstants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
 
+    ssbosDownloadDirty = util::PersistentBuffer<1>(GL_SHADER_STORAGE_BUFFER, sizeof(download_dirty), util::PBFlags::READ_AND_WRITE);
     ssbosData = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(heat_map), util::PBFlags::WRITE_ALT_READ);
     
     reset();
@@ -46,6 +47,8 @@ void SimulationHeat::reset() {
 
 void SimulationHeat::dispatch() {
     uploadedOnce = true;
+
+    memset(&ssbosDownloadDirty.get<uint8_t>(0)[0], 0, sizeof(download_dirty));
 
     ssbosData.wait(0);
     std::copy(
@@ -72,6 +75,7 @@ void SimulationHeat::dispatch() {
     rlBindShaderBuffer(ssbosData.getId(0), 0);
     rlBindShaderBuffer(ssbosData.getId(1), 1);
     rlBindShaderBuffer(ssboConstants, 2);
+    rlBindShaderBuffer(ssbosDownloadDirty.getId(0), 3);
     rlComputeShaderDispatch(constants.DIRTY_INDEX_COUNT, 1, 1);
     rlDisableShader();
 
@@ -82,12 +86,29 @@ void SimulationHeat::dispatch() {
 
 void SimulationHeat::wait_and_get() {
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
     ssbosData.wait(1);
+    ssbosDownloadDirty.wait(0);
 
     std::copy(
-        &ssbosData.get<float>(1)[0],
-        &ssbosData.get<float>(1)[0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])),
-        &heat_map[0][0][0]);
+        &ssbosDownloadDirty.get<uint8_t>(1)[0],
+        &ssbosDownloadDirty.get<uint8_t>(1)[0] + download_dirty.size(),
+        &download_dirty[0]);
+
+    for (auto z = 0; z < ZRES; z++) {
+        for (auto y = 0; y < SIM_HEAT_YBLOCKS; y++) {
+            if (download_dirty[z * SIM_HEAT_YBLOCKS + y]) {
+                int y_ = y * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
+                int bufIdx = z * (XRES * YRES) + y_ * XRES;
+
+                std::copy(
+                    &ssbosData.get<float>(1)[bufIdx],
+                    &ssbosData.get<float>(1)[bufIdx] + XRES * SIM_HEAT_DIRTY_BLOCK_SIZE,
+                    &heat_map[z][y_][0]
+                );
+            }
+        }
+    }
 
     ssbosData.advance_cycle();
     ssbosData.advance_cycle();
