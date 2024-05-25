@@ -444,7 +444,7 @@ void Simulation::download_heat_from_gpu() {
     if (heat.uploadedOnce) {
         heat.wait_and_get();
 
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < maxId; i++) {
             coord_t x = parts[i].rx;
             coord_t y = parts[i].ry;
@@ -632,7 +632,7 @@ void Simulation::_force_update_all_shadows() {
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.shadows_force_update = false;
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;

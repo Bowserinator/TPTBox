@@ -13,5 +13,6 @@ void FontCache::init() {
 }
 
 FontCache::~FontCache() {
-    UnloadFont(main_font);
+    // This segfaults so screw it let the OS deal with it
+    // UnloadFont(main_font);
 }

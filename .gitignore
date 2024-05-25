@@ -4,5 +4,7 @@ _bin
 .vs
 out.txt
 .vscode
+gmon.out
 
 resources/shaders/generated/*.h
+resources/generated/*

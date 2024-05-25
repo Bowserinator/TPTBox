@@ -63,6 +63,9 @@ workspace (workspaceName)
         defines { "DEBUG" }
         symbols "On"
         openmp "On"
+        buildoptions {
+            "-Ofast",
+        }
 
     filter "configurations:Release"
         defines { "NDEBUG" }
