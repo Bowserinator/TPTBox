@@ -48,6 +48,7 @@ Simulation::Simulation():
 
     // TODO: singleton?
     _init_can_move();
+    update_settings(settings::data::ref()->sim);
 }
 
 Simulation::~Simulation() {}
@@ -112,7 +113,7 @@ void Simulation::_init_can_move() {
 }
 
 void Simulation::cycle_gravity_mode() {
-    gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % 3 );
+    gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % static_cast<int>(GravityMode::LAST));
     settings::data::ref()->sim->gravityMode = gravity_mode;
 }
 

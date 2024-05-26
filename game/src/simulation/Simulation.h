@@ -23,7 +23,8 @@
 enum class GravityMode {
     VERTICAL = 0,
     ZERO_G = 1,
-    RADIAL = 2
+    RADIAL = 2,
+    LAST
 };
 
 struct PartHeatDelta {
@@ -118,6 +119,8 @@ public:
                 return "Off";
             case GravityMode::RADIAL:
                 return "Radial";
+            case GravityMode::LAST:
+                break;
         }
         return "Unknown";
     }

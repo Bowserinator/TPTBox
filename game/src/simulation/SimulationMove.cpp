@@ -58,6 +58,8 @@ void Simulation::move_behavior(const part_id idx) {
                     part.vz += gravity_force.z * el.Gravity;
                 }
                 break;
+            case GravityMode::LAST:
+                break;
         }
     }
 

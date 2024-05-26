@@ -42,6 +42,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
             settings->fullScreen = fullscreenCheckbox->checked();
             this->renderer->update_settings(settings);
+            settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 

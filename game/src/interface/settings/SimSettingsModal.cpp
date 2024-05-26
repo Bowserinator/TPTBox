@@ -36,6 +36,7 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
             settings->threadCount = threadCountDropdown->selected();
 
             this->sim->update_settings(settings);
+            settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 

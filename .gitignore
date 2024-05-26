@@ -5,6 +5,7 @@ _bin
 out.txt
 .vscode
 gmon.out
+powder.json
 
 resources/shaders/generated/*.h
 resources/generated/*

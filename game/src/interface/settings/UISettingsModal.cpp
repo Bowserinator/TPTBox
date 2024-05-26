@@ -34,6 +34,7 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
             settings->movementMode = (settings::UI::MovementMode)movementModeDropdown->selected();
             settings->temperatureUnit = (settings::UI::TemperatureUnit)temperatureDropdown->selected();
 
+            settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 

@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "../graphics/gradient.h"
 #include "../interface/settings/data/GraphicsSettingsData.h"
+#include "../interface/settings/data/SettingsData.h"
 
 #include "../util/math.h"
 #include "../util/graphics.h"
@@ -271,6 +272,8 @@ void Renderer::init() {
 
         settings_writer->upload();
     }
+
+    update_settings(settings::data::ref()->graphics);
 }
 
 void Renderer::set_grid_size(float size) {
