@@ -5,6 +5,7 @@
 #include "../util/vector_op.h"
 #include "../util/math.h"
 #include "../interface/settings/data/SimSettingsData.h"
+#include "../interface/settings/data/SettingsData.h"
 
 #include <omp.h>
 #include <algorithm>
@@ -112,6 +113,7 @@ void Simulation::_init_can_move() {
 
 void Simulation::cycle_gravity_mode() {
     gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % 3 );
+    settings::data::ref()->sim->gravityMode = gravity_mode;
 }
 
 part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type, const PartCreateMode mode) {
