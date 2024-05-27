@@ -154,6 +154,8 @@ void Simulation::move_behavior(const part_id idx) {
                 }
                 return;
             }
+            case GravityMode::LAST:
+                break;
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {

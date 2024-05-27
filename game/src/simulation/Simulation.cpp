@@ -514,6 +514,11 @@ void Simulation::recalc_free_particles() {
         update_part(i, false);
     }
 
+    // Update values based on new particles
+    #pragma omp parallel for \
+        reduction(max : newMaxId) reduction(+ : parts_count) \
+        reduction(min : min_y_per_zslice[:ZRES]) \
+        reduction(max : max_y_per_zslice[:ZRES])
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
@@ -530,12 +535,6 @@ void Simulation::recalc_free_particles() {
         if (heatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, heatConduct))
             heat.update_temperate(x, y, z, util::clampf(part.temp, MIN_TEMP, MAX_TEMP));
 
-        // Ambient occlusion and shadow rules
-        if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
-            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
-            _update_shadow_map(x, y, z);
-        }
-
         // GOL check
         if (TYP(pmap[z][y][x]) == PT_GOL)
             gol.zsliceHasGol[z] = true;
@@ -543,6 +542,16 @@ void Simulation::recalc_free_particles() {
         // Pmap / other cache
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
         max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
+
+        // Everything below this line may not necessarily be thread safe but
+        // race conditions shouldn't cause any *major* crashes / issues
+        // ------------------------------------------------------
+
+        // Ambient occlusion and shadow rules
+        if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
+            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
+            _update_shadow_map(x, y, z);
+        }
 
         // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
