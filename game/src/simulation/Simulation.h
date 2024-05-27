@@ -67,6 +67,11 @@ public:
     coord_t max_y_per_zslice[ZRES - 2];
     std::vector<RNG> rngs;
 
+    struct {
+        part_id ids[NPARTS];
+        std::size_t count = 0;
+    } causality_violating_parts[MAX_SIM_THREADS];
+
     bool enable_air = true;
     bool enable_heat = true;
 

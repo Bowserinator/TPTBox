@@ -508,11 +508,30 @@ void Simulation::recalc_free_particles() {
 
     // First do all movement updates, which can create new holes in the pmap
     // Then we fix the holes afterwards
+    
+    // Begin: find particles that have not been updated (due to stacking or causality violation)
+    // then perform update in serial
+    const uint32_t frame_count_parity = frame_count & 1;
+    for (std::size_t threadId = 0; threadId < MAX_SIM_THREADS; threadId++)
+        causality_violating_parts[threadId].count = 0;
+
+    #pragma omp parallel for num_threads(sim_thread_count) schedule(static)
     for (part_id i = 1; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
-        update_part(i, false);
+        if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity || part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) {
+            auto &s = causality_violating_parts[omp_get_thread_num()];
+            s.ids[s.count++] = i;
+        }
     }
+    for (std::size_t threadId = 0; threadId < MAX_SIM_THREADS; threadId++) {
+        for (std::size_t idx = 0; idx < causality_violating_parts[threadId].count; idx++) {
+            part_id i = causality_violating_parts[threadId].ids[idx];
+            update_part(i, false);
+        }
+    }
+
+    // --------------------
 
     // Update values based on new particles
     #pragma omp parallel for \
