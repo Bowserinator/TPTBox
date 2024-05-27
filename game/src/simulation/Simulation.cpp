@@ -541,7 +541,7 @@ void Simulation::recalc_free_particles() {
 
         // Pmap / other cache
         min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
-        max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]);
+        max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]) + 1;
 
         // Everything below this line may not necessarily be thread safe but
         // race conditions shouldn't cause any *major* crashes / issues
