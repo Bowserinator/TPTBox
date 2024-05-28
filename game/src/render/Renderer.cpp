@@ -411,6 +411,7 @@ void Renderer::draw() {
     if (IsWindowResized())
         _generate_render_textures();
 
+    bool displayModeChanged = sim->graphics.display_mode != cached_display_mode;
     update_colors_and_lod();
     if (show_octree)
         draw_octree_debug();
@@ -457,9 +458,16 @@ void Renderer::draw() {
 
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
+    bool isPersistentDisplay = sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_PERSISTENT;
+
     glClearColor(0, 0, 0, 0);
     rlEnableFramebuffer(base_tex.frameBuffer);
-    rlClearScreenBuffers();
+    if (isPersistentDisplay && !displayModeChanged) {
+        glClear(GL_DEPTH_BUFFER_BIT);  
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, 3});
+    } else
+        rlClearScreenBuffers();
+
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
 
@@ -491,20 +499,20 @@ void Renderer::draw() {
     BeginMode3D(cam->camera);
         DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
 
-    BeginShaderMode(post_shader);
+        BeginShaderMode(post_shader);
 
-        rlEnableShader(post_shader.id);
-        rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
-        rlSetUniformSampler(post_shader_glow_texture_loc, glow_tex_id);
-        rlSetUniformSampler(post_shader_blur_texture_loc, blur_tex_id);
-        rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
-        util::set_shader_value(post_shader, post_shader_res_loc, resolution);
+            rlEnableShader(post_shader.id);
+            rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
+            rlSetUniformSampler(post_shader_glow_texture_loc, glow_tex_id);
+            rlSetUniformSampler(post_shader_blur_texture_loc, blur_tex_id);
+            rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
+            util::set_shader_value(post_shader, post_shader_res_loc, resolution);
 
-        util::draw_dummy_triangle();
-        glBindTexture(GL_TEXTURE_2D, 0);
-        rlDisableShader();
+            util::draw_dummy_triangle();
+            glBindTexture(GL_TEXTURE_2D, 0);
+            rlDisableShader();
 
-    EndShaderMode();
+        EndShaderMode();
     EndMode3D();
 
     frame_count++;
