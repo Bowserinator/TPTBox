@@ -26,6 +26,8 @@ public:
 
     // Input-related functions: keyboard
     bool isKeyPressed(int key);
+    bool isKeyPressedRepeat(int key);
+    bool isKeyPressedAny(int key);
     bool isKeyDown(int key);
 
     // Input-related functions: gamepads

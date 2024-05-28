@@ -25,7 +25,7 @@ namespace ui {
 
         Color borderColor         = Color{ 120, 120, 120, 255 };
         Color hoverBorderColor    = WHITE;
-        Color focusBorderColor    = Color{ 120, 120, 120, 255 };
+        Color focusBorderColor    = Color{ 220, 220, 220, 255 };
         Color disabledBorderColor = Color{ 120, 120, 120, 255 };
 
         float borderThickness = 1.0f;

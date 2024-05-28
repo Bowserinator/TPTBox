@@ -20,6 +20,16 @@ bool EventConsumer::isKeyPressed(int key) {
     return IsKeyPressed(key);
 }
 
+bool EventConsumer::isKeyPressedRepeat(int key) {
+    if (keyboardEvtConsumed) return false;
+    return IsKeyPressedRepeat(key);
+}
+
+bool EventConsumer::isKeyPressedAny(int key) {
+    if (keyboardEvtConsumed) return false;
+    return IsKeyPressed(key) || IsKeyPressedRepeat(key);
+}
+
 bool EventConsumer::isKeyDown(int key) {
     if (keyboardEvtConsumed) return false;
     return IsKeyDown(key);
