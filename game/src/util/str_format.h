@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <locale>
+#include <charconv>
 
 namespace util {
     template <int N>
@@ -44,6 +45,12 @@ namespace util {
             out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
         }
         return out;
+    }
+
+    inline std::pair<bool, float> is_string_float(const std::string &s) {
+        double val = 0.0f;
+        auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
+        return std::make_pair(ec == std::errc() && p == s.data() + s.size(), val);
     }
 }
 

@@ -9,6 +9,7 @@
 #include "../gui/styles.h"
 
 #include "../../render/Renderer.h"
+#include "../../util/str_format.h"
 #include "data/SettingsData.h"
 
 using namespace ui;
@@ -41,6 +42,11 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             settings->shadowStrength = shadowStrengthSlider->getPercent();
 
             settings->fullScreen = fullscreenCheckbox->checked();
+            if (heatMinTextInput->isInputValid())
+                settings->heatViewMin = std::stof(heatMinTextInput->getValue());
+            if (heatMaxTextInput->isInputValid())
+                settings->heatViewMax = std::stof(heatMaxTextInput->getValue());
+
             this->renderer->update_settings(settings);
             settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
@@ -125,6 +131,53 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     Y = 400.0f;
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
 
+    // Temperature
+    constexpr float DEFAULT_MAX_HEAT_VIEW_TEMP = 5000.0f;
+    Y = 450.0f;
+    panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
+
+    auto validate_temp = [](const std::string &s) -> bool {
+        auto [isFloat, val] = util::is_string_float(s);
+        if (!isFloat) return false;
+        return MIN_TEMP <= val && MAX_TEMP >= val;
+    };
+    auto input_allowed = [](const std::string &s) -> bool {
+        return s.length() == 1 && (isdigit(s[0]) || s[0] == '.');
+    };
+
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 0 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Heat view min (K)"
+    ));
+    heatMinTextInput = (new TextInput(
+            Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 0 * 1.25f * spacing },
+            Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
+        )
+            ->setMaxLength(16)->setPlaceholder("0.0")
+            ->setInputAllowed(input_allowed)
+            ->setInputValidation(validate_temp);
+    panel->addChild(heatMinTextInput);
+
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 1 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Heat view max (K)"
+    ));
+    heatMaxTextInput = (new TextInput(
+            Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 1 * 1.25f * spacing },
+            Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
+        )
+            ->setMaxLength(16)->setPlaceholder("5000.0")
+            ->setInputAllowed(input_allowed)
+            ->setInputValidation(validate_temp);
+    panel->addChild(heatMaxTextInput);
+
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this]() { heatMinTextInput->setValue(std::format("{:.2f}", MIN_TEMP)); }));
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this, DEFAULT_MAX_HEAT_VIEW_TEMP]() { heatMaxTextInput->setValue(std::format("{:.2f}", DEFAULT_MAX_HEAT_VIEW_TEMP)); }));
+
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);
     showOctreeCheckbox->setChecked(settings->showOctree);
@@ -139,4 +192,6 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     shadowStrengthSlider->setPercent(settings->shadowStrength);
 
     fullscreenCheckbox->setChecked(settings->fullScreen);
+    heatMinTextInput->setValue(std::format("{:.2f}", settings->heatViewMin));
+    heatMaxTextInput->setValue(std::format("{:.2f}", settings->heatViewMax));
 }

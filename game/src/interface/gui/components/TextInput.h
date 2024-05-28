@@ -22,15 +22,21 @@ namespace ui {
 
         virtual ~TextInput() = default;
 
-        void setValue(const std::string &text) { this->value = text; }
+        void setValue(const std::string &text) {
+            this->value = text.substr(0, config.maxLength);
+            onValueChange(value);
+            inputValid = inputValidation(value);
+        }
+        std::string getValue() { return value; }
         bool isReadOnly() const { return config.readOnly; }
         bool isInputValid() const { return inputValid; }
-        
+
         TextInput * setPlaceholder(const std::string &text) { this->config.placeholder = text; return this; }
         TextInput * setMaxLength(const std::size_t maxLength) { this->config.maxLength = maxLength; return this; }
         TextInput * setReadOnly(const bool readOnly) { this->config.readOnly = readOnly; return this; }
         TextInput * setOnValueChange(std::function<void(const std::string&)> onValueChange) { this->onValueChange = onValueChange; return this; }
         TextInput * setInputValidation(std::function<bool(const std::string&)> inputValidation) { this->inputValidation = inputValidation; return this; }
+        TextInput * setInputAllowed(std::function<bool(const std::string&)> inputAllowed) { this->inputAllowed = inputAllowed; return this; }
 
         void draw(const Vector2 &screenPos) override;
         void tick(float dt) override;
@@ -64,6 +70,7 @@ namespace ui {
 
         std::function<void(const std::string&)> onValueChange = [](const std::string &in){};
         std::function<bool(const std::string&)> inputValidation = [](const std::string &in) -> bool { return true; };
+        std::function<bool(const std::string&)> inputAllowed = [](const std::string &in) -> bool { return true; };
 
         // Computed
         float cursorX = 0.0f;

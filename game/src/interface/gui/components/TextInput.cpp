@@ -93,11 +93,12 @@ void TextInput::tick(float dt) {
     int in;
     while ((in = GetCharPressed())) {
         deselect_and_delete_selection();
-        if (value.length() < config.maxLength) {
+        std::string inStr = util::unicode_to_utf8(in);
+        if (value.length() < config.maxLength && inputAllowed(inStr)) {
             if (cursor == value.length())
-                value += util::unicode_to_utf8(in);
+                value += inStr;
             else
-                value = value.substr(0, cursor) + util::unicode_to_utf8(in) + value.substr(cursor);
+                value = value.substr(0, cursor) + inStr + value.substr(cursor);
             cursor++;
             valueModifiedInTick = true;
         }
@@ -160,7 +161,7 @@ void TextInput::onMouseClick(Vector2 localPos, unsigned button) {
 
 void TextInput::onMouseMoved(Vector2 localPos) {
     InteractiveComponent::onMouseMoved(localPos);
-    if (disabled) return;
+    if (disabled || !focused) return;
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
         drag_selection_update(localPos);
 }
@@ -168,7 +169,7 @@ void TextInput::onMouseMoved(Vector2 localPos) {
 void TextInput::onMouseRelease(Vector2 localPos, unsigned button) {
     InteractiveComponent::onMouseRelease(localPos, button);
 
-    if (disabled || button != MOUSE_BUTTON_LEFT) return;
+    if (disabled || !focused || button != MOUSE_BUTTON_LEFT) return;
     if (!value.length()) {
         deselect();
         return;

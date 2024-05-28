@@ -6,7 +6,6 @@
 #include "../gui/components/Label.h"
 #include "../gui/components/HR.h"
 #include "../gui/components/Slider.h"
-#include "../gui/components/TextInput.h"
 #include "../gui/styles.h"
 
 #include "data/SettingsData.h"

@@ -269,6 +269,8 @@ void Renderer::init() {
         settings_writer->write_member("ENABLE_GLOW", 1);
         settings_writer->write_member("ENABLE_AO", 1);
         settings_writer->write_member("ENABLE_SHADOWS", 1);
+        settings_writer->write_member("HEAT_VIEW_MIN", MIN_TEMP);
+        settings_writer->write_member("HEAT_VIEW_MAX", 5000.0f);
 
         settings_writer->upload();
     }
@@ -312,6 +314,8 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("ENABLE_GLOW", settings->enableGlow ? 1 : 0);
     settings_writer->write_member("ENABLE_AO", settings->enableAO ? 1 : 0);
     settings_writer->write_member("ENABLE_SHADOWS", settings->enableShadows ? 1 : 0);
+    settings_writer->write_member("HEAT_VIEW_MIN", settings->heatViewMin);
+    settings_writer->write_member("HEAT_VIEW_MAX", settings->heatViewMax);
     settings_writer->upload();
 }
 

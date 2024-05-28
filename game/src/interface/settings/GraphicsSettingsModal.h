@@ -5,6 +5,7 @@
 #include "../gui/components/Checkbox.h"
 #include "../gui/components/Dropdown.h"
 #include "../gui/components/Slider.h"
+#include "../gui/components/TextInput.h"
 #include "../gui/Style.h"
 
 class Renderer;
@@ -26,6 +27,9 @@ private:
     ui::Dropdown * renderModeDropdown;
     ui::Slider * aoStrengthSlider,
         * shadowStrengthSlider;
+    ui::TextInput
+        * heatMinTextInput,
+        * heatMaxTextInput;
 };
 
 #endif

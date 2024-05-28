@@ -25,6 +25,8 @@ namespace settings {
                 enableAO = json["graphics"].value("enableAO", enableAO);
                 enableShadows = json["graphics"].value("enableShadows", enableShadows);
                 fullScreen = json["graphics"].value("fullScreen", fullScreen);
+                heatViewMin = json["graphics"].value("heatViewMin", heatViewMin);
+                heatViewMax = json["graphics"].value("heatViewMax", heatViewMax);
             }
         }
 
@@ -39,12 +41,16 @@ namespace settings {
             json["graphics"]["enableAO"] = enableAO;
             json["graphics"]["enableShadows"] = enableShadows;
             json["graphics"]["fullScreen"] = fullScreen;
+            json["graphics"]["heatViewMin"] = heatViewMin;
+            json["graphics"]["heatViewMax"] = heatViewMax;
         }
 
         Renderer::FragDebugMode renderMode = Renderer::FragDebugMode::NODEBUG;
         float aoStrength = 0.6f;
         float shadowStrength = 0.35f;
         bool showOctree = false;
+        float heatViewMin = MIN_TEMP;
+        float heatViewMax = MAX_TEMP;
 
         static constexpr float defaultAOStrength = 0.6f;
         static constexpr float defaultShadowStrength = 0.35f;

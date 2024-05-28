@@ -46,6 +46,8 @@ layout(shared, binding = 6) uniform Settings {
     bool ENABLE_GLOW;
     bool ENABLE_AO;
     bool ENABLE_SHADOWS;
+    float HEAT_VIEW_MIN;
+    float HEAT_VIEW_MAX;
 };
 
 layout(std430, binding = 7) readonly restrict buffer DisplayModeSettings {
@@ -380,7 +382,7 @@ void main() {
         if (DISPLAY_MODE == D_MODE_HEAT_GRADIENT)
             mul *= 0.75 + 0.25 * sin(mod(getHeat(data.lastVoxel), 3.14159265));
         else if (DISPLAY_MODE == D_MODE_HEAT) {
-            uint gradColor = HEAT_GRADIENT[uint( 1023 * clamp(getHeat(data.lastVoxel) / 5000.0, 0.0, 1.0) )];
+            uint gradColor = HEAT_GRADIENT[uint( 1023 * clamp((getHeat(data.lastVoxel) - HEAT_VIEW_MIN) / HEAT_VIEW_MAX, 0.0, 1.0) )];
             data.color.b = ((gradColor & 0xFF0000) >> 16) / 255.0;
             data.color.g = ((gradColor & 0xFF00) >> 8) / 255.0;
             data.color.r = ((gradColor & 0xFF)) / 255.0;
