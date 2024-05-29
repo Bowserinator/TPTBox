@@ -43,9 +43,9 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
             settings->fullScreen = fullscreenCheckbox->checked();
             if (heatMinTextInput->isInputValid())
-                settings->heatViewMin = std::stof(heatMinTextInput->getValue());
+                settings->heatViewMin = util::temp_string_to_kelvin(heatMinTextInput->getValue()).value();
             if (heatMaxTextInput->isInputValid())
-                settings->heatViewMax = std::stof(heatMaxTextInput->getValue());
+                settings->heatViewMax = util::temp_string_to_kelvin(heatMaxTextInput->getValue()).value();
             if (renderDownscaleTextInput->isInputValid())
                 settings->renderDownscale = std::stof(renderDownscaleTextInput->getValue());
 
@@ -139,12 +139,18 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
 
     auto validate_temp = [](const std::string &s) -> bool {
-        auto [isFloat, val] = util::is_string_float(s);
-        if (!isFloat) return false;
+        auto val = util::temp_string_to_kelvin(s);
+        if (!val.has_value()) return false;
         return MIN_TEMP <= val && MAX_TEMP >= val;
     };
     auto float_input_allowed = [](const std::string &s) -> bool {
         return s.length() == 1 && (isdigit(s[0]) || s[0] == '.');
+    };
+    auto temp_input_allowed = [float_input_allowed](const std::string &s) -> bool {
+        return float_input_allowed(s) ||
+            s == "K" || s == "k" ||
+            s == "C" || s == "c" ||
+            s == "F" || s == "f";
     };
 
     panel->addChild(new Label(
@@ -157,7 +163,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
         )
             ->setMaxLength(16)->setPlaceholder("0.0")
-            ->setInputAllowed(float_input_allowed)
+            ->setInputAllowed(temp_input_allowed)
             ->setInputValidation(validate_temp);
     panel->addChild(heatMinTextInput);
 
@@ -171,7 +177,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
         )
             ->setMaxLength(16)->setPlaceholder("5000.0")
-            ->setInputAllowed(float_input_allowed)
+            ->setInputAllowed(temp_input_allowed)
             ->setInputValidation(validate_temp);
     panel->addChild(heatMaxTextInput);
 
@@ -182,8 +188,8 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
     // Render downscale
     auto validate_downscale = [](const std::string &s) -> bool {
-        auto [isFloat, val] = util::is_string_float(s);
-        if (!isFloat) return false;
+        auto val = util::parse_string_float(s);
+        if (!val.has_value()) return false;
         return 1.0f <= val && val <= 5.0f;
     };
 
@@ -223,7 +229,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     shadowStrengthSlider->setPercent(settings->shadowStrength);
 
     fullscreenCheckbox->setChecked(settings->fullScreen);
-    heatMinTextInput->setValue(std::format("{:.2f}", settings->heatViewMin));
-    heatMaxTextInput->setValue(std::format("{:.2f}", settings->heatViewMax));
-    renderDownscaleTextInput->setValue(std::format("{:.2f}", settings->renderDownscale));
+    heatMinTextInput->setValue(std::format("{:.2f}K", settings->heatViewMin));
+    heatMaxTextInput->setValue(std::format("{:.2f}K", settings->heatViewMax));
+    renderDownscaleTextInput->setValue(std::format("{:.1f}", settings->renderDownscale));
 }

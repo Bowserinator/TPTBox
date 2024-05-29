@@ -82,6 +82,7 @@ void TextInput::tick(float dt) {
         std::string tmp = GetClipboardText();
         tmp = tmp.substr(0, config.maxLength);
         if (tmp.length()) {
+            cursor = std::min(cursor, value.length());
             value = value.substr(0, cursor) + tmp + value.substr(cursor);
             value = value.substr(0, config.maxLength);
             cursor += tmp.length();
@@ -95,6 +96,7 @@ void TextInput::tick(float dt) {
         deselect_and_delete_selection();
         std::string inStr = util::unicode_to_utf8(in);
         if (value.length() < config.maxLength && inputAllowed(inStr)) {
+            cursor = std::min(cursor, value.length());
             if (cursor == value.length())
                 value += inStr;
             else
