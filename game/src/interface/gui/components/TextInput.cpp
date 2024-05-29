@@ -80,6 +80,11 @@ void TextInput::tick(float dt) {
     if (ctrl && EventConsumer::ref()->isKeyPressed(KEY_V)) {
         deselect_and_delete_selection();
         std::string tmp = GetClipboardText();
+        tmp.erase(
+            std::remove_if(tmp.begin(), tmp.end(), [this](char c)
+                { return !inputAllowed(std::string(1, c)); }),
+            tmp.end());
+
         tmp = tmp.substr(0, config.maxLength);
         if (tmp.length()) {
             cursor = std::min(cursor, value.length());

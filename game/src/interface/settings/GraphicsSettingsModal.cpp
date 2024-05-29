@@ -182,9 +182,9 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild(heatMaxTextInput);
 
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this]() { heatMinTextInput->setValue(std::format("{:.2f}", MIN_TEMP)); }));
+        ->setClickCallback([this]() { heatMinTextInput->setValue(std::format("{:.2f}K", MIN_TEMP)); }));
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this, DEFAULT_MAX_HEAT_VIEW_TEMP]() { heatMaxTextInput->setValue(std::format("{:.2f}", DEFAULT_MAX_HEAT_VIEW_TEMP)); }));
+        ->setClickCallback([this, DEFAULT_MAX_HEAT_VIEW_TEMP]() { heatMaxTextInput->setValue(std::format("{:.2f}K", DEFAULT_MAX_HEAT_VIEW_TEMP)); }));
 
     // Render downscale
     auto validate_downscale = [](const std::string &s) -> bool {
