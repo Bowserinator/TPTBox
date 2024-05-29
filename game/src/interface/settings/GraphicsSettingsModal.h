@@ -29,7 +29,8 @@ private:
         * shadowStrengthSlider;
     ui::TextInput
         * heatMinTextInput,
-        * heatMaxTextInput;
+        * heatMaxTextInput,
+        * renderDownscaleTextInput;
 };
 
 #endif

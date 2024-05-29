@@ -10,8 +10,6 @@
 #include "../util/types/persistent_buffer.h"
 #include "constants.h"
 
-constexpr float DOWNSCALE_RATIO = 1.5f;
-constexpr float BLUR_DOWNSCALE_RATIO = 1.5f;
 constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte
 constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
 constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
@@ -70,6 +68,9 @@ private:
     unsigned int ubo_settings;
     unsigned int ssbo_display_mode;
     uint8_t * ao_data;
+
+    float downscaleRatio = 1.5f;
+    float blurDownscaleRatio = 1.5f;
 
     RenderTexture2D blur1_tex = {0}, blur2_tex = {0}, blur_tmp_tex = {0};
     MultiTexture base_tex;

@@ -46,6 +46,8 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
                 settings->heatViewMin = std::stof(heatMinTextInput->getValue());
             if (heatMaxTextInput->isInputValid())
                 settings->heatViewMax = std::stof(heatMaxTextInput->getValue());
+            if (renderDownscaleTextInput->isInputValid())
+                settings->renderDownscale = std::stof(renderDownscaleTextInput->getValue());
 
             this->renderer->update_settings(settings);
             settings::data::ref()->save_settings_to_file();
@@ -141,7 +143,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         if (!isFloat) return false;
         return MIN_TEMP <= val && MAX_TEMP >= val;
     };
-    auto input_allowed = [](const std::string &s) -> bool {
+    auto float_input_allowed = [](const std::string &s) -> bool {
         return s.length() == 1 && (isdigit(s[0]) || s[0] == '.');
     };
 
@@ -155,7 +157,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
         )
             ->setMaxLength(16)->setPlaceholder("0.0")
-            ->setInputAllowed(input_allowed)
+            ->setInputAllowed(float_input_allowed)
             ->setInputValidation(validate_temp);
     panel->addChild(heatMinTextInput);
 
@@ -169,7 +171,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
         )
             ->setMaxLength(16)->setPlaceholder("5000.0")
-            ->setInputAllowed(input_allowed)
+            ->setInputAllowed(float_input_allowed)
             ->setInputValidation(validate_temp);
     panel->addChild(heatMaxTextInput);
 
@@ -177,6 +179,35 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         ->setClickCallback([this]() { heatMinTextInput->setValue(std::format("{:.2f}", MIN_TEMP)); }));
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
         ->setClickCallback([this, DEFAULT_MAX_HEAT_VIEW_TEMP]() { heatMaxTextInput->setValue(std::format("{:.2f}", DEFAULT_MAX_HEAT_VIEW_TEMP)); }));
+
+    // Render downscale
+    auto validate_downscale = [](const std::string &s) -> bool {
+        auto [isFloat, val] = util::is_string_float(s);
+        if (!isFloat) return false;
+        return 1.0f <= val && val <= 5.0f;
+    };
+
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 2 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Render downscale"
+    ));
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + spacing + 2 * 1.25f * spacing },
+        Vector2{ size.x, styles::DROPDOWN_SIZE.y },
+        "Higher number = lower resolution (1-5x)",
+        Style{ .horizontalAlign = Style::Align::Left }.setAllTextColors(GRAY)
+    ));
+    renderDownscaleTextInput = (new TextInput(
+            Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 2 * 1.25f * spacing },
+            Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
+        )
+            ->setMaxLength(4)->setPlaceholder("1.5")
+            ->setInputAllowed(float_input_allowed)
+            ->setInputValidation(validate_downscale);
+    panel->addChild(renderDownscaleTextInput);
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this]() { renderDownscaleTextInput->setValue(std::format("{:.2f}", settings::Graphics::defaultRenderDownscale)); }));
 
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);
@@ -194,4 +225,5 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     fullscreenCheckbox->setChecked(settings->fullScreen);
     heatMinTextInput->setValue(std::format("{:.2f}", settings->heatViewMin));
     heatMaxTextInput->setValue(std::format("{:.2f}", settings->heatViewMax));
+    renderDownscaleTextInput->setValue(std::format("{:.2f}", settings->renderDownscale));
 }

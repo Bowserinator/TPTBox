@@ -27,6 +27,7 @@ namespace settings {
                 fullScreen = json["graphics"].value("fullScreen", fullScreen);
                 heatViewMin = json["graphics"].value("heatViewMin", heatViewMin);
                 heatViewMax = json["graphics"].value("heatViewMax", heatViewMax);
+                renderDownscale = json["graphics"].value("renderDownscale", renderDownscale);
             }
         }
 
@@ -43,6 +44,7 @@ namespace settings {
             json["graphics"]["fullScreen"] = fullScreen;
             json["graphics"]["heatViewMin"] = heatViewMin;
             json["graphics"]["heatViewMax"] = heatViewMax;
+            json["graphics"]["renderDownscale"] = renderDownscale;
         }
 
         Renderer::FragDebugMode renderMode = Renderer::FragDebugMode::NODEBUG;
@@ -51,7 +53,9 @@ namespace settings {
         bool showOctree = false;
         float heatViewMin = MIN_TEMP;
         float heatViewMax = MAX_TEMP;
+        float renderDownscale = 1.5f;
 
+        static constexpr float defaultRenderDownscale = 1.5f;
         static constexpr float defaultAOStrength = 0.6f;
         static constexpr float defaultShadowStrength = 0.35f;
 

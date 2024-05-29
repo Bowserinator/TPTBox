@@ -106,10 +106,10 @@ void Renderer::_generate_render_textures() {
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
 
-    base_tex = MultiTexture(GetScreenWidth() / DOWNSCALE_RATIO, GetScreenHeight() / DOWNSCALE_RATIO);
+    base_tex = MultiTexture(GetScreenWidth() / downscaleRatio, GetScreenHeight() / downscaleRatio);
 
-    const unsigned int blur_width = GetScreenWidth() / BLUR_DOWNSCALE_RATIO;
-    const unsigned int blur_height = GetScreenHeight() / BLUR_DOWNSCALE_RATIO;
+    const unsigned int blur_width = GetScreenWidth() / blurDownscaleRatio;
+    const unsigned int blur_height = GetScreenHeight() / blurDownscaleRatio;
     blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -290,6 +290,7 @@ void Renderer::update_settings(settings::Graphics * settings) {
     do_glow = settings->enableGlow;
     do_ao = settings->enableAO;
     do_shadows = settings->enableShadows;
+    downscaleRatio = blurDownscaleRatio = settings->renderDownscale;
 
     if (settings->fullScreen != IsWindowFullscreen()) {
         if (!IsWindowFullscreen()) { // To fullscreen
@@ -317,6 +318,8 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("HEAT_VIEW_MIN", settings->heatViewMin);
     settings_writer->write_member("HEAT_VIEW_MAX", settings->heatViewMax);
     settings_writer->upload();
+
+    _generate_render_textures();
 }
 
 void Renderer::update_colors_and_lod() {
@@ -422,8 +425,8 @@ void Renderer::draw() {
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    const Vector2 virtual_resolution{ (float)GetScreenWidth() / DOWNSCALE_RATIO, (float)GetScreenHeight() / DOWNSCALE_RATIO };
-    const Vector2 blur_resolution{ (float)GetScreenWidth() / BLUR_DOWNSCALE_RATIO, (float)GetScreenHeight() / BLUR_DOWNSCALE_RATIO };
+    const Vector2 virtual_resolution{ (float)GetScreenWidth() / downscaleRatio, (float)GetScreenHeight() / downscaleRatio };
+    const Vector2 blur_resolution{ (float)GetScreenWidth() / blurDownscaleRatio, (float)GetScreenHeight() / blurDownscaleRatio };
 
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
