@@ -25,6 +25,8 @@ namespace settings {
                     util::clamp(json["ui"].value("movementMode", (int)movementMode), 0, 1));
                 temperatureUnit = static_cast<TemperatureUnit>(
                     util::clamp(json["ui"].value("temperatureUnit", (int)temperatureUnit), 0, 2));
+                mouseSensitivity = util::clamp(json["ui"].value("mouseSensitivity", mouseSensitivity),
+                    MIN_MOUSE_SENSITIVITY, MAX_MOUSE_SENSITIVITY);
             }
         }
 
@@ -35,12 +37,17 @@ namespace settings {
             json["ui"]["fastQuit"] = fastQuit;
             json["ui"]["movementMode"] = (int)movementMode;
             json["ui"]["temperatureUnit"] = (int)temperatureUnit;
+            json["ui"]["mouseSensitivity"] = mouseSensitivity;
         }
 
         bool hideHud = false;
         bool oppositeTool = true;
         bool frameIndependentCam = false;
         bool fastQuit = false;
+        float mouseSensitivity = 1.0f;
+
+        static constexpr float MIN_MOUSE_SENSITIVITY = 0.25f;
+        static constexpr float MAX_MOUSE_SENSITIVITY = 2.0f;
 
         MovementMode movementMode = MovementMode::THREED;
         TemperatureUnit temperatureUnit = TemperatureUnit::C;

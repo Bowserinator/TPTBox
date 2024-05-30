@@ -20,6 +20,7 @@ private:
     ui::Dropdown
         * movementModeDropdown,
         * temperatureDropdown;
+    ui::Slider * mouseSensitivitySlider;
 };
 
 #endif

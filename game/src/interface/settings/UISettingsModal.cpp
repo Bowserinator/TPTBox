@@ -33,6 +33,11 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
 
             settings->movementMode = (settings::UI::MovementMode)movementModeDropdown->selected();
             settings->temperatureUnit = (settings::UI::TemperatureUnit)temperatureDropdown->selected();
+            settings->mouseSensitivity = Lerp(
+                settings::UI::MIN_MOUSE_SENSITIVITY,
+                settings::UI::MAX_MOUSE_SENSITIVITY,
+                mouseSensitivitySlider->getPercent()
+            );
 
             settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
@@ -91,6 +96,22 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
         ->switchToOption(0);
     panel->addChild(movementModeDropdown);
 
+    // Mouse sensitivity
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 2 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Mouse Sensitivity"
+    ));
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this]() { mouseSensitivitySlider->setPercent(
+            Normalize(1.0f, settings::UI::MIN_MOUSE_SENSITIVITY, settings::UI::MAX_MOUSE_SENSITIVITY)
+        ); }));
+    mouseSensitivitySlider = (new Slider(
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 2 * 1.25f * spacing },
+        Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
+    );
+    panel->addChild(mouseSensitivitySlider);
+
     // Update values from settings
     hideHUDCheckbox->setChecked(settings->hideHud);
     oppositeToolCheckbox->setChecked(settings->oppositeTool);
@@ -98,4 +119,5 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
     fastQuitCheckbox->setChecked(settings->fastQuit);
     movementModeDropdown->switchToOption((int)settings->movementMode);
     temperatureDropdown->switchToOption((int)settings->temperatureUnit);
+    mouseSensitivitySlider->setPercent(Normalize(settings->mouseSensitivity, settings::UI::MIN_MOUSE_SENSITIVITY, settings::UI::MAX_MOUSE_SENSITIVITY));  
 }
