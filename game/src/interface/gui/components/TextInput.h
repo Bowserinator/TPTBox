@@ -22,10 +22,10 @@ namespace ui {
 
         virtual ~TextInput() = default;
 
-        void setValue(const std::string &text) {
+        void setValue(const std::string &text, const bool noCallback = false) {
             this->value = text.substr(0, config.maxLength);
-            onValueChange(value);
             inputValid = inputValidation(value);
+            if (!noCallback) onValueChange(value);
         }
         std::string getValue() { return value; }
         bool isReadOnly() const { return config.readOnly; }

@@ -134,7 +134,6 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
 
     // Temperature
-    constexpr float DEFAULT_MAX_HEAT_VIEW_TEMP = 5000.0f;
     Y = 450.0f;
     panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
 
@@ -176,7 +175,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 1 * 1.25f * spacing },
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y })
         )
-            ->setMaxLength(16)->setPlaceholder("5000.0")
+            ->setMaxLength(16)->setPlaceholder(std::format("{:.2f}K", settings::Graphics::defaultHeatViewMax))
             ->setInputAllowed(temp_input_allowed)
             ->setInputValidation(validate_temp);
     panel->addChild(heatMaxTextInput);
@@ -184,7 +183,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
         ->setClickCallback([this]() { heatMinTextInput->setValue(std::format("{:.2f}K", MIN_TEMP)); }));
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this, DEFAULT_MAX_HEAT_VIEW_TEMP]() { heatMaxTextInput->setValue(std::format("{:.2f}K", DEFAULT_MAX_HEAT_VIEW_TEMP)); }));
+        ->setClickCallback([this]() { heatMaxTextInput->setValue(std::format("{:.2f}K", settings::Graphics::defaultHeatViewMax)); }));
 
     // Render downscale
     auto validate_downscale = [](const std::string &s) -> bool {
@@ -199,7 +198,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         "Render downscale"
     ));
     panel->addChild(new Label(
-        Vector2{ 20.0f, Y + spacing + 2 * 1.25f * spacing },
+        Vector2{ 20.0f, Y + spacing + 2.15f * 1.25f * spacing },
         Vector2{ size.x, styles::DROPDOWN_SIZE.y },
         "Higher number = lower resolution (1-5x)",
         Style{ .horizontalAlign = Style::Align::Left }.setAllTextColors(GRAY)
@@ -213,7 +212,20 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             ->setInputValidation(validate_downscale);
     panel->addChild(renderDownscaleTextInput);
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this]() { renderDownscaleTextInput->setValue(std::format("{:.2f}", settings::Graphics::defaultRenderDownscale)); }));
+        ->setClickCallback([this]() { renderDownscaleTextInput->setValue(std::format("{:.1f}", settings::Graphics::defaultRenderDownscale)); }));
+
+    // Color pickers
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 4 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Background Color"
+    ));
+    bgColorPicker = new ColorPicker(
+            Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 4 * 1.25f * spacing },
+            Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y });
+    panel->addChild(bgColorPicker); // ->noAlpha()
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 4 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this]() { bgColorPicker->setValue(BLACK); }));
 
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);

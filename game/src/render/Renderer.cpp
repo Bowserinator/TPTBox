@@ -270,7 +270,7 @@ void Renderer::init() {
         settings_writer->write_member("ENABLE_AO", 1);
         settings_writer->write_member("ENABLE_SHADOWS", 1);
         settings_writer->write_member("HEAT_VIEW_MIN", MIN_TEMP);
-        settings_writer->write_member("HEAT_VIEW_MAX", 5000.0f);
+        settings_writer->write_member("HEAT_VIEW_MAX", settings::Graphics::defaultHeatViewMax);
 
         settings_writer->upload();
     }

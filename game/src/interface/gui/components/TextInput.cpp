@@ -68,7 +68,7 @@ void TextInput::tick(float dt) {
 
     // Cut / Copy selection
     if (has_selection() && ctrl) {
-        if (EventConsumer::ref()->isKeyPressed(KEY_X)) {
+        if (EventConsumer::ref()->isKeyPressed(KEY_X) && !isReadOnly()) {
             SetClipboardText(value.substr(selection[0], selection[1] - selection[0] + 1).c_str());
             deselect_and_delete_selection();
         } else if (EventConsumer::ref()->isKeyPressed(KEY_C)) {
@@ -77,7 +77,7 @@ void TextInput::tick(float dt) {
     }
 
     // Paste
-    if (ctrl && EventConsumer::ref()->isKeyPressed(KEY_V)) {
+    if (ctrl && EventConsumer::ref()->isKeyPressed(KEY_V) && !isReadOnly()) {
         deselect_and_delete_selection();
         std::string tmp = GetClipboardText();
         tmp.erase(
@@ -97,7 +97,7 @@ void TextInput::tick(float dt) {
 
     // Insertion
     int in;
-    while ((in = GetCharPressed())) {
+    while ((in = GetCharPressed()) && !isReadOnly()) {
         deselect_and_delete_selection();
         std::string inStr = util::unicode_to_utf8(in);
         if (value.length() < config.maxLength && inputAllowed(inStr)) {
@@ -112,7 +112,7 @@ void TextInput::tick(float dt) {
     }
 
     // Deletion
-    if (cursor > 0 && value.length() && EventConsumer::ref()->isKeyPressedAny(KEY_BACKSPACE)) {
+    if (cursor > 0 && value.length() && EventConsumer::ref()->isKeyPressedAny(KEY_BACKSPACE) && !isReadOnly()) {
         valueModifiedInTick = true;
         if (has_selection())
             deselect_and_delete_selection();
@@ -124,7 +124,7 @@ void TextInput::tick(float dt) {
             cursor--;
         }
     }
-    if (cursor < value.length() && EventConsumer::ref()->isKeyPressedAny(KEY_DELETE)) {
+    if (cursor < value.length() && EventConsumer::ref()->isKeyPressedAny(KEY_DELETE) && !isReadOnly()) {
         valueModifiedInTick = true;
         if (has_selection())
             deselect_and_delete_selection();
@@ -150,8 +150,8 @@ void TextInput::tick(float dt) {
 
     update_cursor(cursor, oldCursor);
     if (valueModifiedInTick) {
-        onValueChange(value);
         inputValid = inputValidation(value);
+        onValueChange(value);
     }
 }
 

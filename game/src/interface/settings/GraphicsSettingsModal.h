@@ -6,6 +6,7 @@
 #include "../gui/components/Dropdown.h"
 #include "../gui/components/Slider.h"
 #include "../gui/components/TextInput.h"
+#include "../gui/components/ColorPicker.h"
 #include "../gui/Style.h"
 
 class Renderer;
@@ -31,6 +32,8 @@ private:
         * heatMinTextInput,
         * heatMaxTextInput,
         * renderDownscaleTextInput;
+    ui::ColorPicker
+        * bgColorPicker;
 };
 
 #endif

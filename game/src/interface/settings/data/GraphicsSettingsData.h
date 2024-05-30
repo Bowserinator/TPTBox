@@ -52,9 +52,10 @@ namespace settings {
         float shadowStrength = 0.35f;
         bool showOctree = false;
         float heatViewMin = MIN_TEMP;
-        float heatViewMax = MAX_TEMP;
+        float heatViewMax = 5000.0f;
         float renderDownscale = 1.5f;
 
+        static constexpr float defaultHeatViewMax = 5000.0f;
         static constexpr float defaultRenderDownscale = 1.5f;
         static constexpr float defaultAOStrength = 0.6f;
         static constexpr float defaultShadowStrength = 0.35f;
