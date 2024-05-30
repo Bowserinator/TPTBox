@@ -52,8 +52,8 @@ namespace ui {
             }
 
             panel = new ScrollPanel(
-                Vector2{ 0, 40.0f },
-                Vector2{ size.x, size.y - settings.bottomPadding - settings.headerHeight });
+                Vector2{ 0, settings.headerHeight + 1.0f },
+                Vector2{ size.x, size.y - settings.bottomPadding - settings.headerHeight - 1 });
             addChild(panel);
         }
 
