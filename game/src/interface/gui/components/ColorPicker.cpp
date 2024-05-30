@@ -36,10 +36,11 @@ public:
 #version 430
 in vec2 fragTexCoord;
 uniform vec3 hueColor;
+out vec4 outColor;
 
 void main() {
     vec4 x1 = mix(vec4(1.0), vec4(hueColor, 1.0), fragTexCoord.x);
-    gl_FragColor = mix(x1, vec4(0.0, 0.0, 0.0, 1.0), fragTexCoord.y);
+    outColor = mix(x1, vec4(0.0, 0.0, 0.0, 1.0), fragTexCoord.y);
 }
             )");
             hueColorLoc = GetShaderLocation(colorRectShader, "hueColor");
@@ -49,6 +50,7 @@ void main() {
             hueRectShader  = LoadShaderFromMemory(nullptr, R"(
 #version 430
 in vec2 fragTexCoord;
+out vec4 outColor;
 
 vec3 hueWithMaxSVToRGB(float hue) {
     hue *= 360.0;
@@ -60,7 +62,7 @@ vec3 hueWithMaxSVToRGB(float hue) {
     else if (hue < 300.0) return vec3(X, 0, 1.0);
     return vec3(1.0, 0, X);
 }
-void main() {gl_FragColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0); }
+void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
             )");
         }
 
