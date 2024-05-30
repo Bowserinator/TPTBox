@@ -11,8 +11,6 @@
 #include "constants.h"
 
 constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte
-constexpr Color BACKGROUND_COLOR{ 0, 0, 0, 255 };
-constexpr Color SHADOW_COLOR{ 32, 18, 39, 255 };
 constexpr std::size_t HEAT_GRADIENT_STEPS = 1024;
 
 class Simulation;
@@ -80,6 +78,9 @@ private:
     bool do_glow = true;
     bool do_shadows = true;
     bool do_ao = true;
+
+    Color background_color;
+    Color shadow_color;
 
     Shader grid_shader;
     unsigned int grid_shader_size_loc,

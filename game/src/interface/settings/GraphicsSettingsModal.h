@@ -33,7 +33,8 @@ private:
         * heatMaxTextInput,
         * renderDownscaleTextInput;
     ui::ColorPicker
-        * bgColorPicker;
+        * bgColorPicker,
+        * shadowColorPicker;
 };
 
 #endif

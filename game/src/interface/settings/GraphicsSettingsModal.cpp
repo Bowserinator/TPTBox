@@ -49,6 +49,9 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             if (renderDownscaleTextInput->isInputValid())
                 settings->renderDownscale = std::stof(renderDownscaleTextInput->getValue());
 
+            settings->backgroundColor = bgColorPicker->getValue();
+            settings->shadowColor = shadowColorPicker->getValue();
+
             this->renderer->update_settings(settings);
             settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
@@ -223,9 +226,21 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     bgColorPicker = new ColorPicker(
             Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 4 * 1.25f * spacing },
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y });
-    panel->addChild(bgColorPicker); // ->noAlpha()
+    panel->addChild(bgColorPicker->noAlpha());
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 4 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this]() { bgColorPicker->setValue(BLACK); }));
+        ->setClickCallback([this]() { bgColorPicker->setValue(settings::Graphics::defaultBackgroundColor); }));
+
+    panel->addChild(new Label(
+        Vector2{ 20.0f, Y + 5 * 1.25f * spacing },
+        Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
+        "Shadow Color"
+    ));
+    shadowColorPicker = new ColorPicker(
+            Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 5 * 1.25f * spacing },
+            Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y });
+    panel->addChild(shadowColorPicker->noAlpha());
+    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 5 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this]() { shadowColorPicker->setValue(settings::Graphics::defaultShadowColor); }));
 
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);
@@ -244,4 +259,6 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     heatMinTextInput->setValue(std::format("{:.2f}K", settings->heatViewMin));
     heatMaxTextInput->setValue(std::format("{:.2f}K", settings->heatViewMax));
     renderDownscaleTextInput->setValue(std::format("{:.1f}", settings->renderDownscale));
+    bgColorPicker->setValue(settings->backgroundColor);
+    shadowColorPicker->setValue(settings->shadowColor);
 }

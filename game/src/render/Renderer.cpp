@@ -253,8 +253,8 @@ void Renderer::init() {
         settings_writer = new UBOWriter(part_shader.id, ubo_settings, "Settings");
         glBufferData(GL_UNIFORM_BUFFER, settings_writer->size(), NULL, GL_STATIC_DRAW);
 
-        float BG_COLOR[] = { BACKGROUND_COLOR.r / 255.0f, BACKGROUND_COLOR.g / 255.0f, BACKGROUND_COLOR.b / 255.0f };
-        float SH_COLOR[] = { SHADOW_COLOR.r / 255.0f, SHADOW_COLOR.g / 255.0f, SHADOW_COLOR.b / 255.0f };
+        float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
+        float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
         settings_writer->write_member("MAX_RAY_STEPS", 256 * 3);
         settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer->write_member("AO_STRENGTH", 0.6f);
@@ -291,6 +291,8 @@ void Renderer::update_settings(settings::Graphics * settings) {
     do_ao = settings->enableAO;
     do_shadows = settings->enableShadows;
     downscaleRatio = blurDownscaleRatio = settings->renderDownscale;
+    background_color = settings->backgroundColor;
+    shadow_color = settings->shadowColor;
 
     if (settings->fullScreen != IsWindowFullscreen()) {
         if (!IsWindowFullscreen()) { // To fullscreen
@@ -307,6 +309,11 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("DEBUG_MODE", (FragDebugMode)settings->renderMode);
     settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
     settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);
+    
+    float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
+    float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
+    settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
+    settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
 
     settings_writer->write_member("ENABLE_TRANSPARENCY", settings->enableTransparency ? 1 : 0);
     settings_writer->write_member("ENABLE_REFLECTION", settings->enableReflection ? 1 : 0);

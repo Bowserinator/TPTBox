@@ -28,6 +28,8 @@ namespace settings {
                 heatViewMin = json["graphics"].value("heatViewMin", heatViewMin);
                 heatViewMax = json["graphics"].value("heatViewMax", heatViewMax);
                 renderDownscale = json["graphics"].value("renderDownscale", renderDownscale);
+                backgroundColor = GetColor(json["graphics"].value("backgroundColor", (unsigned int)ColorToInt(backgroundColor)));
+                shadowColor = GetColor(json["graphics"].value("shadowColor", (unsigned int)ColorToInt(shadowColor)));
             }
         }
 
@@ -45,20 +47,27 @@ namespace settings {
             json["graphics"]["heatViewMin"] = heatViewMin;
             json["graphics"]["heatViewMax"] = heatViewMax;
             json["graphics"]["renderDownscale"] = renderDownscale;
+            json["graphics"]["backgroundColor"] = (unsigned int)ColorToInt(backgroundColor);
+            json["graphics"]["shadowColor"] = (unsigned int)ColorToInt(shadowColor);
         }
 
         Renderer::FragDebugMode renderMode = Renderer::FragDebugMode::NODEBUG;
-        float aoStrength = 0.6f;
-        float shadowStrength = 0.35f;
-        bool showOctree = false;
-        float heatViewMin = MIN_TEMP;
-        float heatViewMax = 5000.0f;
-        float renderDownscale = 1.5f;
 
         static constexpr float defaultHeatViewMax = 5000.0f;
         static constexpr float defaultRenderDownscale = 1.5f;
         static constexpr float defaultAOStrength = 0.6f;
         static constexpr float defaultShadowStrength = 0.35f;
+        static constexpr Color defaultBackgroundColor = { 0, 0, 0, 255 };
+        static constexpr Color defaultShadowColor = { 32, 18, 39, 255 };
+
+        float aoStrength = defaultAOStrength;
+        float shadowStrength = defaultShadowStrength;
+        bool showOctree = false;
+        float heatViewMin = MIN_TEMP;
+        float heatViewMax = defaultHeatViewMax;
+        float renderDownscale = defaultRenderDownscale;
+        Color backgroundColor = defaultBackgroundColor;
+        Color shadowColor = defaultShadowColor;
 
         bool enableTransparency = true;
         bool enableReflection = true;

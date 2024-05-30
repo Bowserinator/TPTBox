@@ -14,6 +14,7 @@
 #include "src/interface/brush/Brush.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
+#include "src/interface/settings/data/SettingsData.h"
 
 #include <algorithm>
 
@@ -136,7 +137,7 @@ void ScreenGameplay::update() {
 }
 
 void ScreenGameplay::draw() {
-    ClearBackground(BLACK);
+    ClearBackground(settings::data::ref()->graphics->backgroundColor);
 
     BeginMode3D(render_camera.camera);
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
