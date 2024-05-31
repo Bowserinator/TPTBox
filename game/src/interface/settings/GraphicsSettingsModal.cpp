@@ -30,6 +30,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             auto settings = settings::data::ref()->graphics;
             settings->renderMode = (Renderer::FragDebugMode)renderModeDropdown->selected();
             settings->showOctree = showOctreeCheckbox->checked();
+            settings->showOutline = enableOutlineCheckbox->checked();
             settings->enableTransparency = enableTransparencyCheckbox->checked();
             settings->enableReflection = enableReflectionsCheckbox->checked();
             settings->enableRefraction = enableRefractionsCheckbox->checked();
@@ -98,9 +99,10 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     };
 
     showOctreeCheckbox = createCheckboxAndAdd(Y + 1.5f * spacing, "Show octree (may be slow)");
-    panel->addChild(new HR(Vector2{ 0, Y + 2.7f * spacing}, Vector2{ size.x, 0 }));
+    enableOutlineCheckbox = createCheckboxAndAdd(Y + 2.5f * spacing, "Show voxel outlines");
+    panel->addChild(new HR(Vector2{ 0, Y + 3.7f * spacing}, Vector2{ size.x, 0 }));
 
-    Y = 120.0f;
+    Y = 120.0f + spacing;
     addWarningLabel(Y + 0 * spacing, YELLOW, "Medium Impact");
     addWarningLabel(Y + 1 * spacing, YELLOW, "Medium Impact");
     addWarningLabel(Y + 2 * spacing, GRAY, "Low Impact");
@@ -118,7 +120,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     enableRefractionsCheckbox  = createCheckboxAndAdd(Y + 6 * spacing, "Enable refractions");
     panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
 
-    Y = 320.0f;
+    Y = 320.0f + spacing;
     aoStrengthSlider     = new Slider(Vector2{ size.x / 2, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
     shadowStrengthSlider = new Slider(Vector2{ size.x / 2, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
     panel->addChild(new Label(Vector2{ 20.0f, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "AO Strength"));
@@ -133,11 +135,11 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild(shadowStrengthSlider);
     panel->addChild(new HR(Vector2{ 0, Y + 2.5f * spacing}, Vector2{ size.x, 0 }));
 
-    Y = 400.0f;
+    Y = 400.0f + spacing;
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
 
     // Temperature
-    Y = 450.0f;
+    Y = 450.0f + spacing;
     panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
 
     auto validate_temp = [](const std::string &s) -> bool {
@@ -245,6 +247,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);
     showOctreeCheckbox->setChecked(settings->showOctree);
+    enableOutlineCheckbox->setChecked(settings->showOutline);
     enableTransparencyCheckbox->setChecked(settings->enableTransparency);
     enableReflectionsCheckbox->setChecked(settings->enableReflection);
     enableRefractionsCheckbox->setChecked(settings->enableRefraction);

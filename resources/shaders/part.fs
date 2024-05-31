@@ -39,6 +39,7 @@ layout(shared, binding = 6) uniform Settings {
     float SHADOW_STRENGTH; // 0 = no shadow, 1 = max strength
     vec3 SHADOW_COLOR;     // RGB normalized 0-1
 
+    bool ENABLE_OUTLINES;
     bool ENABLE_TRANSPARENCY;
     bool ENABLE_REFLECTION;
     bool ENABLE_REFRACTION;
@@ -226,6 +227,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
     vec4 prevVoxelColor = vec4(0.0);
     float prevIndexOfRefraction = data.prevIndexOfRefraction;
     uint tmpIntColor = 0;
+    float edgeMultiplier = 1.0;
 
     for (int iter = initialSteps; iter < MAX_RAY_STEPS; iter++, data.steps = iter) {
         if (!isInSim(voxelPos << level)) {
@@ -246,11 +248,20 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                 uint flags = getByteFlags(voxelPos);
                 data.lastVoxel = voxelPos;
 
+                // Compute edge colors
+                if (ENABLE_OUTLINES) {
+                    vec3 tDeltaTmp = (vec3((voxelPos + ivec3(dirSignBits))) - pos) * idir;
+                    float dist = max(tDeltaTmp[prevIdx], 0.);
+                    vec3 uvw = vec3(pos + dir * dist) - voxelPos;
+                    vec3 edgeStep = step(0.45, abs(uvw - 0.5));
+                    edgeMultiplier = (1.0 - edgeStep.x * edgeStep.y) * (1.0 - edgeStep.x * edgeStep.z) * (1.0 - edgeStep.y * edgeStep.z);
+                }
+
                 if (prevVoxelColor != voxelColor) {
                     float forwardAlphaInv = 1.0 - data.color.a;
                     float ao = ((flags & G_NO_LIGHTING) == 0) ? AO_estimate(voxelPos) : 1.0;
                     data.color.rgb += voxelColor.rgb *
-                        (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * ao;
+                        (FACE_COLORS[prevIdx] * voxelColor.a * forwardAlphaInv) * ao * edgeMultiplier;
                     data.color.a = 1.0 - forwardAlphaInv * (1.0 - voxelColor.a);
                 }
                 prevVoxelColor = voxelColor;
@@ -258,6 +269,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                 // Color is "solid enough", return
                 if (data.color.a > ALPHA_THRESH || !ENABLE_TRANSPARENCY || DISPLAY_MODE == D_MODE_HEAT) {
                     data.shouldContinue = false;
+                    data.color.rgb *= edgeMultiplier;
 
                     // In heat display mode, render everything at full alpha
                     if (DISPLAY_MODE == D_MODE_HEAT)

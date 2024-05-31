@@ -16,7 +16,9 @@ public:
 private:
     Renderer * renderer = nullptr;
 
-    ui::LabeledCheckbox * showOctreeCheckbox,
+    ui::LabeledCheckbox 
+        * showOctreeCheckbox,
+        * enableOutlineCheckbox,
         * enableBlurCheckbox,
         * enableGlowCheckbox,
         * enableShadowsCheckbox,

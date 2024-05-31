@@ -262,6 +262,7 @@ void Renderer::init() {
         settings_writer->write_member("SHADOW_STRENGTH", 0.35f);
         settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
 
+        settings_writer->write_member("ENABLE_OUTLINES", 0);
         settings_writer->write_member("ENABLE_TRANSPARENCY", 1);
         settings_writer->write_member("ENABLE_REFLECTION", 1);
         settings_writer->write_member("ENABLE_REFRACTION", 1);
@@ -315,6 +316,7 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
     settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
 
+    settings_writer->write_member("ENABLE_OUTLINES", settings->showOutline ? 1 : 0);
     settings_writer->write_member("ENABLE_TRANSPARENCY", settings->enableTransparency ? 1 : 0);
     settings_writer->write_member("ENABLE_REFLECTION", settings->enableReflection ? 1 : 0);
     settings_writer->write_member("ENABLE_REFRACTION", settings->enableRefraction ? 1 : 0);

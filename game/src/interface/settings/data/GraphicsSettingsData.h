@@ -17,6 +17,7 @@ namespace settings {
                 aoStrength = util::clamp(json["graphics"].value("aoStrength", aoStrength), 0.0f, 1.0f);
                 shadowStrength = util::clamp(json["graphics"].value("shadowStrength", shadowStrength), 0.0f, 1.0f);
 
+                showOutline = json["graphics"].value("showOutline", showOutline);
                 enableTransparency = json["graphics"].value("enableTransparency", enableTransparency);
                 enableReflection = json["graphics"].value("enableReflection", enableReflection);
                 enableRefraction = json["graphics"].value("enableRefraction", enableRefraction);
@@ -34,6 +35,7 @@ namespace settings {
         }
 
         virtual void writeToJSON(nlohmann::json &json) const {
+            json["graphics"]["showOutline"] = showOutline;
             json["graphics"]["aoStrength"] = aoStrength;
             json["graphics"]["shadowStrength"] = shadowStrength;
             json["graphics"]["enableTransparency"] = enableTransparency;
@@ -63,6 +65,7 @@ namespace settings {
         float aoStrength = defaultAOStrength;
         float shadowStrength = defaultShadowStrength;
         bool showOctree = false;
+        bool showOutline = false;
         float heatViewMin = MIN_TEMP;
         float heatViewMax = defaultHeatViewMax;
         float renderDownscale = defaultRenderDownscale;
