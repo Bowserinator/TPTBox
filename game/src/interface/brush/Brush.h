@@ -3,18 +3,10 @@
 
 #include "raylib.h"
 #include "../../util/vector_op.h"
+#include "Brushes.h"
 
 class Simulation;
 class RenderCamera;
-
-class Brush {
-public:
-
-
-private:
-    
-};
-
 
 class BrushRenderer {
 public:
@@ -25,6 +17,8 @@ public:
         selected_element(1),
         sim(sim), camera(camera) {}
     BrushRenderer(BrushRenderer &other) = delete;
+
+    std::string tooltip_to_display = "";
 
     void draw();
     void update();
@@ -39,11 +33,11 @@ public:
     int get_offset() const { return offset; }
     unsigned int get_size() const { return size; }
 private:
-    Brush currentBrush;
+    std::size_t currentBrushIdx = 1;
     int offset;
     unsigned int size;
     int x, y, z;    // Intersection point
-    int bx, by, bz; // Actual brush pos 
+    int bx, by, bz; // Actual brush pos
 
     int selected_element;
     int selected_tool;

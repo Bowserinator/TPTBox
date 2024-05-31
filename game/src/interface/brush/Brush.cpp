@@ -35,7 +35,7 @@ void BrushRenderer::draw() {
             for (float dz = z - 1; dz > bz + half_size; dz -= spacing)
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
-    DrawCubeWires(Vector3{ (float)bx, (float)by, (float)bz }, size, size, size, WHITE);
+    BRUSHES[currentBrushIdx].preview(Vector3{ (float)bx, (float)by, (float)bz }, Vector3 { (float)size, (float)size, (float)size });
 }
 
 void BrushRenderer::update() {
@@ -47,6 +47,16 @@ void BrushRenderer::do_controls(Simulation * sim) {
     bool consumeMouse = false;
     const float deltaAvg = FrameTime::ref()->getDelta();
     const float scroll = EventConsumer::ref()->getMouseWheelMove();
+
+    // TAB or SHIFT + TAB to change brush
+    if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && !EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
+        currentBrushIdx = (currentBrushIdx + 1) % BRUSHES.size();
+        tooltip_to_display = "Brush: " + BRUSHES[currentBrushIdx].name;
+    } else if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
+        if (currentBrushIdx == 0) currentBrushIdx = BRUSHES.size() - 1;
+        else currentBrushIdx--;
+        tooltip_to_display = "Brush: " + BRUSHES[currentBrushIdx].name;
+    }
 
     // LCtrl + scroll to change brush size
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL) && scroll) {
@@ -67,11 +77,13 @@ void BrushRenderer::do_controls(Simulation * sim) {
         consumeMouse = true;
         const bool delete_mode = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
         const int half_size = size / 2;
+        const Vector3 sizeVec{ (float)size, (float)size, (float)size };
+        const Vector3 rotVec{0.0f, 0.0f, 0.0f};
 
         for (int x = bx - half_size; x <= bx + half_size; x++)
         for (int y = by - half_size; y <= by + half_size; y++)
         for (int z = bz - half_size; z <= bz + half_size; z++)
-            if (BOUNDS_CHECK(x, y, z)) {
+            if (BOUNDS_CHECK(x, y, z) && BRUSHES[currentBrushIdx].map(Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)}, sizeVec, rotVec)) {
                 if (delete_mode)
                     sim->kill_part(ID(sim->pmap[z][y][x]));
                 else if (!tool_mode)

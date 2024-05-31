@@ -109,6 +109,12 @@ void HUD::draw(const HUDData &data) {
     constexpr int OFFSET = 2 * PAD_Y + FONT_SIZE;
     const bool debug = state == HUDState::DEBUG_MODE;
 
+    // Handle brush tooltips
+    if (data.brush_renderer->tooltip_to_display.length()) {
+        displayTooltip(data.brush_renderer->tooltip_to_display.c_str());
+        data.brush_renderer->tooltip_to_display = "";
+    }
+
     // Raycast into sim
     const Vector3T<int> raycast_pos = data.brush_renderer->get_raycast_pos();
     const int rx = raycast_pos.x;
