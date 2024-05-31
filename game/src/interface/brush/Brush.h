@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "../../util/vector_op.h"
+#include "../../simulation/Simulation.h"
 #include "Brushes.h"
 
 class Simulation;
@@ -50,9 +51,11 @@ private:
 
     Simulation * sim;
     RenderCamera * camera;
+    RaycastOutput raycast_out;
 
     void do_raycast(Simulation * sim, RenderCamera * camera);
     void do_controls(Simulation * sim);
+    void update_offset();
 };
 
 #endif

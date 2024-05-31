@@ -69,7 +69,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT) && scroll) {
         offset += std::round(scroll * deltaAvg * TARGET_FPS);
         consumeMouse = true;
-        prevMousePos = Vector2{0.0f, 0.0f}; // Clear mouse pos cache since offset changes pos
+        update_offset();
     }
 
     // LClick to place parts
@@ -105,7 +105,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
 
 void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     const auto mousePos = GetMousePosition();
-    if (mousePos == prevMousePos && camera->camera.position == prevCameraPos && sim->frame_count == prevSimFrameCount)
+    if (mousePos == prevMousePos)
         return;
 
     Ray ray = GetMouseRay(mousePos, camera->camera);
@@ -153,12 +153,17 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     this->y = this->by = out.y;
     this->z = this->bz = out.z;
 
+    raycast_out = out;
+    update_offset();
+}
+
+void BrushRenderer::update_offset() {
     if (offset != 0) {
-        if ((out.faces & RayCast::FACE_X).any())
+        if ((raycast_out.faces & RayCast::FACE_X).any())
             this->bx = this->x + offset * util::sign(camera->camera.position.x - this->x);
-        else if ((out.faces & RayCast::FACE_Y).any())
+        else if ((raycast_out.faces & RayCast::FACE_Y).any())
             this->by = this->y + offset * util::sign(camera->camera.position.y - this->y);
-        else if ((out.faces & RayCast::FACE_Z).any())
+        else if ((raycast_out.faces & RayCast::FACE_Z).any())
             this->bz = this->z + offset * util::sign(camera->camera.position.z - this->z);
     }
 }
