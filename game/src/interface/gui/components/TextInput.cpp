@@ -208,7 +208,7 @@ TextInput::CursorClick TextInput::get_cursor_at_click(const float localPosX) con
 
 void TextInput::update_cursor(std::size_t newVal, std::size_t oldCursor) {
     cursor = util::clamp(newVal, 0, value.length());
-    if (cursor != oldCursor) { // TODO: also other text changes since width can change
+    if (cursor != oldCursor) {
         cursorX = MeasureTextEx(FontCache::ref()->main_font, value.substr(0, cursor).c_str(), FONT_SIZE, FONT_SPACING).x;
         scrollX = std::max(0.0f, cursorX - size.x + PAD * 2);
     }

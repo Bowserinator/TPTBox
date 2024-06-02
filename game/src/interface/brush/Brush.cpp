@@ -35,7 +35,18 @@ void BrushRenderer::draw() {
             for (float dz = z - 1; dz > bz + half_size; dz -= spacing)
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
-    BRUSHES[currentBrushIdx].preview(Vector3{ (float)bx, (float)by, (float)bz }, Vector3 { (float)size, (float)size, (float)size });
+
+    if (previousBrushIdx != currentBrushIdx || previousSize != size) {
+        previousBrushIdx = currentBrushIdx;
+        previousSize = size;
+        current_brush_mesh.unload();
+        current_brush_mesh = BrushFaceModels::GenBrushModel(BRUSHES[previousBrushIdx], Vector3T<int>(size, size, size));
+    }
+
+    current_brush_mesh.draw(
+        Vector3T<int>(bx, by, bz),
+        EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)
+    );
 }
 
 void BrushRenderer::update() {

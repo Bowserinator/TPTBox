@@ -47,6 +47,8 @@ int main(void) {
     InitAudioDevice();
     SetExitKey(KEY_NULL);
 
+    glEnable(GL_CLIP_DISTANCE0);
+
     #ifdef DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, nullptr);

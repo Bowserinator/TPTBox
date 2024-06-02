@@ -4,7 +4,9 @@
 #include "raylib.h"
 #include "../../util/vector_op.h"
 #include "../../simulation/Simulation.h"
+
 #include "Brushes.h"
+#include "BrushMesher.h"
 
 class Simulation;
 class RenderCamera;
@@ -34,7 +36,6 @@ public:
     int get_offset() const { return offset; }
     unsigned int get_size() const { return size; }
 private:
-    std::size_t currentBrushIdx = 1;
     int offset;
     unsigned int size;
     int x, y, z;    // Intersection point
@@ -52,6 +53,11 @@ private:
     Simulation * sim;
     RenderCamera * camera;
     RaycastOutput raycast_out;
+
+    std::size_t currentBrushIdx = 1;
+    std::size_t previousBrushIdx = INT_MAX;
+    unsigned int previousSize = INT_MAX;
+    BrushFaceModels current_brush_mesh;
 
     void do_raycast(Simulation * sim, RenderCamera * camera);
     void do_controls(Simulation * sim);

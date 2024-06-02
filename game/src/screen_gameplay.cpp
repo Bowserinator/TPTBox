@@ -144,9 +144,7 @@ void ScreenGameplay::draw() {
 
     auto t = GetTime();
     brush_renderer.draw();
-
     drawTime = GetTime() - t;
-    // DrawGrid(100, 1.0f);
 
     // Visualize air
     // for (auto z = 1; z < AIR_ZRES - 1; z++)
@@ -162,15 +160,6 @@ void ScreenGameplay::draw() {
     //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha}); 
     //     }
     // }
-
-
-
-    // RaycastOutput out;
-    // const float S = 90.0f * std::sin(test) + 30.0f;
-    // sim.raycast(XRES / 2, YRES - 1, ZRES / 2,
-    //     S * std::sin(test), -100.0f, S * std::cos(test), out);
-    // test += 0.01f;
-    // DrawCubeWires({ out.x, out.y, out.z }, 1, 1, 1, WHITE);
 
     EndMode3D();
 
