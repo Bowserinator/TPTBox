@@ -108,6 +108,7 @@ struct RayCastData {
     ivec3 lastVoxel;
     float prevIndexOfRefraction;
     ivec2 counts;
+    vec3 depthLoc;
 };
 
 
@@ -248,6 +249,12 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                 uint flags = getByteFlags(voxelPos);
                 data.lastVoxel = voxelPos;
 
+                if (data.depthLoc.x < 0.0) {
+                    vec3 tDelta = (vec3(voxelPos + ivec3(dirSignBits)) - pos) * idir;
+                    float dist = max(tDelta[prevIdx], 0.);
+                    data.depthLoc = vec3(pos + dir * dist);
+                }
+
                 // Compute edge colors
                 if (ENABLE_OUTLINES) {
                     vec3 tDeltaTmp = (vec3((voxelPos + ivec3(dirSignBits))) - pos) * idir;
@@ -369,7 +376,8 @@ void main() {
         vec3(0.0), // outRay
         ivec3(-1), // lastVoxel
         AIR_INDEX_REFRACTION, // prevIndexOfRefraction
-        ivec2(0)   // counts
+        ivec2(0),  // counts
+        vec3(-1.0) // depthLoc
     );
 
     ivec4 res = ivec4(0);
@@ -380,7 +388,7 @@ void main() {
     } while (data.shouldContinue);
     
     // https://stackoverflow.com/a/29397319/6079328
-    vec4 vClipCoord = mvp * vec4(res.xyz, 1.0);
+    vec4 vClipCoord = mvp * vec4(data.depthLoc, 1.0);
     float fNdcDepth = vClipCoord.z / vClipCoord.w;
     gl_FragDepth = data.color.a > 0.0 ? (fNdcDepth + 1.0) * 0.5 : DEPTH_FAR_AWAY;
 
