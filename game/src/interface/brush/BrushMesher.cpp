@@ -1,26 +1,30 @@
 #include "BrushMesher.h"
 #include "../../render/constants.h"
+#include "../../render/Renderer.h"
+#include "../../render/camera/camera.h"
 #include "../../util/graphics.h"
 #include "../../simulation/SimulationDef.h"
+
 #include <vector>
+#include <GLFW/glfw3.h>
 
 BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int> size) {
-    if (!IsShaderReady(BRUSH_MODEL_SHADER)) {
+    if (!IsShaderReady(brush_model_shader)) {
         #ifdef EMBED_SHADERS
         #include "../../resources/shaders/generated/brush_clip.vs.h"
-        BRUSH_MODEL_SHADER = LoadShaderFromMemory(brush_clip_vs_source, nullptr);
+        #include "../../resources/shaders/generated/brush_clip.fs.h"
+        brush_model_shader = LoadShaderFromMemory(brush_clip_vs_source, brush_clip_fs_source);
         #else
-        BRUSH_MODEL_SHADER = LoadShader("resources/shaders/brush_clip.vs", nullptr);
+        brush_model_shader = LoadShader("resources/shaders/brush_clip.vs", "resources/shaders/brush_clip.fs");
         #endif
 
-        BRUSH_MODEL_SHADER_MV_LOC = GetShaderLocation(BRUSH_MODEL_SHADER, "mv");
-        util::set_shader_value(BRUSH_MODEL_SHADER, GetShaderLocation(BRUSH_MODEL_SHADER, "simRes"),
+        brush_model_shader_mv_loc = GetShaderLocation(brush_model_shader, "mv");
+        brush_model_shader_depth_tex_loc = GetShaderLocation(brush_model_shader, "depth");
+        brush_model_shader_res_loc = GetShaderLocation(brush_model_shader, "resolution");
+
+        util::set_shader_value(brush_model_shader, GetShaderLocation(brush_model_shader, "simRes"),
             Vector3{ (float)XRES, (float)YRES, (float)ZRES });
     }
-
-    if (size.x % 2 == 0) size.x++;
-    if (size.y % 2 == 0) size.y++;
-    if (size.z % 2 == 0) size.z++;
 
     std::vector<unsigned char> voxel_fill_map(size.x * size.y * size.z, 0);
     std::vector<unsigned char> visited_map((size.x + 2) * (size.y + 2) * (size.z + 2), 0);
@@ -179,13 +183,19 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
 
         UploadMesh(&mesh, false);
         out.models[i] = LoadModelFromMesh(mesh);
-        out.models[i].materials[0].shader = BRUSH_MODEL_SHADER;
+        out.models[i].materials[0].shader = brush_model_shader;
     }
 
+    out.render_tex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
     return out;
 }
 
-void BrushFaceModels::draw(Vector3T<int> center, bool deleteMode) {
+void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool deleteMode) {
+    if (IsWindowResized()) {
+        UnloadRenderTexture(render_tex);
+        render_tex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+    }
+
     constexpr Vector3 createModeColor{ 107, 255, 112 };
     constexpr Vector3 deleteModeColor{ 255, 43, 43 };
     const Vector3 centerOfModel = Vector3{
@@ -194,31 +204,50 @@ void BrushFaceModels::draw(Vector3T<int> center, bool deleteMode) {
         static_cast<float>(center.z - (int)size.z / 2)
     };
 
-    SetShaderValueMatrix(BRUSH_MODEL_SHADER, BRUSH_MODEL_SHADER_MV_LOC,
+    SetShaderValueMatrix(brush_model_shader, brush_model_shader_mv_loc,
         MatrixTranslate(
             centerOfModel.x,
             centerOfModel.y,
             centerOfModel.z
         ));
+    util::set_shader_value(brush_model_shader, brush_model_shader_res_loc, Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
+    rlEnableShader(brush_model_shader.id);
+    rlSetUniformSampler(brush_model_shader_depth_tex_loc, renderer->get_base_tex().depthTexture);
+    rlDisableShader();
 
-    for (int i = 0; i < models.size(); i++) {
-        const unsigned char faceShadow = (i == 0) ? 255 : (i == 1) ? 220 : 150;
-        const Vector3 col = deleteMode ? deleteModeColor : createModeColor;
-
-        DrawModelWires(models[i],
-            centerOfModel, 0.99f,
-            Color{
-                static_cast<unsigned char>(col.x / 255.0f * faceShadow),
-                static_cast<unsigned char>(col.y / 255.0f * faceShadow),
-                static_cast<unsigned char>(col.z / 255.0f * faceShadow),
-                120
-            });
-    }
-
+    // WARNING: there is a cursed bug. You MUST draw anything
+    // with gl (ie a rectangle, cube, etc...) before the BeginTextureMode()
+    // below or the depth texture passed to the shader will give incorrect values
+    // (I have no idea why)
+    // The below is the brush volume outline
     DrawCubeWires((Vector3)center, size.x, size.y, size.z, GRAY);
+
+    BeginTextureMode(render_tex);
+    BeginMode3D(renderer->get_cam()->camera);
+        ClearBackground(BLANK);
+
+        for (int i = 0; i < models.size(); i++) {
+            const unsigned char faceShadow = (i == 0) ? 255 : (i == 1) ? 220 : 150;
+            const Vector3 col = deleteMode ? deleteModeColor : createModeColor;
+
+            DrawModelWires(models[i],
+                centerOfModel, 1.0f,
+                Color{
+                    static_cast<unsigned char>(col.x / 255.0f * faceShadow),
+                    static_cast<unsigned char>(col.y / 255.0f * faceShadow),
+                    static_cast<unsigned char>(col.z / 255.0f * faceShadow),
+                    200
+                });
+        }
+
+    EndMode3D();
+    EndTextureMode();
+
+    util::draw_render_texture(render_tex);
 }
 
 void BrushFaceModels::unload() {
+    UnloadRenderTexture(render_tex);
     for (int i = 0; i < models.size(); i++)
         UnloadModel(models[i]);
 }

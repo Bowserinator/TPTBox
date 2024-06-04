@@ -30,6 +30,9 @@ public:
     void update_settings(settings::Graphics * settings);
     void set_grid_size(float size);
 
+    MultiTexture& get_base_tex() { return base_tex; }
+    RenderCamera * get_cam() { return cam; }
+
     enum class FragDebugMode: uint32_t {
         NODEBUG = 0,
         DEBUG_STEPS = 1,

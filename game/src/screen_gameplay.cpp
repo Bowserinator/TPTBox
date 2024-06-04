@@ -143,7 +143,6 @@ void ScreenGameplay::draw() {
     DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
 
     auto t = GetTime();
-    brush_renderer.draw();
     drawTime = GetTime() - t;
 
     // Visualize air
@@ -164,6 +163,8 @@ void ScreenGameplay::draw() {
     EndMode3D();
 
     renderer.draw();
+    brush_renderer.draw(&renderer);
+
     hud.draw(HUDData {
         .fps = (float)GetFPS(),
         .sim_fps = (float)(1.0f / simTime),

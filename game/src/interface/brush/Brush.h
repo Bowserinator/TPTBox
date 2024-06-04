@@ -10,6 +10,7 @@
 
 class Simulation;
 class RenderCamera;
+class Renderer;
 
 class BrushRenderer {
 public:
@@ -23,7 +24,7 @@ public:
 
     std::string tooltip_to_display = "";
 
-    void draw();
+    void draw(Renderer * renderer);
     void update();
 
     void set_selected_element(int element) { selected_element = element; tool_mode = false; }

@@ -2,12 +2,16 @@
 #include "../../simulation/Simulation.h"
 #include "../../simulation/ToolClasses.h"
 #include "../../render/camera/camera.h"
+#include "../../render/Renderer.h"
 #include "../EventConsumer.h"
 #include "../FrameTimeAvg.h"
 #include "../../util/math.h"
 
-void BrushRenderer::draw() {
+void BrushRenderer::draw(Renderer * renderer) {
     if (x < 0 || y < 0 || z < 0) return;
+
+    BeginMode3D(renderer->get_cam()->camera);
+
     if (offset != 0) {
         DrawCube(Vector3{ (float)x, (float)y, (float)z }, 1.0f, 1.0f, 1.0f, WHITE);
         
@@ -45,8 +49,11 @@ void BrushRenderer::draw() {
 
     current_brush_mesh.draw(
         Vector3T<int>(bx, by, bz),
+        renderer,
         EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)
     );
+
+    EndMode3D();
 }
 
 void BrushRenderer::update() {
