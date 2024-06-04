@@ -220,7 +220,12 @@ void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool delet
     // below or the depth texture passed to the shader will give incorrect values
     // (I have no idea why)
     // The below is the brush volume outline
-    DrawCubeWires((Vector3)center, size.x, size.y, size.z, GRAY);
+    Vector3 boundingBoxOffset = Vector3{
+        size.x % 2 == 1 ? 0.5f : 0.0f,
+        size.y % 2 == 1 ? 0.5f : 0.0f,
+        size.z % 2 == 1 ? 0.5f : 0.0f
+    };
+    DrawCubeWires((Vector3)center + boundingBoxOffset, size.x, size.y, size.z, GRAY);
 
     BeginTextureMode(render_tex);
     BeginMode3D(renderer->get_cam()->camera);
@@ -230,7 +235,7 @@ void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool delet
             const unsigned char faceShadow = (i == 0) ? 255 : (i == 1) ? 220 : 150;
             const Vector3 col = deleteMode ? deleteModeColor : createModeColor;
 
-            DrawModelWires(models[i],
+            DrawModel(models[i],
                 centerOfModel, 1.0f,
                 Color{
                     static_cast<unsigned char>(col.x / 255.0f * faceShadow),

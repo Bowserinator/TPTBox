@@ -7,6 +7,7 @@ in vec4 vertexColor;
 out float gl_ClipDistance[1];
 out vec4 fragColor;
 out vec2 fragTexCoord;
+// out vec3 vertexPos;
 
 uniform mat4 mvp;
 uniform mat4 mv;
@@ -16,6 +17,7 @@ void main() {
     gl_Position = mvp * vec4(vertexPosition, 1.0);
     fragColor = vertexColor;
     fragTexCoord = vertexTexCoord;
+    // vertexPos = vertexPosition + vec3(-0.01);
 
     vec4 translatedPos = mv * vec4(vertexPosition, 1.0);
     bool outside =
