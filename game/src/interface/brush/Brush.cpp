@@ -40,7 +40,8 @@ void BrushRenderer::draw(Renderer * renderer) {
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
 
-    if (previousBrushIdx != currentBrushIdx || previousSize != size) {
+    if ((previousBrushIdx != currentBrushIdx || previousSize != size) && (GetTime() - last_remesh_time) >= MIN_BRUSH_REMESH_DELAY_SECONDS) {
+        last_remesh_time = GetTime();
         previousBrushIdx = currentBrushIdx;
         previousSize = size;
         current_brush_mesh.unload();
@@ -79,7 +80,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // LCtrl + scroll to change brush size
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL) && scroll) {
         size += std::round(scroll * deltaAvg * TARGET_FPS);
-        size = util::clamp(size, 1, (XRES + YRES + ZRES) * 2);
+        size = util::clamp(size, 1, MAX_BRUSH_SIZE);
         consumeMouse = true;
     }
 

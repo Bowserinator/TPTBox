@@ -8,6 +8,9 @@
 #include "Brushes.h"
 #include "BrushMesher.h"
 
+constexpr unsigned int MAX_BRUSH_SIZE = std::max(std::max(2 * XRES, 2 * YRES), 2 * ZRES);
+constexpr float MIN_BRUSH_REMESH_DELAY_SECONDS = 0.03;
+
 class Simulation;
 class RenderCamera;
 class Renderer;
@@ -41,6 +44,7 @@ private:
     unsigned int size;
     int x, y, z;    // Intersection point
     int bx, by, bz; // Actual brush pos
+    float last_remesh_time = 0.0f;
 
     int selected_element;
     int selected_tool;
