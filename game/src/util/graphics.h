@@ -1,8 +1,8 @@
 #ifndef UTIL_GRAPHICS_H
 #define UTIL_GRAPHICS_H
 
-#include "rlgl.h"
 #include "raylib.h"
+#include "rlgl.h"
 #include "raymath.h"
 #include "vector_op.h"
 
@@ -69,6 +69,9 @@ namespace util {
             rlVertex3f(0, 0, 0);
         rlEnd();
     }
+
+    // UploadMesh, but only creates the vertices buffer
+    void upload_mesh_vertices_only(Mesh *mesh, bool dynamic);
 }
 
 #endif

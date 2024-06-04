@@ -17,15 +17,16 @@ class Brush {
 public:
     using brushMap = std::function<bool(BRUSH_MAP_ARGS)>;
 
-    Brush(const std::string &name, brushMap map): name(name), map(map) {};
+    Brush(const std::string &name, brushMap map, bool solid): name(name), map(map), solid(solid) {};
 
     const std::string name;
     const brushMap map;
+    const bool solid;
 };
 
 const std::array<Brush, 6> BRUSHES({
     Brush("Rectangular Prism",
-        [](BRUSH_MAP_ARGS) { return true; }),
+        [](BRUSH_MAP_ARGS) { return true; }, true),
 
     Brush("Sphere", 
         [](BRUSH_MAP_ARGS) {
@@ -33,24 +34,24 @@ const std::array<Brush, 6> BRUSHES({
             return sqr.x / (size.x * size.x / 4.0f)
                 + sqr.y / (size.y * size.y / 4.0f)
                 + sqr.z / (size.z * size.z / 4.0f) <= 1.0f;
-        }),
+        }, true),
 
     Brush("Cylinder", 
         [](BRUSH_MAP_ARGS) {
             return (pos.x * pos.x) / (size.x * size.x / 4.0f) +
                 (pos.z * pos.z) / (size.z * size.z / 4.0f) <= 1.0f;
-        }),
+        }, true),
 
     Brush("Square Pyramid", 
         [](BRUSH_MAP_ARGS) {
             return std::max(std::abs(pos.x / size.x), std::abs(pos.z / size.z)) <= (0.5f - pos.y / size.y) / 2;
-        }),
+        }, true),
 
     Brush("Cone", 
         [](BRUSH_MAP_ARGS) {
             return (pos.x * pos.x) / (size.x * size.x / 4.0f) +
                 (pos.z * pos.z) / (size.z * size.z / 4.0f) <= (0.5f - pos.y / size.y) * (0.5f - pos.y / size.y);
-        }),
+        }, true),
 
     Brush("Tetrahedron", 
         [](BRUSH_MAP_ARGS) {
@@ -64,7 +65,7 @@ const std::array<Brush, 6> BRUSHES({
             const float c = plane(Vector3{-e,e,-e}, Vector3{f,f,-f});
             const float d = plane(Vector3{-e,-e,e}, Vector3{-f,-f,-f});
             return std::max(std::max(a, b), std::max(c,d)) <= 0.0f;
-        }),
+        }, true),
 });
 
 #endif

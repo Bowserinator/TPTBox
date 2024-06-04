@@ -27,10 +27,8 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
     }
 
     std::vector<unsigned char> voxel_fill_map(size.x * size.y * size.z, 0);
-    std::vector<unsigned char> visited_map((size.x + 2) * (size.y + 2) * (size.z + 2), 0);
 
     auto idx = [size](int x, int y, int z) { return x + y * size.x + z * size.x * size.y; };
-    auto idx2 = [size](int x, int y, int z) { return (x + 1) + (y + 1) * (size.x + 2) + (z + 1) * (size.x + 2) * (size.y + 2); };
     auto is_filled = [size, idx, &voxel_fill_map](int x, int y, int z) {
         if (x < 0 || y < 0 || z < 0 || x >= size.x || y >= size.y || z >= size.z)
             return false;
@@ -38,9 +36,9 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
     };
 
     #pragma omp parallel for
-    for (int x = 0; x < size.x; x++)
+    for (int z = 0; z < size.z; z++) 
     for (int y = 0; y < size.y; y++)
-    for (int z = 0; z < size.z; z++) {
+    for (int x = 0; x < size.x; x++) {
         Vector3T<int> subpos{ x - size.x / 2, y - size.y / 2, z - size.z / 2 };
 
         if (brush.map((Vector3)subpos, (Vector3)size, Vector3{0.0f, 0.0f, 0.0f}))
@@ -59,129 +57,193 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
         vertices[(int)face].push_back(z);
     };
 
-    for (int z = 0; z <= size.z; z++) {
-    for (int y = 0; y <= size.y; y++) {
-    for (int x = 0; x <= size.x; x++) {
-        // Top faces
-        int x2 = x;
-        if (!is_filled(x2, y, z) && is_filled(x2, y - 1, z)) {
-            if ((visited_map[idx2(x2, y, z)] & (1 << 0)) != 0)
-                break;
-            visited_map[idx2(x2, y, z)] |= (1 << 0);
-            x2++;
-        }
-        if (x2 > x) {
-            add_vertex(BrushFace::Y, x, y, z);
-            add_vertex(BrushFace::Y, x, y, z + 1);
-            add_vertex(BrushFace::Y, x2, y, z);
-            
-            add_vertex(BrushFace::Y, x2, y, z);
-            add_vertex(BrushFace::Y, x, y, z + 1);
-            add_vertex(BrushFace::Y, x2, y, z + 1);
-        }
+    if (brush.solid) {
+        #pragma omp parallel for
+        for (int i = 0; i < 3; i++) {
+            if (i == 0) {
+                for (int y = 0; y < size.y; y++) { // Front / back
+                for (int x = 0; x < size.x; x++) {
+                    // Front faces
+                    int z = size.z;
+                    while (!is_filled(x, y, z) && z >= 0) { z--; }
+                    if (z >= 0) {
+                        z++;
+                        add_vertex(BrushFace::Z, x, y, z);
+                        add_vertex(BrushFace::Z, x + 1, y, z);
+                        add_vertex(BrushFace::Z, x, y + 1, z);
+                        add_vertex(BrushFace::Z, x + 1, y, z);
+                        add_vertex(BrushFace::Z, x + 1, y + 1, z);
+                        add_vertex(BrushFace::Z, x, y + 1, z);
+                    }
 
-        // Bottom faces
-        x2 = x;
-        if (is_filled(x2, y, z) && !is_filled(x2, y - 1, z)) {
-            if ((visited_map[idx2(x2, y, z)] & (1 << 1)) != 0)
-                break;
-            visited_map[idx2(x2, y, z)] |= (1 << 1);
-            x2++;
-        }
-        if (x2 > x) {
-            add_vertex(BrushFace::Y, x, y, z);
-            add_vertex(BrushFace::Y, x2, y, z);
-            add_vertex(BrushFace::Y, x, y, z + 1);
+                    // Back faces
+                    z = 0;
+                    while (!is_filled(x, y, z) && z <= size.z) { z++; }
+                    if (z <= size.z) {
+                        add_vertex(BrushFace::Z, x, y, z);
+                        add_vertex(BrushFace::Z, x, y + 1, z);
+                        add_vertex(BrushFace::Z, x + 1, y, z);
+                        add_vertex(BrushFace::Z, x + 1, y, z);
+                        add_vertex(BrushFace::Z, x, y + 1, z);
+                        add_vertex(BrushFace::Z, x + 1, y + 1, z);
+                    }
+                }}
+            }
+            else if (i == 1) {
+                for (int z = 0; z < size.z; z++) {
+                for (int y = 0; y < size.y; y++) { // Left / right
+                    // Left faces
+                    int x = size.x;
+                    while (!is_filled(x, y, z) && x >= 0) { x--; }
+                    if (x >= 0) {
+                        x++;
+                        add_vertex(BrushFace::X, x, y, z);
+                        add_vertex(BrushFace::X, x, y + 1, z);
+                        add_vertex(BrushFace::X, x, y, z + 1);
+                        add_vertex(BrushFace::X, x, y + 1, z);
+                        add_vertex(BrushFace::X, x, y + 1, z + 1);
+                        add_vertex(BrushFace::X, x, y, z + 1);
+                    }
 
-            add_vertex(BrushFace::Y, x2, y, z);
-            add_vertex(BrushFace::Y, x2, y, z + 1);
-            add_vertex(BrushFace::Y, x, y, z + 1);
-        }
+                    // Right faces
+                    x = 0;
+                    while (!is_filled(x, y, z) && x <= size.x) { x++; }
+                    if (x <= size.x) {
+                        add_vertex(BrushFace::X, x, y, z);
+                        add_vertex(BrushFace::X, x, y, z + 1);
+                        add_vertex(BrushFace::X, x, y + 1, z);
+                        add_vertex(BrushFace::X, x, y + 1, z);
+                        add_vertex(BrushFace::X, x, y, z + 1);
+                        add_vertex(BrushFace::X, x, y + 1, z + 1);
+                    }
+                }}
+            }
+            else if (i == 2) {
+                for (int z = 0; z < size.z; z++) { // Top / bottom
+                for (int x = 0; x < size.x; x++) {
+                    // Top faces
+                    int y = size.y;
+                    while (!is_filled(x, y, z) && y >= 0) { y--; }
+                    if (y >= 0) {
+                        y++;
+                        add_vertex(BrushFace::Y, x, y, z);
+                        add_vertex(BrushFace::Y, x, y, z + 1);
+                        add_vertex(BrushFace::Y, x + 1, y, z);
+                        add_vertex(BrushFace::Y, x + 1, y, z);
+                        add_vertex(BrushFace::Y, x, y, z + 1);
+                        add_vertex(BrushFace::Y, x + 1, y, z + 1);
+                    }
 
-        // Left faces
-        int y2 = y;
-        if (!is_filled(x, y2, z) && is_filled(x - 1, y2, z)) {
-            if ((visited_map[idx2(x, y2, z)] & (1 << 2)) != 0)
-                break;
-            visited_map[idx2(x, y2, z)] |= (1 << 2);
-            y2++;
+                    // Bottom faces
+                    y = 0;
+                    while (!is_filled(x, y, z) && y <= size.y) { y++; }
+                    if (y <= size.y) {
+                        add_vertex(BrushFace::Y, x, y, z);
+                        add_vertex(BrushFace::Y, x + 1, y, z);
+                        add_vertex(BrushFace::Y, x, y, z + 1);
+                        add_vertex(BrushFace::Y, x + 1, y, z);
+                        add_vertex(BrushFace::Y, x + 1, y, z + 1);
+                        add_vertex(BrushFace::Y, x, y, z + 1);
+                    }
+                }}
+            }
         }
-        if (y2 > y) {
-            add_vertex(BrushFace::X, x, y, z);
-            add_vertex(BrushFace::X, x, y2, z);
-            add_vertex(BrushFace::X, x, y, z + 1);
+    }
+    else {
+        for (int z = 0; z <= size.z; z++) {
+        for (int y = 0; y <= size.y; y++) {
+        for (int x = 0; x <= size.x; x++) {
+            // Top faces
+            int x2 = x;
+            if (!is_filled(x2, y, z) && is_filled(x2, y - 1, z))
+                x2++;
+            if (x2 > x) {
+                add_vertex(BrushFace::Y, x, y, z);
+                add_vertex(BrushFace::Y, x, y, z + 1);
+                add_vertex(BrushFace::Y, x2, y, z);
+                add_vertex(BrushFace::Y, x2, y, z);
+                add_vertex(BrushFace::Y, x, y, z + 1);
+                add_vertex(BrushFace::Y, x2, y, z + 1);
+            }
 
-            add_vertex(BrushFace::X, x, y2, z);
-            add_vertex(BrushFace::X, x, y2, z + 1);
-            add_vertex(BrushFace::X, x, y, z + 1);
-        }
+            // Bottom faces
+            x2 = x;
+            if (is_filled(x2, y, z) && !is_filled(x2, y - 1, z))
+                x2++;
+            if (x2 > x) {
+                add_vertex(BrushFace::Y, x, y, z);
+                add_vertex(BrushFace::Y, x2, y, z);
+                add_vertex(BrushFace::Y, x, y, z + 1);
+                add_vertex(BrushFace::Y, x2, y, z);
+                add_vertex(BrushFace::Y, x2, y, z + 1);
+                add_vertex(BrushFace::Y, x, y, z + 1);
+            }
 
-        // Right faces
-        y2 = y;
-        if (is_filled(x, y2, z) && !is_filled(x - 1, y2, z)) {
-            if ((visited_map[idx2(x, y2, z)] & (1 << 3)) != 0)
-                break;
-            visited_map[idx2(x, y2, z)] |= (1 << 3);
-            y2++;
-        }
-        if (y2 > y) {
-            add_vertex(BrushFace::X, x, y, z);
-            add_vertex(BrushFace::X, x, y, z + 1);
-            add_vertex(BrushFace::X, x, y2, z);
-            
-            add_vertex(BrushFace::X, x, y2, z);
-            add_vertex(BrushFace::X, x, y, z + 1);
-            add_vertex(BrushFace::X, x, y2, z + 1);
-        }
+            // Left faces
+            int y2 = y;
+            if (!is_filled(x, y2, z) && is_filled(x - 1, y2, z))
+                y2++;
+            if (y2 > y) {
+                add_vertex(BrushFace::X, x, y, z);
+                add_vertex(BrushFace::X, x, y2, z);
+                add_vertex(BrushFace::X, x, y, z + 1);
+                add_vertex(BrushFace::X, x, y2, z);
+                add_vertex(BrushFace::X, x, y2, z + 1);
+                add_vertex(BrushFace::X, x, y, z + 1);
+            }
 
-        // Front faces
-        x2 = x;
-        if (!is_filled(x2, y, z) && is_filled(x2, y, z - 1)) {
-            if ((visited_map[idx2(x2, y, z)] & (1 << 4)) != 0)
-                break;
-            visited_map[idx2(x2, y, z)] |= (1 << 4);
-            x2++;
-        }
-        if (x2 > x) {
-            add_vertex(BrushFace::Z, x, y, z);
-            add_vertex(BrushFace::Z, x2, y, z);
-            add_vertex(BrushFace::Z, x, y + 1, z);
+            // Right faces
+            y2 = y;
+            if (is_filled(x, y2, z) && !is_filled(x - 1, y2, z))
+                y2++;
+            if (y2 > y) {
+                add_vertex(BrushFace::X, x, y, z);
+                add_vertex(BrushFace::X, x, y, z + 1);
+                add_vertex(BrushFace::X, x, y2, z);
+                add_vertex(BrushFace::X, x, y2, z);
+                add_vertex(BrushFace::X, x, y, z + 1);
+                add_vertex(BrushFace::X, x, y2, z + 1);
+            }
 
-            add_vertex(BrushFace::Z, x2, y, z);
-            add_vertex(BrushFace::Z, x2, y + 1, z);
-            add_vertex(BrushFace::Z, x, y + 1, z);
-        }
+            // Front faces
+            x2 = x;
+            if (!is_filled(x2, y, z) && is_filled(x2, y, z - 1))
+                x2++;
+            if (x2 > x) {
+                add_vertex(BrushFace::Z, x, y, z);
+                add_vertex(BrushFace::Z, x2, y, z);
+                add_vertex(BrushFace::Z, x, y + 1, z);
+                add_vertex(BrushFace::Z, x2, y, z);
+                add_vertex(BrushFace::Z, x2, y + 1, z);
+                add_vertex(BrushFace::Z, x, y + 1, z);
+            }
 
-        // Back faces
-        x2 = x;
-        if (is_filled(x2, y, z) && !is_filled(x2, y, z - 1)) {
-            if ((visited_map[idx2(x2, y, z)] & (1 << 5)) != 0)
-                break;
-            visited_map[idx2(x2, y, z)] |= (1 << 5);
-            x2++;
-        }
-        if (x2 > x) {
-            add_vertex(BrushFace::Z, x, y, z);
-            add_vertex(BrushFace::Z, x, y + 1, z);
-            add_vertex(BrushFace::Z, x2, y, z);
-            
-            add_vertex(BrushFace::Z, x2, y, z);
-            add_vertex(BrushFace::Z, x, y + 1, z);
-            add_vertex(BrushFace::Z, x2, y + 1, z);
-        }
-    }}}
+            // Back faces
+            x2 = x;
+            if (is_filled(x2, y, z) && !is_filled(x2, y, z - 1))
+                x2++;
+            if (x2 > x) {
+                add_vertex(BrushFace::Z, x, y, z);
+                add_vertex(BrushFace::Z, x, y + 1, z);
+                add_vertex(BrushFace::Z, x2, y, z);
+                add_vertex(BrushFace::Z, x2, y, z);
+                add_vertex(BrushFace::Z, x, y + 1, z);
+                add_vertex(BrushFace::Z, x2, y + 1, z);
+            }
+        }}}
+    } // END non-solid
 
     for (int i = 0; i < 3; i++) {
         Mesh mesh = { 0 };
 
         mesh.triangleCount = vertices[i].size() / 9;
         mesh.vertexCount = mesh.triangleCount * 3;
-        mesh.vertices = (float*)malloc(mesh.vertexCount * 3 * sizeof(float));
+        mesh.vertices = vertices[i].data();
         mesh.texcoords = nullptr;
         mesh.normals = nullptr;
-        memcpy(mesh.vertices, &vertices[i][0], mesh.vertexCount * 3 * sizeof(float));
 
-        UploadMesh(&mesh, false);
+        util::upload_mesh_vertices_only(&mesh, false);
+        mesh.vertices = nullptr;
         out.models[i] = LoadModelFromMesh(mesh);
         out.models[i].materials[0].shader = brush_model_shader;
     }
