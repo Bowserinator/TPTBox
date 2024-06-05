@@ -15,6 +15,8 @@
 #include "../gui/components/Label.h"
 #include "../gui/styles.h"
 
+#include "BrushViewModal.h"
+
 #include "../settings/data/SettingsData.h"
 #include "../settings/GraphicsSettingsModal.h"
 #include "../settings/SimSettingsModal.h"
@@ -28,6 +30,9 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
     brushRenderer(brushRenderer), renderer(renderer), sim(sim) {}
 
 void SimUI::init() {
+    brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f });
+    addChild(brushViewWindow);
+
     mainPanel = new ui::Panel(
         Vector2{ 0, (float)GetScreenHeight() - MAIN_PANEL_HEIGHT },
         Vector2{ (float)GetScreenWidth(), MAIN_PANEL_HEIGHT },
@@ -64,24 +69,24 @@ void SimUI::init() {
         return btn;
     };
 
-    addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS, "Graphics Settings")->setClickCallback([this]() {
+    addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS, "Graphics Settings")->setClickCallback([this](unsigned int) {
         addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, renderer));
     }));
-    addChild(getBottomIconButton(3, ICON_SIM_SETTINGS, "Sim Settings")->setClickCallback([this]() {
+    addChild(getBottomIconButton(3, ICON_SIM_SETTINGS, "Sim Settings")->setClickCallback([this](unsigned int) {
         addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}, sim));
     }));
-    addChild(getBottomIconButton(4, ICON_UI_SETTINGS, "UI Settings")->setClickCallback([this]() {
+    addChild(getBottomIconButton(4, ICON_UI_SETTINGS, "UI Settings")->setClickCallback([this](unsigned int) {
         addChild(new UISettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
         Vector2{500, 500}));
     }));
-    addChild(getBottomIconButton(5, ICON_FILE, "Clear Sim")->setClickCallback([this]() {
+    addChild(getBottomIconButton(5, ICON_FILE, "Clear Sim")->setClickCallback([this](unsigned int) {
         sim->reset();
     }));
 
     pauseButton = getBottomIconButton(1, ICON_PLAYER_PAUSE, "");
-    addChild(pauseButton->setClickCallback([this]() { sim->paused = !sim->paused; }));
+    addChild(pauseButton->setClickCallback([this](unsigned int) { sim->paused = !sim->paused; }));
 
     // Tooltip for bottom button
     bottomTooltip = new ui::Label(
@@ -172,7 +177,7 @@ void SimUI::switchCategory(const MenuCategory category) {
     if (category == MenuCategory::LIFE) {
         for (int j = 0; j < GOL_RULE_COUNT; j++) {
             ui::TextButton * btn = getElementButton(i, golRules[j].name, golRules[j].color);
-            btn->setClickCallback([this, j]() {
+            btn->setClickCallback([this, j](unsigned int) {
                 brushRenderer->set_selected_tool(TOOL_GOL);
                 brushRenderer->set_misc_data(j + 1); // id = index + 1 since 0 is reserved for EMPTY
             });
@@ -192,7 +197,7 @@ void SimUI::switchCategory(const MenuCategory category) {
         if (!tool.Enabled || tool.MenuSection != category) continue;
         
         ui::TextButton * btn = getElementButton(i, tool.Name, tool.Color);
-        btn->setClickCallback([this, id]() { brushRenderer->set_selected_tool(id); });
+        btn->setClickCallback([this, id](unsigned int) { brushRenderer->set_selected_tool(id); });
         btn->setEnterCallback([this, id]() {
             const auto &tool = GetTools()[id];
             elementDescLabel->setText(tool.Description);
@@ -208,7 +213,7 @@ void SimUI::switchCategory(const MenuCategory category) {
         if (!el.Enabled || el.MenuSection != category) continue;
 
         ui::TextButton * btn = getElementButton(i, el.Name, el.Color);
-        btn->setClickCallback([this, id]() { brushRenderer->set_selected_element(id); });
+        btn->setClickCallback([this, id](unsigned int) { brushRenderer->set_selected_element(id); });
         btn->setEnterCallback([this, id]() {
             const auto &el = GetElements()[id];
             elementDescLabel->setText(el.Description);

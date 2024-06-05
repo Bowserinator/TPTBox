@@ -28,7 +28,7 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x, styles::SETTINGS_BUTTON_HEIGHT },
             "OK"
-        ))->setClickCallback([this]() {
+        ))->setClickCallback([this](unsigned int) {
             auto settings = settings::data::ref()->sim;
             settings->enableAir = enableAirCheckbox->checked();
             settings->enableHeat = enableHeatCheckbox->checked();

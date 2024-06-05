@@ -21,12 +21,12 @@ namespace ui {
         Color hoverTextColor    = WHITE;
         Color textColor         = WHITE;
         Color focusTextColor    = WHITE;
-        Color disabledTextColor = Color{ 120, 120, 120, 255 };
+        Color disabledTextColor = Color{ 80, 80, 80, 255 };
 
         Color borderColor         = Color{ 120, 120, 120, 255 };
         Color hoverBorderColor    = WHITE;
         Color focusBorderColor    = Color{ 220, 220, 220, 255 };
-        Color disabledBorderColor = Color{ 120, 120, 120, 255 };
+        Color disabledBorderColor = Color{ 80, 80, 80, 255 };
 
         float borderThickness = 1.0f;
 

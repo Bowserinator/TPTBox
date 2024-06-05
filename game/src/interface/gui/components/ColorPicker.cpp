@@ -136,13 +136,13 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x * 2 / 3, styles::SETTINGS_BUTTON_HEIGHT },
             "Cancel"
-        ))->setClickCallback([this]() { tryClose(ui::Window::CloseReason::BUTTON); }));
+        ))->setClickCallback([this](unsigned int) { tryClose(ui::Window::CloseReason::BUTTON); }));
 
         addChild((new TextButton(
             Vector2{ size.x * 2 / 3, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x / 3, styles::SETTINGS_BUTTON_HEIGHT },
             "Ok"
-        ))->setClickCallback([this, colorPicker]() {
+        ))->setClickCallback([this, colorPicker](unsigned int) {
             colorPicker->setValue(finalColor);
             tryClose(ui::Window::CloseReason::BUTTON);
         }));

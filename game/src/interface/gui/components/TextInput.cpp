@@ -153,6 +153,8 @@ void TextInput::tick(float dt) {
         inputValid = inputValidation(value);
         onValueChange(value);
     }
+
+    EventConsumer::ref()->consumeKeyboard();
 }
 
 void TextInput::onMouseClick(Vector2 localPos, unsigned button) {

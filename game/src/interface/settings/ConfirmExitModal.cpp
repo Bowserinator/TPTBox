@@ -16,7 +16,7 @@ ConfirmExitModal::ConfirmExitModal(const Vector2 &pos, const Vector2 &size):
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x * 2 / 3, styles::SETTINGS_BUTTON_HEIGHT },
             "Cancel"
-        ))->setClickCallback([this]() {
+        ))->setClickCallback([this](unsigned int) {
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 
@@ -25,7 +25,7 @@ ConfirmExitModal::ConfirmExitModal(const Vector2 &pos, const Vector2 &size):
             Vector2{ size.x / 3, styles::SETTINGS_BUTTON_HEIGHT },
             "Confirm",
             Style::getDefault().setAllTextColors(YELLOW)
-        ))->setClickCallback([]() {
+        ))->setClickCallback([](unsigned int) {
             EventConsumer::ref()->flagExit();
         }));
 

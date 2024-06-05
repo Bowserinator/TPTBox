@@ -21,13 +21,13 @@ namespace ui {
         }
 		void onMouseClick(Vector2 localPos, unsigned button) override {
             InteractiveComponent::onMouseClick(localPos, button);
-            if (!disabled) clickCallback();
+            if (!disabled) clickCallback(button);
         }
 
-        Button * setClickCallback(const std::function<void ()> &f) { clickCallback = f; return this; }
+        Button * setClickCallback(const std::function<void (unsigned int)> &f) { clickCallback = f; return this; }
         Button * setEnterCallback(const std::function<void ()> &f) { enterCallback = f; return this; }
     protected:
-        std::function<void ()> clickCallback = [](){};
+        std::function<void (unsigned int)> clickCallback = [](unsigned int){};
         std::function<void ()> enterCallback = [](){};
     };
 }

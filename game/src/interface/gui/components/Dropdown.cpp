@@ -21,7 +21,7 @@ public:
                 Vector2{ 0, i * optHeight },
                 Vector2{ size.x, optHeight },
                 options[i].first
-            ))->setClickCallback([dropdown, &options, i](){
+            ))->setClickCallback([dropdown, &options, i](unsigned int){
                 dropdown->switchToOption(options[i].second);
                 dropdown->updateCallback(options[i].second);
             }));

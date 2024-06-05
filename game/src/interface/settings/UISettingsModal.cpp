@@ -24,7 +24,7 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x, styles::SETTINGS_BUTTON_HEIGHT },
             "OK"
-        ))->setClickCallback([this]() {
+        ))->setClickCallback([this](unsigned int) {
             auto settings = settings::data::ref()->ui;
             settings->hideHud = hideHUDCheckbox->checked();
             settings->oppositeTool = oppositeToolCheckbox->checked();
@@ -103,7 +103,7 @@ UISettingsModal::UISettingsModal(const Vector2 &pos, const Vector2 &size):
         "Mouse Sensitivity"
     ));
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this]() { mouseSensitivitySlider->setPercent(
+        ->setClickCallback([this](unsigned int) { mouseSensitivitySlider->setPercent(
             Normalize(1.0f, settings::UI::MIN_MOUSE_SENSITIVITY, settings::UI::MAX_MOUSE_SENSITIVITY)
         ); }));
     mouseSensitivitySlider = (new Slider(
