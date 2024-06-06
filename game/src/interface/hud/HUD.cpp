@@ -88,6 +88,10 @@ void HUD::update_controls(const BrushRenderer &brush_renderer) {
         cam->setLerpTarget(cam->camera.position, (Vector3)brush_renderer.get_raycast_pos(), cam->camera.up);
         consumeKey = true;
     }
+    if (EventConsumer::ref()->isKeyPressed(KEY_F1)) // Toggle HUD
+        showHUD = !showHUD;
+    if (EventConsumer::ref()->isKeyPressed(KEY_D)) // Toggle debug
+        state = state == HUDState::DEBUG_MODE ? HUDState::NORMAL : HUDState::DEBUG_MODE;
 
     // Display modes
     constexpr int NUM_KEYS[] = { KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE, KEY_ZERO };
@@ -127,7 +131,7 @@ void HUD::draw(const HUDData &data) {
             idx = ID(sim->photons[rz][ry][rx]);
     }
 
-    if (debug && data.brush_renderer->brush_in_sim()) {
+    if (showHUD && debug && data.brush_renderer->brush_in_sim()) {
         const Vector3T<int> brush_pos = data.brush_renderer->get_brush_pos();
         drawText(TextFormat("%d, %d, %d / d%d / s%d",
                 brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(), data.brush_renderer->get_size()),
@@ -139,89 +143,91 @@ void HUD::draw(const HUDData &data) {
     sim_fps_avg[fps_counter % FPS_AVG_WINDOW_SIZE] = data.sim_fps;
     fps_counter++;
 
-    // Top left corner: FPS, [Parts, sim FPS]
-    const char * text  = !debug ?
-        TextFormat("FPS: %.3f", avg_fps()) :
-        TextFormat("FPS: %.3f  Parts: %s", avg_fps(), util::format_commas(sim->parts_count).c_str());
-    drawText(text, 20, 20, BLUE_TEXT);
+    if (showHUD) {
+        // Top left corner: FPS, [Parts, sim FPS]
+        const char * text  = !debug ?
+            TextFormat("FPS: %.3f", avg_fps()) :
+            TextFormat("FPS: %.3f  Parts: %s", avg_fps(), util::format_commas(sim->parts_count).c_str());
+        drawText(text, 20, 20, BLUE_TEXT);
 
-    if (state == HUDState::DEBUG_MODE)
-        drawText(TextFormat("Sim: %.3f  Thrd: %d", avg_sim_fps(), sim->actual_thread_count), 20, 20 + OFFSET, BLUE_TEXT);
+        if (state == HUDState::DEBUG_MODE)
+            drawText(TextFormat("Sim: %.3f  Thrd: %d", avg_sim_fps(), sim->actual_thread_count), 20, 20 + OFFSET, BLUE_TEXT);
 
-    // Top right corner
-    const int x = util::clamp(rx, 0, XRES);
-    const int y = util::clamp(ry, 0, YRES);
-    const int z = util::clamp(rz, 0, ZRES);
+        // Top right corner
+        const int x = util::clamp(rx, 0, XRES);
+        const int y = util::clamp(ry, 0, YRES);
+        const int z = util::clamp(rz, 0, ZRES);
 
-    const char * air_data = TextFormat("Pressure: %.2f",
-        sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
+        const char * air_data = TextFormat("Pressure: %.2f",
+            sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
 
-    // Ctype
-    std::string ctype_data = "";
-    if (sim->parts[idx].ctype) {
-        if (sim->parts[idx].type == PT_LAVA)
-            ctype_data = " (Molten " + GetElements()[sim->parts[idx].ctype].Name + ')';
-        else
-            ctype_data = " (" + GetElements()[sim->parts[idx].ctype].Name + ')';
-    }
-
-    // Names
-    std::string name = GetElements()[sim->parts[idx].type].Name;
-    if (sim->parts[idx].type == PT_GOL)
-        name = golRules[util::clamp(sim->parts[idx].tmp2 - 1, 0, GOL_RULE_COUNT - 1)].name;
-
-    const char * line11 = idx ?
-        TextFormat("%s%s,  %s", name.c_str(), ctype_data.c_str(), air_data) :
-        TextFormat("Empty,  %s", air_data);
-
-    const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
-    const char * line12 = (idx && debug) ? TextFormat("#%i, %s", idx, pos_data) : pos_data;
-    drawTextRAlign(TextFormat("%s,  %s", line11, line12), GetScreenWidth() - RHUD_X_OFFSET, 20, WHITE);
-
-    // Additional lines if currently hovering an element
-    if (idx) {
-        const char * dcolor = sim->parts[idx].dcolor.as_RGBA() ?
-            TextFormat("#%08X", sim->parts[idx].dcolor.as_RGBA()) : "0";
-
-        float formattedTemp;
-        char tempUnit;
-        switch (settings::data::ref()->ui->temperatureUnit) {
-            case settings::UI::TemperatureUnit::C:
-                tempUnit = 'C';
-                formattedTemp = sim->parts[idx].temp - R_ZERO_C;
-                break;
-            case settings::UI::TemperatureUnit::F:
-                tempUnit = 'F';
-                formattedTemp = (sim->parts[idx].temp - R_ZERO_C) * 1.8f + 32.0f;
-                break;
-            default:
-                formattedTemp = sim->parts[idx].temp;
-                tempUnit = 'K';
-                break;
+        // Ctype
+        std::string ctype_data = "";
+        if (sim->parts[idx].ctype) {
+            if (sim->parts[idx].type == PT_LAVA)
+                ctype_data = " (Molten " + GetElements()[sim->parts[idx].ctype].Name + ')';
+            else
+                ctype_data = " (" + GetElements()[sim->parts[idx].ctype].Name + ')';
         }
 
-        drawTextRAlign(TextFormat("Temp: %.2f %c  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
-                formattedTemp,
-                tempUnit,
-                sim->parts[idx].life,
-                sim->parts[idx].tmp1,
-                sim->parts[idx].tmp2,
-                dcolor),
-            GetScreenWidth() - RHUD_X_OFFSET, 20 + OFFSET, WHITE);
+        // Names
+        std::string name = GetElements()[sim->parts[idx].type].Name;
+        if (sim->parts[idx].type == PT_GOL)
+            name = golRules[util::clamp(sim->parts[idx].tmp2 - 1, 0, GOL_RULE_COUNT - 1)].name;
 
-        if (debug) {
-            drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
-                    sim->parts[idx].vx,
-                    sim->parts[idx].vy,
-                    sim->parts[idx].vz,
-                    sim->parts[idx].flag.to_string().c_str()
-                ),
-                GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
+        const char * line11 = idx ?
+            TextFormat("%s%s,  %s", name.c_str(), ctype_data.c_str(), air_data) :
+            TextFormat("Empty,  %s", air_data);
+
+        const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
+        const char * line12 = (idx && debug) ? TextFormat("#%i, %s", idx, pos_data) : pos_data;
+        drawTextRAlign(TextFormat("%s,  %s", line11, line12), GetScreenWidth() - RHUD_X_OFFSET, 20, WHITE);
+
+        // Additional lines if currently hovering an element
+        if (idx) {
+            const char * dcolor = sim->parts[idx].dcolor.as_RGBA() ?
+                TextFormat("#%08X", sim->parts[idx].dcolor.as_RGBA()) : "0";
+
+            float formattedTemp;
+            char tempUnit;
+            switch (settings::data::ref()->ui->temperatureUnit) {
+                case settings::UI::TemperatureUnit::C:
+                    tempUnit = 'C';
+                    formattedTemp = sim->parts[idx].temp - R_ZERO_C;
+                    break;
+                case settings::UI::TemperatureUnit::F:
+                    tempUnit = 'F';
+                    formattedTemp = (sim->parts[idx].temp - R_ZERO_C) * 1.8f + 32.0f;
+                    break;
+                default:
+                    formattedTemp = sim->parts[idx].temp;
+                    tempUnit = 'K';
+                    break;
+            }
+
+            drawTextRAlign(TextFormat("Temp: %.2f %c  Life: %d, tmp1: %d, tmp2: %d, dcolor: %s",
+                    formattedTemp,
+                    tempUnit,
+                    sim->parts[idx].life,
+                    sim->parts[idx].tmp1,
+                    sim->parts[idx].tmp2,
+                    dcolor),
+                GetScreenWidth() - RHUD_X_OFFSET, 20 + OFFSET, WHITE);
+
+            if (debug) {
+                drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
+                        sim->parts[idx].vx,
+                        sim->parts[idx].vy,
+                        sim->parts[idx].vz,
+                        sim->parts[idx].flag.to_string().c_str()
+                    ),
+                    GetScreenWidth() - RHUD_X_OFFSET, 20 + 2 * OFFSET, WHITE);
+            }
         }
-    }
 
-    // Draw the nav cube
-    cube.draw();
+        // Draw the nav cube
+        cube.draw();
+    }
 
     // Tooltip
     if (tooltip_opacity) {

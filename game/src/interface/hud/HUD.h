@@ -39,6 +39,7 @@ private:
     float sim_fps_avg[FPS_AVG_WINDOW_SIZE];
     unsigned int fps_counter = 0;
     unsigned int grid_type = 0;
+    bool showHUD = true;
 
     char tooltip[MAX_TOOLTIP_LENGTH];
     double tooltip_opacity = 0.0f;
