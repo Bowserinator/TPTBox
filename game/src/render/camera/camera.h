@@ -105,6 +105,9 @@ public:
     void moveRight(float distance, bool moveInWorldPlane);
     void moveUp(float distance);
     void moveToTarget(float amt);
+
+    /** Return if first person locked */
+    bool isLocked() const { return _first_person_locked; }
 private:
     bool _viewProjMatrixUpdated;
     bool _isLerping;

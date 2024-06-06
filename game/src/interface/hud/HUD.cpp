@@ -131,11 +131,22 @@ void HUD::draw(const HUDData &data) {
             idx = ID(sim->photons[rz][ry][rx]);
     }
 
+    // Brush tooltip
     if (showHUD && debug && data.brush_renderer->brush_in_sim()) {
         const Vector3T<int> brush_pos = data.brush_renderer->get_brush_pos();
         drawText(TextFormat("%d, %d, %d / d%d / s%d",
                 brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(), data.brush_renderer->get_size()),
             GetMouseX() + 20.0f, GetMouseY() + 20.0f, WHITE);
+    }
+
+    // Bottom left: camera coords + movement mode
+    if (showHUD) {
+        drawText(TextFormat("Cam: %d, %d, %d %s",
+                util::roundf(cam->camera.position.x),
+                util::roundf(cam->camera.position.y),
+                util::roundf(cam->camera.position.z),
+                cam->isLocked() ? "/ [Cursor Lock (RCLICK)]" : ""),
+            20.0f, GetScreenHeight() - 120.0f, WHITE);
     }
 
     // Update the average fps
