@@ -1,5 +1,6 @@
 #include "Brush.h"
 #include "../../simulation/Simulation.h"
+#include "../settings/data/SettingsData.h"
 #include "../../simulation/ToolClasses.h"
 #include "../../render/camera/camera.h"
 #include "../../render/Renderer.h"
@@ -99,10 +100,18 @@ void BrushRenderer::do_controls(Simulation * sim) {
         const Vector3 sizeVec{ (float)size, (float)size, (float)size };
         const Vector3 rotVec{0.0f, 0.0f, 0.0f};
 
+        const Vector3 viewBegin = settings::data::ref()->graphics->viewSliceBegin;
+        const Vector3 viewEnd = settings::data::ref()->graphics->viewSliceEnd;
+
         for (int x = bx - half_size; x <= bx + half_size; x++)
         for (int y = by - half_size; y <= by + half_size; y++)
         for (int z = bz - half_size; z <= bz + half_size; z++)
-            if (BOUNDS_CHECK(x, y, z) && BRUSHES[currentBrushIdx].map(Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)}, sizeVec, rotVec)) {
+            if (
+                BOUNDS_CHECK(x, y, z) &&
+                BRUSHES[currentBrushIdx].map(Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)}, sizeVec, rotVec) &&
+                x >= viewBegin.x && y >= viewBegin.y && z >= viewBegin.z &&
+                x <= viewEnd.x && y <= viewEnd.y && z <= viewEnd.z
+            ) {
                 if (delete_mode)
                     sim->kill_part(ID(sim->pmap[z][y][x]));
                 else if (!tool_mode)

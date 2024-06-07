@@ -255,12 +255,17 @@ void Renderer::init() {
 
         float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
         float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
+        float VIEW_SLICE_BEGIN[] = { 0.0f, 0.0f, 0.0f };
+        float VIEW_SLICE_END[] = { (float)XRES, (float)YRES, (float)ZRES };
+
         settings_writer->write_member("MAX_RAY_STEPS", 256 * 3);
         settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
         settings_writer->write_member("AO_STRENGTH", 0.6f);
         settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
         settings_writer->write_member("SHADOW_STRENGTH", 0.35f);
         settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
+        settings_writer->write_member("VIEW_SLICE_BEGIN", VIEW_SLICE_BEGIN);
+        settings_writer->write_member("VIEW_SLICE_END", VIEW_SLICE_END);
 
         settings_writer->write_member("ENABLE_OUTLINES", 0);
         settings_writer->write_member("ENABLE_TRANSPARENCY", 1);
@@ -313,8 +318,13 @@ void Renderer::update_settings(settings::Graphics * settings) {
     
     float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
     float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
+    float VIEW_SLICE_BEGIN[] = { settings->viewSliceBegin.x, settings->viewSliceBegin.y, settings->viewSliceBegin.z };
+    float VIEW_SLICE_END[] = { settings->viewSliceEnd.x, settings->viewSliceEnd.y, settings->viewSliceEnd.z };
+
     settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
     settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
+    settings_writer->write_member("VIEW_SLICE_BEGIN", VIEW_SLICE_BEGIN);
+    settings_writer->write_member("VIEW_SLICE_END", VIEW_SLICE_END);
 
     settings_writer->write_member("ENABLE_OUTLINES", settings->showOutline ? 1 : 0);
     settings_writer->write_member("ENABLE_TRANSPARENCY", settings->enableTransparency ? 1 : 0);

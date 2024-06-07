@@ -5,9 +5,10 @@
 #include "../gui/components/Label.h"
 #include "../gui/components/TextInput.h"
 
+#include "../../render/Renderer.h"
 #include "./mini_panels/ViewPanel.h"
 
-BrushViewModal::BrushViewModal(const Vector2 &pos, const Vector2 &size):
+BrushViewModal::BrushViewModal(const Vector2 &pos, const Vector2 &size, Renderer * renderer):
     ui::Modal(pos, size, Style::getDefault())
 {
     viewBtn = (new TextButton(
@@ -27,5 +28,5 @@ BrushViewModal::BrushViewModal(const Vector2 &pos, const Vector2 &size):
     addChild(viewBtn);
     addChild(brushBtn);
 
-    addChild(new ViewPanel(Vector2{ 1, styles::SETTINGS_BUTTON_HEIGHT }, size - Vector2{ 2, 2 + styles::SETTINGS_BUTTON_HEIGHT }));
+    addChild(new ViewPanel(Vector2{ 1, styles::SETTINGS_BUTTON_HEIGHT }, size - Vector2{ 2, 2 + styles::SETTINGS_BUTTON_HEIGHT }, renderer));
 }

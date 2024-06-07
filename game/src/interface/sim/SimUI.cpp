@@ -30,7 +30,7 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
     brushRenderer(brushRenderer), renderer(renderer), sim(sim) {}
 
 void SimUI::init() {
-    brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f });
+    brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f }, renderer);
     addChild(brushViewWindow);
 
     mainPanel = new ui::Panel(

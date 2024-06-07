@@ -3,6 +3,7 @@
 
 #include "AbstractSettingsData.h"
 #include "../../../render/Renderer.h"
+#include "../../../util/math.h"
 
 namespace settings {
     class Graphics : public AbstractSettingsData {
@@ -71,6 +72,9 @@ namespace settings {
         float renderDownscale = defaultRenderDownscale;
         Color backgroundColor = defaultBackgroundColor;
         Color shadowColor = defaultShadowColor;
+
+        Vector3 viewSliceBegin{0.0f, 0.0f, 0.0f};
+        Vector3 viewSliceEnd{(float)XRES, (float)YRES, (float)ZRES};
 
         bool enableTransparency = true;
         bool enableReflection = true;

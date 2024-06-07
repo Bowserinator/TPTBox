@@ -10,20 +10,25 @@
 
 using namespace ui;
 
+class Renderer;
+
 class ViewPanel : public ui::Panel {
 public:
     enum class ViewDropdownOptions { ALL = 0, SINGLE_LAYER, RANGE, ALL_BELOW, ALL_ABOVE };
     enum class AxisDropdownOptions { X = 0, Y, Z };
 
-    ViewPanel(const Vector2 &pos, const Vector2 &size);
+    ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * renderer);
 private:
     unsigned int maxCurrentCoord() const;
     void clampCoordInput(ui::TextInput * input);
+    void updateValues();
 
     void disableMin();
     void disableMax();
     void enableMin();
     void enableMax();
+
+    Renderer * renderer;
 
     ui::TextInput
         * minCoordInput = nullptr,

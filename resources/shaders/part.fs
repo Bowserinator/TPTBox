@@ -38,6 +38,8 @@ layout(shared, binding = 6) uniform Settings {
     vec3 BACKGROUND_COLOR; // RGB normalized 0-1
     float SHADOW_STRENGTH; // 0 = no shadow, 1 = max strength
     vec3 SHADOW_COLOR;     // RGB normalized 0-1
+    vec3 VIEW_SLICE_BEGIN; // xyz
+    vec3 VIEW_SLICE_END;   // xyz
 
     bool ENABLE_OUTLINES;
     bool ENABLE_TRANSPARENCY;
@@ -120,6 +122,10 @@ float max3(vec3 v) { return max(max(v.x,v.y), v.z); }
 
 bool isInSim(vec3 c) {
     return clamp(c, vec3(0.0), SIMRES.xyz - vec3(SIMBOX_CAST_PAD)) == c;
+}
+
+bool isInView(vec3 c) {
+    return clamp(c, VIEW_SLICE_BEGIN, VIEW_SLICE_END) == c;
 }
 
 // Collide ray with sim bounding cube, rayDir should be normalized
@@ -245,7 +251,8 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
 
                 // Blend forward color (current screen color) with voxel color
                 // We are blending front to back
-                vec4 voxelColor = toVec4Color(tmpIntColor);
+                bool inView = isInView(voxelPos);
+                vec4 voxelColor = inView ? toVec4Color(tmpIntColor) : vec4(0.0);
                 uint flags = getByteFlags(voxelPos);
                 data.lastVoxel = voxelPos;
 
@@ -264,7 +271,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                     edgeMultiplier = (1.0 - edgeStep.x * edgeStep.y) * (1.0 - edgeStep.x * edgeStep.z) * (1.0 - edgeStep.y * edgeStep.z);
                 }
 
-                if (prevVoxelColor != voxelColor) {
+                if (prevVoxelColor != voxelColor && inView) {
                     float forwardAlphaInv = 1.0 - data.color.a;
                     float ao = ((flags & G_NO_LIGHTING) == 0) ? AO_estimate(voxelPos) : 1.0;
                     data.color.rgb += voxelColor.rgb *
@@ -288,7 +295,7 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                 bool shouldReflect = ENABLE_REFLECTION && ((flags & G_REFLECT) != 0) && data.counts.x < MAX_REFLECT_COUNT;
                 bool shouldRefract = ENABLE_REFRACTION && ((flags & G_REFRACT) != 0) && prevIndexOfRefraction != indexOfRefraction && data.counts.y < MAX_REFRACT_COUNT;
 
-                if (shouldReflect || shouldRefract) {
+                if (inView && (shouldReflect || shouldRefract)) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
                     vec3 normal = vec3(0.0);
                     normal[prevIdx] = rayStep[prevIdx];
