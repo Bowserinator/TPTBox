@@ -57,6 +57,22 @@ void TextInput::tick(float dt) {
     // Collect input:
     auto oldCursor = cursor;
     const bool ctrl = EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL);
+    const bool shift = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
+
+    // Tab / Shift + Tab
+    if (EventConsumer::ref()->isKeyPressed(KEY_TAB)) {
+        if (shift && prevTabInput) {
+            unfocus(); deselect();
+            prevTabInput->focus();
+            EventConsumer::ref()->consumeKeyboard();
+            return;
+        } else if (!shift && nextTabInput) {
+            unfocus(); deselect();
+            nextTabInput->focus();
+            EventConsumer::ref()->consumeKeyboard();
+            return;
+        }
+    }
 
     // Ctrl-A (select all)
     if (ctrl && value.length() && EventConsumer::ref()->isKeyPressed(KEY_A)) {

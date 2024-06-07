@@ -50,6 +50,9 @@ namespace ui {
             bool readOnly = false;
         };
 
+        TextInput * prevTabInput = nullptr;
+        TextInput * nextTabInput = nullptr;
+
     protected:
         struct CursorClick {
             std::size_t cursor;

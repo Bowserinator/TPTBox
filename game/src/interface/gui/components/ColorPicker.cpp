@@ -132,6 +132,15 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
             Vector2{ SMALL_INPUT_SIZE.x * 4, SMALL_INPUT_SIZE.y }, "Hex (#RGBA)",
             Style { .horizontalAlign = Style::Align::Center }));
 
+        rInput->nextTabInput = gInput;
+        gInput->nextTabInput = bInput;
+        bInput->nextTabInput = aInput;
+        aInput->nextTabInput = hexInput;
+        hexInput->prevTabInput = aInput;
+        aInput->prevTabInput = bInput;
+        bInput->prevTabInput = gInput;
+        gInput->prevTabInput = rInput;
+
         addChild((new TextButton(
             Vector2{ 0, size.y - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{ size.x * 2 / 3, styles::SETTINGS_BUTTON_HEIGHT },

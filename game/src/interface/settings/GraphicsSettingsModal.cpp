@@ -219,6 +219,11 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
         ->setClickCallback([this](unsigned int) { renderDownscaleTextInput->setValue(std::format("{:.1f}", settings::Graphics::defaultRenderDownscale)); }));
 
+    heatMinTextInput->nextTabInput = heatMaxTextInput;
+    heatMaxTextInput->nextTabInput = renderDownscaleTextInput;
+    renderDownscaleTextInput->prevTabInput = heatMaxTextInput;
+    heatMaxTextInput->prevTabInput = heatMinTextInput;
+
     // Color pickers
     panel->addChild(new Label(
         Vector2{ 20.0f, Y + 4 * 1.25f * spacing },

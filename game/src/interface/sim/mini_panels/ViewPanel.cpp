@@ -124,6 +124,9 @@ ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * rendere
     maxButton = std::get<2>(g2);
     Y += styles::DROPDOWN_SIZE.y + PAD;
 
+    minCoordInput->nextTabInput = maxCoordInput;
+    maxCoordInput->prevTabInput = minCoordInput;
+
     // Default values
     minCoordInput->setValue("0");
     maxCoordInput->setValue(std::to_string(XRES));
