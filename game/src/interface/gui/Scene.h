@@ -1,5 +1,5 @@
-#ifndef GUI_SCENE_H
-#define GUI_SCENE_H
+#ifndef INTERFACE_GUI_SCENE_H_
+#define INTERFACE_GUI_SCENE_H_
 
 #include <vector>
 #include <algorithm>
@@ -45,10 +45,11 @@ namespace ui {
             for (auto child : children)
                 child->processDeletion();
         }
+
     private:
         std::vector<Component *> children;
         Vector2 pos;
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_SCENE_H_

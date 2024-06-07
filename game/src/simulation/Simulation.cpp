@@ -36,7 +36,7 @@ Simulation::Simulation():
     heat.uploadedOnce = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
-    
+
 
     // ---- Threads ------
     sim_thread_count = std::min(omp_get_max_threads(), MAX_SIM_THREADS);
@@ -100,13 +100,14 @@ void Simulation::_init_can_move() {
         // Photons can move through:
         can_move[PT_PHOT][PT_GLAS] = PartSwapBehavior::OCCUPY_SAME;
 
-		for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
+        for (destinationType = 1; destinationType <= ELEMENT_COUNT; destinationType++) {
             // Heavier elements can swap with lighter ones
-			if (elements[movingType].Weight > elements[destinationType].Weight)
-				can_move[movingType][destinationType] = PartSwapBehavior::SWAP;
+            if (elements[movingType].Weight > elements[destinationType].Weight)
+                can_move[movingType][destinationType] = PartSwapBehavior::SWAP;
 
             // All energy particles can occupy same space
-            if (elements[movingType].State == ElementState::TYPE_ENERGY && elements[destinationType].State == ElementState::TYPE_ENERGY)
+            if (elements[movingType].State == ElementState::TYPE_ENERGY &&
+                    elements[destinationType].State == ElementState::TYPE_ENERGY)
                 can_move[movingType][destinationType] = PartSwapBehavior::OCCUPY_SAME;
         }
     }
@@ -117,7 +118,8 @@ void Simulation::cycle_gravity_mode() {
     settings::data::ref()->sim->gravityMode = gravity_mode;
 }
 
-part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type, const PartCreateMode mode) {
+part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z,
+        const ElementType type, const PartCreateMode mode) {
     #ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
@@ -198,7 +200,8 @@ void Simulation::kill_part(const part_id i) {
     else if (photons[z][y][x] && ID(photons[z][y][x]) == i)
         photons[z][y][x] = 0;
 
-    graphics.color_force_update[FLAT_IDX(x, y, z)] = true; // Force whatever was below the particle to render now that it's gone
+    // Force whatever was below the particle to render now that it's gone
+    graphics.color_force_update[FLAT_IDX(x, y, z)] = true;
     if (GetElements()[part.type].OnChangeType)
         GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
@@ -225,16 +228,16 @@ void Simulation::kill_part(const part_id i) {
 bool Simulation::part_change_type(const part_id i, const part_type new_type) {
     const auto &el = GetElements()[new_type];
     if (!el.Enabled || new_type == PT_NONE) {
-		kill_part(i);
-		return true;
-	}
+        kill_part(i);
+        return true;
+    }
 
     const part_type prev_part_type = parts[i].type;
     const coord_t x = parts[i].rx;
     const coord_t y = parts[i].ry;
     const coord_t z = parts[i].rz;
     const bool is_energy = el.State == ElementState::TYPE_ENERGY;
-    
+
     if (el.CreateAllowed && !el.CreateAllowed(*this, i, x, y, z, new_type))
         return false;
     if (GetElements()[parts[i].type].OnChangeType)
@@ -247,16 +250,16 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
 
     parts[i].type = new_type;
 
-	if (is_energy) {
-		photons[z][y][x] = PMAP(new_type, i);
-		if (pmap[z][y][x] && ID(pmap[z][y][x]) == i)
-			pmap[z][y][x] = 0;
-	}
-	else {
-		pmap[z][y][x] = PMAP(new_type, i);
-		if (photons[z][y][x] && ID(photons[z][y][x]) == i)
-			photons[z][y][x] = 0;
-	}
+    if (is_energy) {
+        photons[z][y][x] = PMAP(new_type, i);
+        if (pmap[z][y][x] && ID(pmap[z][y][x]) == i)
+            pmap[z][y][x] = 0;
+    }
+    else {
+        pmap[z][y][x] = PMAP(new_type, i);
+        if (photons[z][y][x] && ID(photons[z][y][x]) == i)
+            photons[z][y][x] = 0;
+    }
 
     parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
     parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
@@ -267,7 +270,7 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
 
     _set_color_data_at(x, y, z, &parts[i]);
 
-	return true;
+    return true;
 }
 
 void Simulation::update_zslice(const coord_t pz) {
@@ -280,7 +283,8 @@ void Simulation::update_zslice(const coord_t pz) {
     coord_t golz2 = (pz - 1) == 0 ? ZRES - 2 : pz - 1; // Check neighbors for gol as well, needs to wrap
     coord_t golz3 = (pz + 1) == ZRES - 1 ? 1 : pz + 1;
 
-    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[golz2] && !gol.zsliceHasGol[golz3]) { // No GOL, can use smaller dirty rect
+    // No GOL, can use smaller dirty rect
+    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[golz2] && !gol.zsliceHasGol[golz3]) {
         y1 = min_y_per_zslice[pz - 1];
         y2 = max_y_per_zslice[pz - 1];
     } else {
@@ -408,14 +412,14 @@ void Simulation::update() {
     auto t = GetTime();
     if (gol.golCount) gol.wait_and_get();
     if (enable_heat) download_heat_from_gpu();
-    
+
     auto end = (GetTime() - t);
     // std::cout << end << "\n";
 
     // air.update(); // TODO
 
     #pragma omp parallel num_threads(sim_thread_count)
-    { 
+    {
         const int thread_count = omp_get_num_threads();
         const int z_chunk_size = (ZRES - 2) / (2 * thread_count) + 1;
         const int tid = omp_get_thread_num();
@@ -455,7 +459,7 @@ void Simulation::download_heat_from_gpu() {
 
             if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
                 parts[i].temp = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
-                
+
                 // Heat transition
                 const auto &el = GetElements()[parts[i].type];
                 const part_type prevType = parts[i].type;
@@ -463,12 +467,14 @@ void Simulation::download_heat_from_gpu() {
                 bool transition = false;
 
                 if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature) {
-                    toType = el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighTemperatureTransition;
+                    toType = el.HighTemperatureTransition == Transition::TO_CTYPE ?
+                        parts[i].ctype : el.HighTemperatureTransition;
                     transition = true;
                     part_change_type(i, toType);
                 }
                 else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature) {
-                    toType = el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowTemperatureTransition;
+                    toType = el.LowTemperatureTransition == Transition::TO_CTYPE ?
+                        parts[i].ctype : el.LowTemperatureTransition;
                     transition = true;
                     part_change_type(i, toType);
                 }
@@ -508,7 +514,7 @@ void Simulation::recalc_free_particles() {
 
     // First do all movement updates, which can create new holes in the pmap
     // Then we fix the holes afterwards
-    
+
     // Begin: find particles that have not been updated (due to stacking or causality violation)
     // then perform update in serial
     const uint32_t frame_count_parity = frame_count & 1;
@@ -519,7 +525,8 @@ void Simulation::recalc_free_particles() {
     for (part_id i = 1; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
-        if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity || part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) {
+        if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity ||
+                part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) {
             auto &s = causality_violating_parts[omp_get_thread_num()];
             s.ids[s.count++] = i;
         }
@@ -632,7 +639,8 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
     }
 
     unsigned int idx = FLAT_IDX(x, y, z);
-    if (graphics.color_data[idx] == new_color && graphics.color_flags[idx] == new_flags) return; // Color did not actually change
+    if (graphics.color_data[idx] == new_color && graphics.color_flags[idx] == new_flags)
+        return; // Color did not actually change
 
     auto &tree = graphics.octree_blocks[
         (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +

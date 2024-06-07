@@ -1,5 +1,5 @@
-#ifndef GUI_COLORPICKER_H
-#define GUI_COLORPICKER_H
+#ifndef INTERFACE_GUI_COMPONENTS_COLORPICKER_H_
+#define INTERFACE_GUI_COMPONENTS_COLORPICKER_H_
 
 #include "raylib.h"
 #include "../styles.h"
@@ -24,19 +24,19 @@ namespace ui {
         void onMouseClick(Vector2 localPos, unsigned button) override;
 
         void setValue(const Color c, const bool noCallback = false) {
-            this->value = c;
-            if (!noCallback) onValueChange(value);
+            this->m_value = c;
+            if (!noCallback) m_on_value_change(m_value);
         }
-        Color getValue() const { return value; }
+        Color value() const { return m_value; }
 
-        ColorPicker * noAlpha() { hasAlpha = false; return this; }
-        ColorPicker * setOnValueChange(const std::function<void (Color)> &f) { onValueChange = f; return this; }
+        ColorPicker * noAlpha() { m_has_alpha = false; return this; }
+        ColorPicker * setOnValueChange(const std::function<void (Color)> &f) { m_on_value_change = f; return this; }
     protected:
         friend ColorPickerWindow;
-        Color value = RED;
-        bool hasAlpha = true;
-        std::function<void (Color)> onValueChange = [](Color){};
+        Color m_value = RED;
+        bool m_has_alpha = true;
+        std::function<void (Color)> m_on_value_change = [](Color){};
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_COLORPICKER_H_

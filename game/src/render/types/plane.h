@@ -1,5 +1,5 @@
-#ifndef RENDER_PLANE_H
-#define RENDER_PLANE_H
+#ifndef RENDER_TYPES_PLANE_H_
+#define RENDER_TYPES_PLANE_H_
 
 #include "raymath.h"
 #include "../../util/vector_op.h"
@@ -58,4 +58,4 @@ inline std::ostream& operator<<(std::ostream& os, const Plane &plane) {
     return os;
 }
 
-#endif
+#endif // RENDER_TYPES_PLANE_H_

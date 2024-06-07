@@ -46,5 +46,5 @@ namespace graphics {
                 { 0xFF0000FF, 0.71f },
                 { 0xFF00DCFF, 1.00f },
             }, 1024);
-    }
-}
+    } // namespace gradients
+} // namespace graphics

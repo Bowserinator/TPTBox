@@ -91,8 +91,10 @@ void Simulation::move_behavior(const part_id idx) {
                         return;
 
                     const float newyf = is_liquid ? part.y : part.y - 1.0f;
-                    bool can_move_y_check = is_liquid || (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz)) != PartSwapBehavior::NOOP);
-        
+                    bool can_move_y_check = is_liquid ||
+                        (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz))
+                            != PartSwapBehavior::NOOP);
+
                     if (can_move_y_check) {
                         // If we raycast and collide with another voxel we can't
                         // do the naive try_move
@@ -189,7 +191,7 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
     const coord_t oldx = parts[idx].rx;
     const coord_t oldy = parts[idx].ry;
     const coord_t oldz = parts[idx].rz;
-    
+
     // Particle did not move, but target pos could
     // potentially have changed (ie +0.1) but not
     // enough to shift the rounding, so assign anyways

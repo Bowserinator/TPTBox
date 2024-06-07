@@ -1,5 +1,5 @@
-#ifndef UTIL_GRAPHICS_H
-#define UTIL_GRAPHICS_H
+#ifndef UTIL_GRAPHICS_H_
+#define UTIL_GRAPHICS_H_
 
 #include "raylib.h"
 #include "rlgl.h"
@@ -74,4 +74,4 @@ namespace util {
     void upload_mesh_vertices_only(Mesh *mesh, bool dynamic);
 }
 
-#endif
+#endif // UTIL_GRAPHICS_H_

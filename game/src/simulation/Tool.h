@@ -1,5 +1,5 @@
-#ifndef TOOL_H
-#define TOOL_H
+#ifndef SIMULATION_TOOL_H_
+#define SIMULATION_TOOL_H_
 
 #include <string>
 #include "stdint.h"
@@ -11,19 +11,19 @@
 
 class Tool {
 public:
-	bool Enabled;            // If enabled = false tool cannot be used
+    bool Enabled;            // If enabled = false tool cannot be used
     std::string Identifier;  // ID string, like HEAT
-	std::string Name;        // Display name, like HEAT
+    std::string Name;        // Display name, like HEAT
     std::string Description; // Menu description
     RGBA Color;
 
-	MenuCategory MenuSection;
-    
+    MenuCategory MenuSection;
+
     void (*Perform)(PERFORM_FUNC_ARGS);
 
     Tool();
-	Tool(const Tool&) = delete;
-	Tool& operator=(const Tool&) = delete;
+    Tool(const Tool&) = delete;
+    Tool& operator=(const Tool&) = delete;
 
     // Define void Tool_NAME(); for each tool
     #define TOOL_NUMBERS_DECLARE
@@ -31,4 +31,4 @@ public:
     #undef TOOL_NUMBERS_DECLARE
 };
 
-#endif
+#endif // SIMULATION_TOOL_H_

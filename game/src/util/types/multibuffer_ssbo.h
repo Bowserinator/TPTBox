@@ -1,10 +1,11 @@
-#ifndef UTIL_MULTIBUFFER_SSBO
-#define UTIL_MULTIBUFFER_SSBO
+#ifndef UTIL_TYPES_MULTIBUFFER_SSBO_H_
+#define UTIL_TYPES_MULTIBUFFER_SSBO_H_
 
 #include "raylib.h"
 #include "rlgl.h"
 #include <cstddef>
 #include <algorithm>
+#include <utility>
 
 namespace util {
     class MultibufferSSBO {
@@ -32,6 +33,7 @@ namespace util {
         // Get SSBO at id, also taking into account cycle
         // Essentially returns ssbos[(i + cycle) % size()]
         unsigned int get(std::size_t i) const { return ssbos[(cycle + i) % ssboCount]; }
+
     private:
         unsigned int * ssbos;
         std::size_t ssboCount;
@@ -39,4 +41,4 @@ namespace util {
     };
 }
 
-#endif
+#endif // UTIL_TYPES_MULTIBUFFER_SSBO_H_

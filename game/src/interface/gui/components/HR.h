@@ -1,5 +1,5 @@
-#ifndef GUI_HR_H
-#define GUI_HR_H
+#ifndef INTERFACE_GUI_COMPONENTS_HR_H_
+#define INTERFACE_GUI_COMPONENTS_HR_H_
 
 #include "raylib.h"
 #include "../Style.h"
@@ -10,7 +10,7 @@ namespace ui {
     class HR : public Component {
     public:
         HR(
-            const Vector2 &pos, 
+            const Vector2 &pos,
             const Vector2 &size,
             const Style &style = Style { .borderColor = Color{255, 255, 255, 70} }
         ): Component(pos, size, style) {}
@@ -19,6 +19,6 @@ namespace ui {
             DrawLineEx(screenPos, screenPos + size, style.borderThickness, style.getBorderColor(this));
         }
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_HR_H_

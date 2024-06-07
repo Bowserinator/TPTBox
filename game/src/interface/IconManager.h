@@ -1,5 +1,5 @@
-#ifndef INTERFACE_ICON_MANAGER_H
-#define INTERFACE_ICON_MANAGER_H
+#ifndef INTERFACE_ICONMANAGER_H_
+#define INTERFACE_ICONMANAGER_H_
 
 #include "rlgl.h"
 #include "raylib.h"
@@ -7,7 +7,7 @@
 
 class IconManager {
 public:
-    IconManager(IconManager& other) = delete;
+    IconManager(const IconManager& other) = delete;
     void operator=(const IconManager&) = delete;
     ~IconManager() { UnloadRenderTexture(texture); }
 
@@ -38,6 +38,7 @@ public:
             single = new IconManager;
         return single;
     };
+
 private:
     inline static IconManager * single = nullptr;
     RenderTexture2D texture = {0};
@@ -45,4 +46,4 @@ private:
     IconManager() {}
 };
 
-#endif
+#endif // INTERFACE_ICONMANAGER_H_

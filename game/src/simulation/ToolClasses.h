@@ -1,6 +1,6 @@
 // Defines the TOOL_XXXX values
-#ifndef TOOL_CLASSES_H
-#define TOOL_CLASSES_H
+#ifndef SIMULATION_TOOLCLASSES_H_
+#define SIMULATION_TOOLCLASSES_H_
 
 #include <array>
 
@@ -13,4 +13,4 @@
 
 std::array<Tool, __GLOBAL_TOOL_COUNT + 1> const &GetTools();
 
-#endif
+#endif // SIMULATION_TOOLCLASSES_H_

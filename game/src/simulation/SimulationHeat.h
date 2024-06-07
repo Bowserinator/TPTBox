@@ -1,5 +1,5 @@
-#ifndef SIMULATION_HEAT_H
-#define SIMULATION_HEAT_H
+#ifndef SIMULATION_SIMULATIONHEAT_H_
+#define SIMULATION_SIMULATIONHEAT_H_
 
 #include "raylib.h"
 #include "rlgl.h"
@@ -39,6 +39,7 @@ public:
     void reset_dirty_chunks();
 
     inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
+
 private:
     util::PersistentBuffer<2> ssbosData;
     util::PersistentBuffer<1> ssbosUploadDownloadDirty;
@@ -52,4 +53,4 @@ private:
     std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty;
 };
 
-#endif
+#endif // SIMULATION_SIMULATIONHEAT_H_

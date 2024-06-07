@@ -36,7 +36,7 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
     };
 
     #pragma omp parallel for
-    for (int z = 0; z < size.z; z++) 
+    for (int z = 0; z < size.z; z++)
     for (int y = 0; y < size.y; y++)
     for (int x = 0; x < size.x; x++) {
         Vector3T<int> subpos{ x - size.x / 2, y - size.y / 2, z - size.z / 2 };
@@ -272,7 +272,8 @@ void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool delet
             centerOfModel.y,
             centerOfModel.z
         ));
-    util::set_shader_value(brush_model_shader, brush_model_shader_res_loc, Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
+    util::set_shader_value(brush_model_shader, brush_model_shader_res_loc,
+        Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
     rlEnableShader(brush_model_shader.id);
     rlSetUniformSampler(brush_model_shader_depth_tex_loc, renderer->get_base_tex().depthTexture);
     rlDisableShader();

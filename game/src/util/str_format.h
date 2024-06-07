@@ -1,5 +1,5 @@
-#ifndef UTIL_STR_FORMAT_H
-#define UTIL_STR_FORMAT_H
+#ifndef UTIL_STR_FORMAT_H_
+#define UTIL_STR_FORMAT_H_
 
 #include "./types/bitset8.h"
 #include <string>
@@ -76,4 +76,4 @@ namespace util {
     }
 }
 
-#endif
+#endif // UTIL_STR_FORMAT_H_

@@ -1,5 +1,5 @@
-#ifndef RENDER_OCTREE_H
-#define RENDER_OCTREE_H
+#ifndef RENDER_TYPES_OCTREE_H_
+#define RENDER_TYPES_OCTREE_H_
 
 #include "stdint.h"
 #include "../../simulation/SimulationGraphics.h"
@@ -61,4 +61,4 @@ public:
     uint8_t modified = 0x0;
 };
 
-#endif
+#endif // RENDER_TYPES_OCTREE_H_

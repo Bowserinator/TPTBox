@@ -1,5 +1,5 @@
-#ifndef SIM_GRAPHICS_H
-#define SIM_GRAPHICS_H
+#ifndef SIMULATION_SIMULATIONGRAPHICS_H_
+#define SIMULATION_SIMULATIONGRAPHICS_H_
 
 #include "SimulationDef.h"
 #include "DisplayMode.h"
@@ -84,4 +84,4 @@ struct SimulationGraphics {
     }
 };
 
-#endif
+#endif // SIMULATION_SIMULATIONGRAPHICS_H_

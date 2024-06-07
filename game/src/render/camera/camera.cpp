@@ -24,7 +24,7 @@ bool RenderCamera::sphereOutsideFrustum(float x, float y, float z, float r) {
     // If distance to plane is "below" the plane and more than
     // the radius of the sphere, the sphere is 100% below the plane
     // (outside the frustum, which is made of 6 planes)
-    for (const auto &plane: frustum) {
+    for (const auto &plane : frustum) {
         if (plane.distanceToPlane(x, y, z) < -r)
             return true;
     }
@@ -44,7 +44,6 @@ void RenderCamera::update() {
         updateControls3DEditor(deltaAvg);
 
     updateControlsShared(deltaAvg);
-
 }
 
 void RenderCamera::updateControlsFirstPerson(const float delta) {
@@ -86,7 +85,8 @@ void RenderCamera::updateControlsFirstPerson(const float delta) {
             // Project the current target onto a XZ plane with the same y level as
             // the current camera position, this is distance from camera to the projected point
             // This is our pseudo "x" for rotation
-            const float XZDistance = Vector3Distance(camera.position, Vector3{ camera.target.x, camera.position.y, camera.target.z });
+            const float XZDistance = Vector3Distance(camera.position,
+                Vector3{ camera.target.x, camera.position.y, camera.target.z });
             // If the new distance is right below / above us the camera gets all glitchy since we use Euler angles
             const float newXZDistance = std::max(3.0f, XZDistance * std::cos(theta) - targetPrime.y * std::sin(theta));
             camera.target.y = targetPrime.y * std::cos(theta) + XZDistance * std::sin(theta) + camera.position.y;
@@ -215,7 +215,8 @@ void RenderCamera::generateFrustum() {
 
 void RenderCamera::updateViewProjMatrix() {
     const float aspectRatio = ((double)GetScreenWidth() / (double)GetScreenHeight());
-    const Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD, aspectRatio, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+    const Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD, aspectRatio,
+        RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
     const Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
     viewProjMatrix = MatrixMultiply(matView, matProj);
 }

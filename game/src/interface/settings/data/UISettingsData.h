@@ -1,5 +1,5 @@
-#ifndef UI_SETTING_DATA_H
-#define UI_SETTING_DATA_H
+#ifndef INTERFACE_SETTINGS_DATA_UISETTINGSDATA_H_
+#define INTERFACE_SETTINGS_DATA_UISETTINGSDATA_H_
 
 #include "AbstractSettingsData.h"
 
@@ -7,7 +7,7 @@ namespace settings {
     class UI : public AbstractSettingsData {
     public:
         UI() {}
-        UI(UI&other) = delete;
+        UI(const UI& other) = delete;
         void operator=(const UI&) = delete;
         ~UI() = default;
 
@@ -52,6 +52,6 @@ namespace settings {
         MovementMode movementMode = MovementMode::THREED;
         TemperatureUnit temperatureUnit = TemperatureUnit::C;
     };
-}
+} // namespace settings
 
-#endif
+#endif // INTERFACE_SETTINGS_DATA_UISETTINGSDATA_H_

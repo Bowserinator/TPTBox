@@ -1,5 +1,5 @@
-#ifndef UTIL_UBO_H
-#define UTIL_UBO_H
+#ifndef UTIL_TYPES_UBO_H_
+#define UTIL_TYPES_UBO_H_
 
 #include "raylib.h"
 #include "stdint.h"
@@ -7,6 +7,7 @@
 #include <glad.h>
 #include <cstring>
 #include <algorithm>
+#include <utility>
 
 /**
  * @brief Uniform Buffer Object Writer
@@ -34,7 +35,7 @@ public:
      * @param uniformBlockName Name in the shader, ie uniform MyUBOName { would be "MyUBOName"
      */
     UBOWriter(const GLuint program, const GLuint UBOId, const char * uniformBlockName);
-    
+
     ~UBOWriter() { destroy(); }
     UBOWriter(const UBOWriter &other) = delete;
     UBOWriter &operator=(const UBOWriter &other) = delete;
@@ -68,7 +69,7 @@ public:
      */
     template <class T>
     void write_member(const char * memberName, const T &value) {
-        memcpy(&data[0] + get_offset(memberName), &value, sizeof(value));     
+        memcpy(&data[0] + get_offset(memberName), &value, sizeof(value));
     }
 
     /**
@@ -76,7 +77,7 @@ public:
      */
     void upload() {
         glBindBuffer(GL_UNIFORM_BUFFER, UBOId);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, dataSizeBytes, data); 
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, dataSizeBytes, data);
     }
 
     /**
@@ -93,6 +94,7 @@ public:
         std::swap(other.uniformCount, uniformCount);
         std::swap(other.data, data);
     }
+
 private:
     const char * uniformBlockName;
     GLint programId, UBOId;
@@ -117,4 +119,4 @@ private:
     }
 };
 
-#endif
+#endif // UTIL_TYPES_UBO_H_

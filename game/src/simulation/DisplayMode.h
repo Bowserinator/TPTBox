@@ -1,5 +1,5 @@
-#ifndef DISPLAY_MODE_H
-#define DISPLAY_MODE_H
+#ifndef SIMULATION_DISPLAYMODE_H_
+#define SIMULATION_DISPLAYMODE_H_
 
 #include <string>
 #include <functional>
@@ -29,6 +29,6 @@ const std::array<DisplayModeData, (std::size_t)DisplayMode::LAST> displayModePro
     DisplayModeData{ "Fancy Display", false },
     DisplayModeData{ "Nothing Display", false },
     DisplayModeData{ "Heat Gradient Display", true }
-}; 
+};
 
-#endif
+#endif // SIMULATION_DISPLAYMODE_H_

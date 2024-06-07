@@ -1,7 +1,7 @@
-#ifndef SIMULATION_DEF_H
-#define SIMULATION_DEF_H
+#ifndef SIMULATION_SIMULATIONDEF_H_
+#define SIMULATION_SIMULATIONDEF_H_
 
-#include "stdint.h"
+#include <stdint.h>
 
 using coord_t = uint8_t;
 using signed_coord_t = int16_t;
@@ -91,4 +91,4 @@ namespace Transition {
 constexpr int MIN_CASUALITY_RADIUS = 4; // Width of each slice = 2 * this
 constexpr int MAX_SIM_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
 
-#endif
+#endif // SIMULATION_SIMULATIONDEF_H_

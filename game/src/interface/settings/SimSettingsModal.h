@@ -1,5 +1,5 @@
-#ifndef SIM_SETTING_MODAL_H
-#define SIM_SETTING_MODAL_H
+#ifndef INTERFACE_SETTINGS_SIMSETTINGSMODAL_H_
+#define INTERFACE_SETTINGS_SIMSETTINGSMODAL_H_
 
 #include "../gui/components/Window.h"
 #include "../gui/components/Checkbox.h"
@@ -22,4 +22,4 @@ private:
         * threadCountDropdown;
 };
 
-#endif
+#endif // INTERFACE_SETTINGS_SIMSETTINGSMODAL_H_

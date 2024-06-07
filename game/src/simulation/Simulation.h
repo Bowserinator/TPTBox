@@ -1,5 +1,5 @@
-#ifndef SIMULATION_H
-#define SIMULATION_H
+#ifndef SIMULATION_SIMULATION_H_
+#define SIMULATION_SIMULATION_H_
 
 #include "Particle.h"
 #include "SimulationDef.h"
@@ -19,6 +19,7 @@
 
 #include <omp.h>
 #include <vector>
+#include <limits>
 
 enum class GravityMode {
     VERTICAL = 0,
@@ -44,7 +45,7 @@ public:
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
     util::Spinlock parts_add_remove_lock;
-    
+
     std::vector<PartHeatDelta> heat_updates;
 
     Air air;
@@ -53,7 +54,7 @@ public:
 
     part_id pfree;
     part_id maxId;
-    
+
     uint32_t parts_count;
     uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
 
@@ -133,6 +134,7 @@ public:
     void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part);
     void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
     bool _should_do_lighting(const Particle &part);
+
 private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
@@ -227,7 +229,8 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     // prev is now, final is the voxel we will collide with if we continue
     // down our current trajectory
     // Precondition: prev_loc != final_loc
-    auto getFaces = [this, &pmapOccupied](const Vector3T<signed_coord_t> &prev_loc, const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
+    auto getFaces = [this, &pmapOccupied](const Vector3T<signed_coord_t> &prev_loc,
+            const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
         RayCast::RayHitFace faces = 0;
 
         if ((prev_loc.x != final_loc.x) + (prev_loc.y != final_loc.y) + (prev_loc.z != final_loc.z) == 1) {
@@ -291,4 +294,4 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     return false;
 }
 
-#endif
+#endif // SIMULATION_SIMULATION_H_

@@ -40,7 +40,7 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, 10.0f },
         Vector2{ size.x, 20.0f },
         "Settings will apply once you hit \"OK\"",
@@ -52,7 +52,7 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
 
     auto createCheckboxAndAdd = [this, &size](const float Y, const char * s) {
         LabeledCheckbox * ptr = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE }, s);
-        panel->addChild(ptr);
+        m_panel->addChild(ptr);
         return ptr;
     };
 
@@ -72,8 +72,8 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
         ->addOption(sim->getGravityModeName(GravityMode::RADIAL), (int)GravityMode::RADIAL)
         ->switchToOption(0);
 
-    panel->addChild(gravityModeDropdown);
-    panel->addChild(new Label(
+    m_panel->addChild(gravityModeDropdown);
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Gravity Mode"
@@ -91,13 +91,13 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
         ->addOption("8", 8)
         ->addOption(TextFormat("Max (%d)", MAX_SIM_THREADS), MAX_SIM_THREADS)
         ->switchToOption(-1);
-    panel->addChild(threadCountDropdown);
-    panel->addChild(new Label(
+    m_panel->addChild(threadCountDropdown);
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Threads"
     ));
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 1.2f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         TextFormat(
@@ -113,5 +113,4 @@ SimSettingsModal::SimSettingsModal(const Vector2 &pos, const Vector2 &size, Simu
     enableAirCheckbox->setChecked(settings->enableAir);
     gravityModeDropdown->switchToOption((int)settings->gravityMode);
     threadCountDropdown->switchToOption(settings->threadCount);
-
 }

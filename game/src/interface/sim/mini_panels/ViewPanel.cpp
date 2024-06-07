@@ -4,6 +4,9 @@
 #include "../../../render/Renderer.h"
 #include "../../../util/math.h"
 
+#include <string>
+#include <utility>
+
 using namespace ui;
 
 ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * renderer):
@@ -98,7 +101,7 @@ ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * rendere
             "+-"
         ))->setClickCallback([this, textInput](unsigned int button) {
             if (textInput->isInputValid()) {
-                auto val = std::stoi(textInput->getValue());
+                auto val = std::stoi(textInput->value());
                 if (button == MOUSE_BUTTON_LEFT) val++;
                 else if (button == MOUSE_BUTTON_RIGHT) val--;
 
@@ -154,10 +157,11 @@ ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * rendere
                 minCoordInput->setValue(std::to_string(val));
                 break;
             case ViewDropdownOptions::RANGE: {
-                float minVal = !minCoordInput->isInputValid() ? 0.0f : std::stoi(minCoordInput->getValue());
-                float maxVal = !maxCoordInput->isInputValid() ? maxCurrentCoord() : std::stoi(maxCoordInput->getValue());
+                float minVal = !minCoordInput->isInputValid() ? 0.0f : std::stoi(minCoordInput->value());
+                float maxVal = !maxCoordInput->isInputValid() ?
+                    maxCurrentCoord() : std::stoi(maxCoordInput->value());
                 float midVal = (minVal + maxVal) / 2;
-                
+
                 if (val < midVal)
                     minCoordInput->setValue(std::to_string(val));
                 else
@@ -187,7 +191,7 @@ unsigned int ViewPanel::maxCurrentCoord() const {
 
 void ViewPanel::clampCoordInput(ui::TextInput * input) {
     if (input->isInputValid()) {
-        auto val = std::stoi(input->getValue());
+        auto val = std::stoi(input->value());
         if (val > maxCurrentCoord()) {
             val = maxCurrentCoord();
             input->setValue(std::to_string(val));
@@ -208,14 +212,14 @@ void ViewPanel::updateValues() {
             break;
         case ViewDropdownOptions::SINGLE_LAYER:
             if (minCoordInput->isInputValid()) {
-                int val = std::stoi(minCoordInput->getValue());
+                int val = std::stoi(minCoordInput->value());
                 viewSliceBegin[axis] = val;
                 viewSliceEnd[axis] = val;
             }
             break;
         case ViewDropdownOptions::RANGE: {
-            float minVal = !minCoordInput->isInputValid() ? viewSliceBegin[axis] : std::stoi(minCoordInput->getValue());
-            float maxVal = !maxCoordInput->isInputValid() ? viewSliceEnd[axis] : std::stoi(maxCoordInput->getValue());
+            float minVal = !minCoordInput->isInputValid() ? viewSliceBegin[axis] : std::stoi(minCoordInput->value());
+            float maxVal = !maxCoordInput->isInputValid() ? viewSliceEnd[axis] : std::stoi(maxCoordInput->value());
             if (minVal > maxVal) std::swap(minVal, maxVal);
 
             viewSliceBegin[axis] = minVal;
@@ -224,16 +228,16 @@ void ViewPanel::updateValues() {
         }
         case ViewDropdownOptions::ALL_BELOW:
             if (maxCoordInput->isInputValid())
-                viewSliceEnd[axis] = std::stoi(maxCoordInput->getValue());
+                viewSliceEnd[axis] = std::stoi(maxCoordInput->value());
             break;
         case ViewDropdownOptions::ALL_ABOVE:
             if (minCoordInput->isInputValid())
-                viewSliceBegin[axis] = std::stoi(minCoordInput->getValue());
+                viewSliceBegin[axis] = std::stoi(minCoordInput->value());
             break;
     }
 
     settings->viewSliceBegin = Vector3{ viewSliceBegin[0], viewSliceBegin[1], viewSliceBegin[2] };
-    settings->viewSliceEnd = Vector3{ viewSliceEnd[0],viewSliceEnd[1], viewSliceEnd[2] };
+    settings->viewSliceEnd = Vector3{ viewSliceEnd[0], viewSliceEnd[1], viewSliceEnd[2] };
     renderer->update_settings(settings);
 }
 
@@ -251,12 +255,12 @@ void ViewPanel::disableMax() {
 
 void ViewPanel::enableMin() {
     minButton->enable();
-    minCoordInput->enable(); 
+    minCoordInput->enable();
     minLabel->enable();
 }
 
 void ViewPanel::enableMax() {
     maxButton->enable();
-    maxCoordInput->enable(); 
+    maxCoordInput->enable();
     maxLabel->enable();
 }

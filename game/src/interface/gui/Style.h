@@ -1,5 +1,5 @@
-#ifndef GUI_STYLE_H
-#define GUI_STYLE_H
+#ifndef INTERFACE_GUI_STYLE_H_
+#define INTERFACE_GUI_STYLE_H_
 
 #include "raylib.h"
 #include "styles.h"
@@ -70,6 +70,6 @@ namespace ui {
             return style;
         }
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_STYLE_H_

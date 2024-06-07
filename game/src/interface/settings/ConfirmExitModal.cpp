@@ -30,7 +30,7 @@ ConfirmExitModal::ConfirmExitModal(const Vector2 &pos, const Vector2 &size):
         }));
 
     addChild(new Label(
-        Vector2{ 10.0f, 15.0f + settings.headerHeight },
+        Vector2{ 10.0f, 15.0f + m_settings.headerHeight },
         Vector2{ size.x, 20.0f },
         "Are you sure you want to quit the game?",
         Style { .horizontalAlign = Style::Align::Left }

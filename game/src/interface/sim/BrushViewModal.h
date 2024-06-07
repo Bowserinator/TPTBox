@@ -1,5 +1,5 @@
-#ifndef SIM_BRUSHVIEW_MODAL_H
-#define SIM_BRUSHVIEW_MODAL_H
+#ifndef INTERFACE_SIM_BRUSHVIEWMODAL_H_
+#define INTERFACE_SIM_BRUSHVIEWMODAL_H_
 
 #include "../gui/components/Modal.h"
 #include "../gui/components/TextButton.h"
@@ -14,4 +14,4 @@ private:
     ui::Button * brushBtn = nullptr;
 };
 
-#endif
+#endif // INTERFACE_SIM_BRUSHVIEWMODAL_H_

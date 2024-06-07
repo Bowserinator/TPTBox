@@ -1,5 +1,5 @@
-#ifndef TPB_ICONS_H
-#define TPB_ICONS_H
+#ifndef INTERFACE_ICONS_H_
+#define INTERFACE_ICONS_H_
 
 #include "../../resources/generated/icons.png.h"
 
@@ -30,4 +30,4 @@ typedef enum {
     ICON_UI_SETTINGS
 } guiIconName;
 
-#endif
+#endif // INTERFACE_ICONS_H_

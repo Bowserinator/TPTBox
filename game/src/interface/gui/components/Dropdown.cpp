@@ -12,7 +12,11 @@ using namespace ui;
 // to the parent modal
 class DropdownModal : public Modal {
 public:
-    DropdownModal(const Vector2 &pos, const Vector2 &size, std::vector<std::pair<std::string, int>> &options, Dropdown * dropdown):
+    DropdownModal(
+        const Vector2 &pos, const Vector2 &size,
+        std::vector<std::pair<std::string, int>> &options,
+        Dropdown * dropdown
+    ):
             Modal(pos, size, Style::getDefault()), options(options), dropdown(dropdown) {
         float optHeight = size.y / options.size();
 
@@ -23,7 +27,7 @@ public:
                 options[i].first
             ))->setClickCallback([dropdown, &options, i](unsigned int){
                 dropdown->switchToOption(options[i].second);
-                dropdown->updateCallback(options[i].second);
+                dropdown->m_update_callback(options[i].second);
             }));
         }
     }
@@ -59,8 +63,8 @@ void Dropdown::draw(const Vector2 &screenPos) {
         Vector2{ screenPos.x + size.x - TRIANGLE_SIZE / 2, screenPos.y + TRIANGLE_SIZE / 2 } + pad,
         style.getBorderColor(this));
 
-    if (selectedOptionIndex >= 0) {
-        const auto text = options[selectedOptionIndex].first;
+    if (m_selected_option_index >= 0) {
+        const auto text = m_options[m_selected_option_index].first;
         const auto tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
 
@@ -74,42 +78,43 @@ void Dropdown::draw(const Vector2 &screenPos) {
 
 void Dropdown::onMouseClick(Vector2 localPos, unsigned button) {
     InteractiveComponent::onMouseClick(localPos, button);
-    addToParent(new DropdownModal(pos, Vector2{size.x, options.size() * size.y}, options, this));
+    addToParent(new DropdownModal(pos, Vector2{size.x, m_options.size() * size.y}, m_options, this));
 }
 
 Dropdown * Dropdown::switchToOption(int option) {
-    selectedOptionIndex = -1;
-    for (std::size_t i = 0; i < options.size(); i++)
-        if (options[i].second == option) {
-            selectedOption = options[i].second;
-            selectedOptionIndex = i;
+    m_selected_option_index = -1;
+    for (std::size_t i = 0; i < m_options.size(); i++)
+        if (m_options[i].second == option) {
+            m_selected_option = m_options[i].second;
+            m_selected_option_index = i;
             break;
         }
     return this;
 }
 
 Dropdown * Dropdown::switchToOption(const std::string &option) {
-    selectedOptionIndex = -1;
-    for (std::size_t i = 0; i < options.size(); i++)
-        if (options[i].first == option) {
-            selectedOption = options[i].second;
-            selectedOptionIndex = i;
+    m_selected_option_index = -1;
+    for (std::size_t i = 0; i < m_options.size(); i++)
+        if (m_options[i].first == option) {
+            m_selected_option = m_options[i].second;
+            m_selected_option_index = i;
             break;
         }
     return this;
 }
 
 Dropdown * Dropdown::addOption(const std::string &name, int id) {
-    options.push_back(std::make_pair(name, id));
+    m_options.push_back(std::make_pair(name, id));
     return this;
 }
 
 Dropdown * Dropdown::removeOption(int id) {
-    options.erase(std::remove_if(options.begin(), options.end(), [id](auto x) { return x.second == id; }), options.end());
+    m_options.erase(std::remove_if(m_options.begin(), m_options.end(),
+        [id](auto x) { return x.second == id; }), m_options.end());
     return this;
 }
 
 Dropdown * Dropdown::setOptions(const std::vector<std::pair<std::string, int>> &options) {
-    this->options = options;
-    return switchToOption(options.size() ? -1 : this->options[0].second);
+    this->m_options = options;
+    return switchToOption(options.size() ? -1 : this->m_options[0].second);
 }

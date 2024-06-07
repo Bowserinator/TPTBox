@@ -10,6 +10,7 @@
 #include "../../../util/graphics.h"
 
 #include <format>
+#include <string>
 #include "rlgl.h"
 
 using namespace ui;
@@ -18,7 +19,8 @@ using namespace ui;
 // to the parent scene
 class ColorPickerWindow : public Window {
 public:
-    ColorPickerWindow(const Vector2 &pos, const Vector2 &size, ColorPicker * colorPicker, Color initialColor, bool hasAlpha):
+    ColorPickerWindow(const Vector2 &pos, const Vector2 &size,
+        ColorPicker * colorPicker, Color initialColor, bool hasAlpha):
             Window(pos, size, Window::Settings {
                 .draggable = true,
                 .title = "Color Picker"
@@ -27,7 +29,7 @@ public:
         if (!IsTextureReady(alphaBg)) {
             auto bg = GenImageChecked(HUE_RECT_WIDTH, COLOR_PICKER_RECT_HEIGHT,
                 HUE_RECT_WIDTH / 2, HUE_RECT_WIDTH / 2,
-                Color{70,70,70,255}, BLACK);
+                Color{70, 70, 70, 255}, BLACK);
             alphaBg = LoadTextureFromImage(bg);
             UnloadImage(bg);
         }
@@ -76,15 +78,15 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
                     for (auto c : s)
                         if (!isdigit(c))
                             return false;
-                    int val = std::stoi(s);     
+                    int val = std::stoi(s);
                     return val >= 0 && val <= 255;
                 })
                 ->setOnValueChange([this, r, idx](const std::string &newVal) {
                     if (r->isInputValid()) {
-                        if (idx == 0) finalColor.r = std::stoi(r->getValue());
-                        else if (idx == 1) finalColor.g = std::stoi(r->getValue());
-                        else if (idx == 2) finalColor.b = std::stoi(r->getValue());
-                        else if (idx == 3) finalColor.a = std::stoi(r->getValue());
+                        if (idx == 0) finalColor.r = std::stoi(r->value());
+                        else if (idx == 1) finalColor.g = std::stoi(r->value());
+                        else if (idx == 2) finalColor.b = std::stoi(r->value());
+                        else if (idx == 3) finalColor.a = std::stoi(r->value());
                         updateAllValuesFromColor(true);
                     }
                 });
@@ -99,11 +101,11 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
         if (!hasAlpha)
             aInput->setReadOnly(true);
 
-        panel->addChild(rInput);
-        panel->addChild(gInput);
-        panel->addChild(bInput);
-        panel->addChild(aInput);
-        panel->addChild(new Label(Vector2{ PAD, PAD * 2 + COLOR_PICKER_RECT_HEIGHT + SMALL_INPUT_SIZE.y },
+        m_panel->addChild(rInput);
+        m_panel->addChild(gInput);
+        m_panel->addChild(bInput);
+        m_panel->addChild(aInput);
+        m_panel->addChild(new Label(Vector2{ PAD, PAD * 2 + COLOR_PICKER_RECT_HEIGHT + SMALL_INPUT_SIZE.y },
             Vector2{ SMALL_INPUT_SIZE.x * 4 + 5.0f * 3, SMALL_INPUT_SIZE.y }, "RGBA",
             Style { .horizontalAlign = Style::Align::Center }));
 
@@ -117,7 +119,7 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
                     for (auto c : s)
                         if (!isxdigit(c))
                             return false;
-                    unsigned int val = static_cast<unsigned int>(std::stoul(s, nullptr, 16));    
+                    unsigned int val = static_cast<unsigned int>(std::stoul(s, nullptr, 16));
                     return val >= 0 && val <= 0xFFFFFFFF;
                 })
                 ->setOnValueChange([this](const std::string &newVal) {
@@ -127,8 +129,9 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
                     }
                 });
 
-        panel->addChild(hexInput);
-        panel->addChild(new Label(Vector2{ PAD + 4 * (SMALL_INPUT_SIZE.x + 5.0f), PAD * 2 + COLOR_PICKER_RECT_HEIGHT + SMALL_INPUT_SIZE.y },
+        m_panel->addChild(hexInput);
+        m_panel->addChild(new Label(Vector2{ PAD + 4 * (SMALL_INPUT_SIZE.x + 5.0f),
+                PAD * 2 + COLOR_PICKER_RECT_HEIGHT + SMALL_INPUT_SIZE.y },
             Vector2{ SMALL_INPUT_SIZE.x * 4, SMALL_INPUT_SIZE.y }, "Hex (#RGBA)",
             Style { .horizontalAlign = Style::Align::Center }));
 
@@ -160,14 +163,14 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
         updateAllValuesFromColor(true);
     }
 
-    virtual void draw(const Vector2 &screenPos) override {
+    void draw(const Vector2 &screenPos) override {
         Window::draw(screenPos);
 
-        Vector2 topLeft = { screenPos.x + PAD, screenPos.y + settings.headerHeight + PAD };
+        Vector2 topLeft = { screenPos.x + PAD, screenPos.y + m_settings.headerHeight + PAD };
         Vector2 bottomRight = {
             screenPos.x + PAD + COLOR_PICKER_RECT_WIDTH,
-            screenPos.y + settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT };
-        
+            screenPos.y + m_settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT };
+
         // Big box
         BeginShaderMode(colorRectShader);
         rlBegin(RL_QUADS);
@@ -180,14 +183,14 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
         EndShaderMode();
 
         DrawRectangleLines(topLeft.x, topLeft.y, COLOR_PICKER_RECT_WIDTH, COLOR_PICKER_RECT_HEIGHT, WHITE);
-        DrawCircleLines(colorX + PAD + screenPos.x, colorY + PAD + screenPos.y + settings.headerHeight, 6.0f, WHITE);
+        DrawCircleLines(colorX + PAD + screenPos.x, colorY + PAD + screenPos.y + m_settings.headerHeight, 6.0f, WHITE);
 
         // Hue strip
-        topLeft = { screenPos.x + 2 * PAD + COLOR_PICKER_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD };
+        topLeft = { screenPos.x + 2 * PAD + COLOR_PICKER_RECT_WIDTH, screenPos.y + m_settings.headerHeight + PAD };
         bottomRight = {
             screenPos.x + 2 * PAD + COLOR_PICKER_RECT_WIDTH + HUE_RECT_WIDTH,
-            screenPos.y + settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT };
-        
+            screenPos.y + m_settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT };
+
         BeginShaderMode(hueRectShader);
         rlBegin(RL_QUADS);
             rlNormal3f(0.0f, 0.0f, 1.0f);
@@ -199,36 +202,43 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
         EndShaderMode();
 
         DrawRectangleLines(topLeft.x, topLeft.y, HUE_RECT_WIDTH, COLOR_PICKER_RECT_HEIGHT, WHITE);
-        DrawCircle(topLeft.x + HUE_RECT_WIDTH / 2, hueY + PAD + screenPos.y + settings.headerHeight, 8.0f, pureHueColor);
-        DrawCircleLines(topLeft.x + HUE_RECT_WIDTH / 2, hueY + PAD + screenPos.y + settings.headerHeight, 8.0f, WHITE);
+        DrawCircle(topLeft.x + HUE_RECT_WIDTH / 2,
+            hueY + PAD + screenPos.y + m_settings.headerHeight, 8.0f, pureHueColor);
+        DrawCircleLines(topLeft.x + HUE_RECT_WIDTH / 2, hueY + PAD + screenPos.y + m_settings.headerHeight, 8.0f, WHITE);
 
         // Alpha strip
         if (hasAlpha) {
-            topLeft = { screenPos.x + 3 * PAD + + HUE_RECT_WIDTH + COLOR_PICKER_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD };
+            topLeft = { screenPos.x + 3 * PAD + + HUE_RECT_WIDTH + COLOR_PICKER_RECT_WIDTH,
+                screenPos.y + m_settings.headerHeight + PAD };
             DrawTexture(alphaBg, topLeft.x, topLeft.y, WHITE);
-            DrawRectangleGradientV(topLeft.x, topLeft.y, HUE_RECT_WIDTH, COLOR_PICKER_RECT_HEIGHT, WHITE, Color{0, 0, 0, 0});
+            DrawRectangleGradientV(topLeft.x, topLeft.y, HUE_RECT_WIDTH,
+                COLOR_PICKER_RECT_HEIGHT, WHITE, Color{0, 0, 0, 0});
             DrawRectangleLines(topLeft.x, topLeft.y, HUE_RECT_WIDTH, COLOR_PICKER_RECT_HEIGHT, WHITE);
 
-            DrawCircle(topLeft.x + HUE_RECT_WIDTH / 2, alphaY + PAD + screenPos.y + settings.headerHeight, 8.0f, GRAY);
-            DrawCircleLines(topLeft.x + HUE_RECT_WIDTH / 2, alphaY + PAD + screenPos.y + settings.headerHeight, 8.0f, WHITE);
+            DrawCircle(topLeft.x + HUE_RECT_WIDTH / 2, alphaY + PAD + screenPos.y + m_settings.headerHeight, 8.0f, GRAY);
+            DrawCircleLines(topLeft.x + HUE_RECT_WIDTH / 2,
+                alphaY + PAD + screenPos.y + m_settings.headerHeight, 8.0f, WHITE);
         }
 
         // Color preview
-        DrawRectangle(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD,
+        DrawRectangle(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + m_settings.headerHeight + PAD,
             PREVIEW_RECT_WIDTH, PREVIEW_RECT_HEIGHT, finalColor);
-        DrawRectangleLines(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD,
+        DrawRectangleLines(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + m_settings.headerHeight + PAD,
             PREVIEW_RECT_WIDTH, PREVIEW_RECT_HEIGHT, WHITE);
-        DrawRectangle(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD + PREVIEW_RECT_HEIGHT,
+        DrawRectangle(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH,
+            screenPos.y + m_settings.headerHeight + PAD + PREVIEW_RECT_HEIGHT,
             PREVIEW_RECT_WIDTH, PREVIEW_RECT_HEIGHT, initialColor);
-        DrawRectangleLines(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH, screenPos.y + settings.headerHeight + PAD + PREVIEW_RECT_HEIGHT,
+        DrawRectangleLines(screenPos.x + size.x - PAD - PREVIEW_RECT_WIDTH,
+            screenPos.y + m_settings.headerHeight + PAD + PREVIEW_RECT_HEIGHT,
             PREVIEW_RECT_WIDTH, PREVIEW_RECT_HEIGHT, WHITE);
     }
 
     void onMouseClick(Vector2 localPos, unsigned button) override {
         Window::onMouseClick(localPos, button);
 
-        Vector2 rectPos = { localPos.x - PAD, localPos.y - PAD - settings.headerHeight };
-        if (rectPos.x >= 0.0f && rectPos.x <= COLOR_PICKER_RECT_WIDTH && rectPos.y >= 0.0f && rectPos.y <= COLOR_PICKER_RECT_HEIGHT)
+        Vector2 rectPos = { localPos.x - PAD, localPos.y - PAD - m_settings.headerHeight };
+        if (rectPos.x >= 0.0f && rectPos.x <= COLOR_PICKER_RECT_WIDTH &&
+            rectPos.y >= 0.0f && rectPos.y <= COLOR_PICKER_RECT_HEIGHT)
             draggingMainRect = true;
         else if (posInHueBar(localPos))
             draggingHueRect = true;
@@ -257,7 +267,7 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
     void onMouseMoved(Vector2 localPos) override {
         Window::onMouseMoved(localPos);
         if (EventConsumer::ref()->isMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            Vector2 rectPos = { localPos.x - PAD, localPos.y - PAD - settings.headerHeight };
+            Vector2 rectPos = { localPos.x - PAD, localPos.y - PAD - m_settings.headerHeight };
             if (draggingMainRect) {
                 colorX = util::clamp(rectPos.x, 0.0f, COLOR_PICKER_RECT_WIDTH);
                 colorY = util::clamp(rectPos.y, 0.0f, COLOR_PICKER_RECT_HEIGHT);
@@ -276,6 +286,7 @@ void main(){outColor = vec4(hueWithMaxSVToRGB(fragTexCoord.y), 1.0);}
         Window::onUnfocus();
         //removeFromParent(this);
     }
+
 private:
     inline static Shader colorRectShader = {0};
     inline static Shader hueRectShader = {0};
@@ -314,15 +325,15 @@ private:
     bool posInHueBar(const Vector2 localPos) const {
         return localPos.x >= 2 * PAD + COLOR_PICKER_RECT_WIDTH &&
                 localPos.x <= 2 * PAD + COLOR_PICKER_RECT_WIDTH + HUE_RECT_WIDTH &&
-                localPos.y >= settings.headerHeight + PAD &&
-                localPos.y <= settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT;
+                localPos.y >= m_settings.headerHeight + PAD &&
+                localPos.y <= m_settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT;
     }
 
     bool posInAlphaBar(const Vector2 localPos) const {
         return localPos.x >= 3 * PAD + COLOR_PICKER_RECT_WIDTH + HUE_RECT_WIDTH &&
                 localPos.x <= 3 * PAD + COLOR_PICKER_RECT_WIDTH + 2 * HUE_RECT_WIDTH &&
-                localPos.y >= settings.headerHeight + PAD &&
-                localPos.y <= settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT;
+                localPos.y >= m_settings.headerHeight + PAD &&
+                localPos.y <= m_settings.headerHeight + PAD + COLOR_PICKER_RECT_HEIGHT;
     }
 
     void updateColors(bool isTextboxEdit) {
@@ -373,29 +384,32 @@ private:
         if (hexStr.length() < 8)
             hexStr = std::string(8 - hexStr.length(), '0') + hexStr;
 
-        if (rInput->getValue() != rStr)
+        if (rInput->value() != rStr)
             rInput->setValue(rStr, !isTextboxEdit);
-        if (gInput->getValue() != gStr)
+        if (gInput->value() != gStr)
             gInput->setValue(gStr, !isTextboxEdit);
-        if (bInput->getValue() != bStr)
+        if (bInput->value() != bStr)
             bInput->setValue(bStr, !isTextboxEdit);
-        if (aInput->getValue() != aStr)
+        if (aInput->value() != aStr)
             aInput->setValue(aStr, !isTextboxEdit);
-        if (hexInput->getValue() != hexStr)
+        if (hexInput->value() != hexStr)
             hexInput->setValue(hexStr, !isTextboxEdit);
 
         Vector3 hsv = ColorToHSV(finalColor);
-        colorX = hsv.y * COLOR_PICKER_RECT_WIDTH; // Saturation
-        colorY = (1.0f - hsv.z) * COLOR_PICKER_RECT_HEIGHT; // Value
 
-        if (isTextboxEdit) { hueY = hsv.x / 360.0f * COLOR_PICKER_RECT_HEIGHT; }
+        if (isTextboxEdit) {
+            colorX = hsv.y * COLOR_PICKER_RECT_WIDTH; // Saturation
+            colorY = (1.0f - hsv.z) * COLOR_PICKER_RECT_HEIGHT; // Value
+            hueY = hsv.x / 360.0f * COLOR_PICKER_RECT_HEIGHT;
+        }
         else { hsv.x = hueY / COLOR_PICKER_RECT_HEIGHT * 360.0f; }
 
         alphaY = (1.0f - finalColor.a / 255.0f) * COLOR_PICKER_RECT_HEIGHT;
 
         hsv.y = hsv.z = 1.0f;
         pureHueColor = ColorFromHSV(hsv.x, hsv.y, hsv.z);
-        util::set_shader_value(colorRectShader, hueColorLoc, Vector3{ pureHueColor.r / 255.0f, pureHueColor.g / 255.0f, pureHueColor.b / 255.0f });
+        util::set_shader_value(colorRectShader, hueColorLoc,
+            Vector3{ pureHueColor.r / 255.0f, pureHueColor.g / 255.0f, pureHueColor.b / 255.0f });
     }
 };
 
@@ -406,12 +420,12 @@ void ColorPicker::draw(const Vector2 &screenPos) {
         style.getBorderColor(this));
 
     constexpr float PAD = 5.0f;
-    DrawRectangle(screenPos.x + PAD, screenPos.y + PAD, size.x - 2 * PAD, size.y - 2 * PAD, value);
+    DrawRectangle(screenPos.x + PAD, screenPos.y + PAD, size.x - 2 * PAD, size.y - 2 * PAD, m_value);
 }
 
 void ColorPicker::onMouseClick(Vector2 localPos, unsigned button) {
     InteractiveComponent::onMouseClick(localPos, button);
     parentScene->addChild(new ColorPickerWindow(
         Vector2{ GetScreenWidth() / 2 - 250.0f, GetScreenHeight() / 2 - 150.0f },
-        Vector2{500.0f, 370.0f}, this, value, hasAlpha));
+        Vector2{500.0f, 370.0f}, this, m_value, m_has_alpha));
 }

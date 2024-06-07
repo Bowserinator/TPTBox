@@ -1,5 +1,5 @@
-#ifndef SIM_UI_H
-#define SIM_UI_H
+#ifndef INTERFACE_SIM_SIMUI_H_
+#define INTERFACE_SIM_SIMUI_H_
 
 #include "../../simulation/MenuCategories.h"
 #include "../gui/Scene.h"
@@ -22,6 +22,7 @@ public:
 
     void init() override;
     void update() override;
+
 private:
     void switchCategory(const MenuCategory category);
 
@@ -47,4 +48,4 @@ private:
     std::map<int, ui::IconButton *> bottomBarButtons;
 };
 
-#endif
+#endif // INTERFACE_SIM_SIMUI_H_

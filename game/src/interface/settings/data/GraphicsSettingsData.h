@@ -1,5 +1,5 @@
-#ifndef GRAPHICS_SETTING_DATA_H
-#define GRAPHICS_SETTING_DATA_H
+#ifndef INTERFACE_SETTINGS_DATA_GRAPHICSSETTINGSDATA_H_
+#define INTERFACE_SETTINGS_DATA_GRAPHICSSETTINGSDATA_H_
 
 #include "AbstractSettingsData.h"
 #include "../../../render/Renderer.h"
@@ -9,7 +9,7 @@ namespace settings {
     class Graphics : public AbstractSettingsData {
     public:
         Graphics() {}
-        Graphics(Graphics&other) = delete;
+        Graphics(const Graphics&other) = delete;
         void operator=(const Graphics&) = delete;
         ~Graphics() = default;
 
@@ -30,7 +30,8 @@ namespace settings {
                 heatViewMin = json["graphics"].value("heatViewMin", heatViewMin);
                 heatViewMax = json["graphics"].value("heatViewMax", heatViewMax);
                 renderDownscale = json["graphics"].value("renderDownscale", renderDownscale);
-                backgroundColor = GetColor(json["graphics"].value("backgroundColor", (unsigned int)ColorToInt(backgroundColor)));
+                backgroundColor = GetColor(json["graphics"].value("backgroundColor",
+                    (unsigned int)ColorToInt(backgroundColor)));
                 shadowColor = GetColor(json["graphics"].value("shadowColor", (unsigned int)ColorToInt(shadowColor)));
             }
         }
@@ -86,6 +87,6 @@ namespace settings {
 
         bool fullScreen = false;
     };
-}
+} // namespace settings
 
-#endif
+#endif // INTERFACE_SETTINGS_DATA_GRAPHICSSETTINGSDATA_H_

@@ -1,5 +1,5 @@
-#ifndef GUI_STYLES_H
-#define GUI_STYLES_H
+#ifndef INTERFACE_GUI_STYLES_H_
+#define INTERFACE_GUI_STYLES_H_
 
 #include "raylib.h"
 
@@ -19,6 +19,6 @@ namespace styles {
     extern const Color SCROLL_TRACK_COLOR;
     extern const Color SCROLL_THUMB_COLOR;
     extern const Color SLIDER_DEFAULT_BG_COLOR;
-}
+} // namespace styles
 
-#endif
+#endif // INTERFACE_GUI_STYLES_H_

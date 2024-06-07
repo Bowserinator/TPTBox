@@ -1,5 +1,5 @@
-#ifndef SIMULATION_GOL_H
-#define SIMULATION_GOL_H
+#ifndef SIMULATION_GOL_H_
+#define SIMULATION_GOL_H_
 
 #include "stdint.h"
 #include "SimulationDef.h"
@@ -57,4 +57,4 @@ private:
     unsigned int golProgram;
 };
 
-#endif
+#endif // SIMULATION_GOL_H_

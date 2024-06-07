@@ -1,5 +1,5 @@
-#ifndef GUI_BUTTON_H
-#define GUI_BUTTON_H
+#ifndef INTERFACE_GUI_COMPONENTS_ABSTRACT_BUTTON_H_
+#define INTERFACE_GUI_COMPONENTS_ABSTRACT_BUTTON_H_
 
 #include "raylib.h"
 #include "InteractiveComponent.h"
@@ -15,21 +15,21 @@ namespace ui {
         virtual ~Button() = default;
 
         void draw(const Vector2 &screenPos) override;
-		void onMouseEnter(Vector2 localPos) override {
+        void onMouseEnter(Vector2 localPos) override {
             InteractiveComponent::onMouseEnter(localPos);
-            if (!disabled) enterCallback();
+            if (!m_disabled) m_enter_callback();
         }
-		void onMouseClick(Vector2 localPos, unsigned button) override {
+        void onMouseClick(Vector2 localPos, unsigned button) override {
             InteractiveComponent::onMouseClick(localPos, button);
-            if (!disabled) clickCallback(button);
+            if (!m_disabled) m_click_callback(button);
         }
 
-        Button * setClickCallback(const std::function<void (unsigned int)> &f) { clickCallback = f; return this; }
-        Button * setEnterCallback(const std::function<void ()> &f) { enterCallback = f; return this; }
+        Button * setClickCallback(const std::function<void (unsigned int)> &f) { m_click_callback = f; return this; }
+        Button * setEnterCallback(const std::function<void ()> &f) { m_enter_callback = f; return this; }
     protected:
-        std::function<void (unsigned int)> clickCallback = [](unsigned int){};
-        std::function<void ()> enterCallback = [](){};
+        std::function<void (unsigned int)> m_click_callback = [](unsigned int){};
+        std::function<void ()> m_enter_callback = [](){};
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_ABSTRACT_BUTTON_H_

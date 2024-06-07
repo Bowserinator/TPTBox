@@ -1,12 +1,16 @@
-#ifndef BRUSH_H
-#define BRUSH_H
+#ifndef INTERFACE_BRUSH_BRUSH_H_
+#define INTERFACE_BRUSH_BRUSH_H_
 
 #include "raylib.h"
 #include "../../util/vector_op.h"
 #include "../../simulation/Simulation.h"
+#include "../hud/abstract/IMiddleTooltip.h"
 
 #include "Brushes.h"
 #include "BrushMesher.h"
+
+#include <algorithm>
+#include <string>
 
 constexpr unsigned int MAX_BRUSH_SIZE = std::max(std::max(2 * XRES, 2 * YRES), 2 * ZRES);
 constexpr float MIN_BRUSH_REMESH_DELAY_SECONDS = 0.03;
@@ -15,7 +19,7 @@ class Simulation;
 class RenderCamera;
 class Renderer;
 
-class BrushRenderer {
+class BrushRenderer : public IMiddleTooltip {
 public:
     BrushRenderer(Simulation * sim, RenderCamera * camera):
         offset(0),
@@ -23,9 +27,7 @@ public:
         x(-1), y(-1), z(-1),
         selected_element(1),
         sim(sim), camera(camera) {}
-    BrushRenderer(BrushRenderer &other) = delete;
-
-    std::string tooltip_to_display = "";
+    BrushRenderer(const BrushRenderer &other) = delete;
 
     void draw(Renderer * renderer);
     void update();
@@ -39,6 +41,7 @@ public:
     Vector3T<int> get_brush_pos() const { return Vector3T<int>{ bx, by, bz }; };
     int get_offset() const { return offset; }
     unsigned int get_size() const { return size; }
+
 private:
     int offset;
     unsigned int size;
@@ -69,4 +72,4 @@ private:
     void update_offset();
 };
 
-#endif
+#endif // INTERFACE_BRUSH_BRUSH_H_

@@ -1,9 +1,9 @@
-#ifndef UTIL_COLOR_H
-#define UTIL_COLOR_H
+#ifndef GRAPHICS_COLOR_H_
+#define GRAPHICS_COLOR_H_
 
 #include <iostream>
 #include <format>
-#include "stdint.h"
+#include <stdint.h>
 #include "raylib.h"
 
 class RGBA {
@@ -64,4 +64,4 @@ inline std::ostream& operator<<(std::ostream& os, const RGBA& color) {
     return os;
 }
 
-#endif
+#endif // GRAPHICS_COLOR_H_

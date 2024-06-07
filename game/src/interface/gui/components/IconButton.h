@@ -1,5 +1,5 @@
-#ifndef GUI_ICON_BUTTON_H
-#define GUI_ICON_BUTTON_H
+#ifndef INTERFACE_GUI_COMPONENTS_ICONBUTTON_H_
+#define INTERFACE_GUI_COMPONENTS_ICONBUTTON_H_
 
 #include "raylib.h"
 #include "./abstract/Button.h"
@@ -7,6 +7,8 @@
 #include "../Style.h"
 #include "../../../util/vector_op.h"
 #include "../../IconManager.h"
+
+#include <algorithm>
 
 namespace ui {
     // Button that displays text inside
@@ -18,15 +20,15 @@ namespace ui {
             const guiIconName icon,
             const Style &style = Style::getDefault()
         ):
-            ui::Button(pos, size, style), icon(icon)
+            ui::Button(pos, size, style), m_icon(icon)
         {
             setIcon(icon);
             float minDim = std::min(size.x, size.y) - 10.0f;
-            tsize = Vector2{minDim, minDim};
+            m_tsize = Vector2{minDim, minDim};
         };
 
         void setIcon(guiIconName icon) {
-            this->icon = icon;
+            this->m_icon = icon;
         }
 
         void draw(const Vector2 &screenPos) override {
@@ -37,15 +39,15 @@ namespace ui {
                 style.borderThickness,
                 style.getBorderColor(this));
 
-            const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
-            IconManager::ref()->draw(screenPos.x + pad.x, screenPos.y + pad.y, icon,
-                style.getTextColor(this), tsize.x);
+            const Vector2 pad = style.align(size, Vector2{ 5, 5 }, m_tsize);
+            IconManager::ref()->draw(screenPos.x + pad.x, screenPos.y + pad.y, m_icon,
+                style.getTextColor(this), m_tsize.x);
         }
 
     protected:
-        guiIconName icon;
-        Vector2 tsize;
+        guiIconName m_icon;
+        Vector2 m_tsize;
     };
-}
+} // namespace ui
 
-#endif
+#endif //INTERFACE_GUI_COMPONENTS_ICONBUTTON_H_

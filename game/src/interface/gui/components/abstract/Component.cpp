@@ -30,7 +30,7 @@ void ui::Component::addToParent(ui::Component * child) {
 }
 
 void ui::Component::removeFromParent(ui::Component * child) {
-    child->shouldBeDeleted = true;
+    child->m_should_be_deleted = true;
 }
 
 void ui::Component::processDeletion() {}

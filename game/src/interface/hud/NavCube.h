@@ -1,5 +1,5 @@
-#ifndef NAV_CUBE_H
-#define NAV_CUBE_H
+#ifndef INTERFACE_HUD_NAVCUBE_H_
+#define INTERFACE_HUD_NAVCUBE_H_
 
 #include "raylib.h"
 #include "raymath.h"
@@ -10,13 +10,13 @@ class RenderCamera;
 
 class NavCube {
 public:
-    NavCube(RenderCamera * cam): cam(cam) {}
+    explicit NavCube(RenderCamera * cam): cam(cam) {}
     ~NavCube() {
         UnloadRenderTexture(target);
         for (int i = 0; i < 6; i++)
             UnloadRenderTexture(cube_faces[i]);
     }
-    
+
     void init(); // called after OpenGL instance is initialized
     void update();
     void draw();
@@ -33,4 +33,4 @@ private:
     void DrawCubeCustom();
 };
 
-#endif
+#endif // INTERFACE_HUD_NAVCUBE_H_

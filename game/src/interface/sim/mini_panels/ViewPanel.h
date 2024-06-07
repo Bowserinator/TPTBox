@@ -1,5 +1,5 @@
-#ifndef SIM_MINI_PANEL_VIEW_PANEL_H
-#define SIM_MINI_PANEL_VIEW_PANEL_H
+#ifndef INTERFACE_SIM_MINI_PANELS_VIEWPANEL_H_
+#define INTERFACE_SIM_MINI_PANELS_VIEWPANEL_H_
 
 #include "../../../simulation/SimulationDef.h"
 #include "../../gui/components/TextButton.h"
@@ -18,6 +18,7 @@ public:
     enum class AxisDropdownOptions { X = 0, Y, Z };
 
     ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * renderer);
+
 private:
     unsigned int maxCurrentCoord() const;
     void clampCoordInput(ui::TextInput * input);
@@ -44,4 +45,4 @@ private:
         * viewTypeDropdown = nullptr;
 };
 
-#endif
+#endif // INTERFACE_SIM_MINI_PANELS_VIEWPANEL_H_

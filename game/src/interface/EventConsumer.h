@@ -1,5 +1,5 @@
-#ifndef EVENT_CONSUMER_H
-#define EVENT_CONSUMER_H
+#ifndef INTERFACE_EVENTCONSUMER_H_
+#define INTERFACE_EVENTCONSUMER_H_
 
 #include "raylib.h"
 
@@ -10,7 +10,7 @@
  */
 class EventConsumer {
 public:
-    EventConsumer(EventConsumer&other) = delete;
+    EventConsumer(const EventConsumer& other) = delete;
     void operator=(const EventConsumer&) = delete;
     ~EventConsumer() = default;
 
@@ -53,6 +53,7 @@ public:
         delete single;
         single = nullptr;
     }
+
 private:
     bool keyboardEvtConsumed;
     bool gamepadEvtConsumed;
@@ -69,4 +70,4 @@ private:
         mouseEvtConsumed(false) {}
 };
 
-#endif
+#endif // INTERFACE_EVENTCONSUMER_H_

@@ -129,7 +129,7 @@ void ScreenGameplay::update() {
     EventConsumer::ref()->reset();
 
     sim_ui.update();
-    hud.update_controls(brush_renderer);
+    hud.updateControls(brush_renderer);
     brush_renderer.update();
     render_camera.update();
 

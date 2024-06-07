@@ -1,5 +1,5 @@
-#ifndef MENU_CATEGORIES_H
-#define MENU_CATEGORIES_H
+#ifndef SIMULATION_MENUCATEGORIES_H_
+#define SIMULATION_MENUCATEGORIES_H_
 
 #include "../interface/icons.h"
 
@@ -42,4 +42,4 @@ inline CategoryData CATEGORY_DATA[] = {
     { ICON_MENU_TOOLS,       "Tools" }
 };
 
-#endif
+#endif // SIMULATION_MENUCATEGORIES_H_

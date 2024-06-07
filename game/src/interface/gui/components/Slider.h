@@ -1,5 +1,5 @@
-#ifndef GUI_SLIDER_H
-#define GUI_SLIDER_H
+#ifndef INTERFACE_GUI_COMPONENTS_SLIDER_H_
+#define INTERFACE_GUI_COMPONENTS_SLIDER_H_
 
 #include "raylib.h"
 #include "./abstract/InteractiveComponent.h"
@@ -22,20 +22,20 @@ namespace ui {
         void draw(const Vector2 &screenPos) override;
 
         void onMouseMoved(Vector2 localPos) override;
-		void onMouseClick(Vector2 localPos, unsigned button) override;
+        void onMouseClick(Vector2 localPos, unsigned button) override;
         void onMouseRelease(Vector2 localPos, unsigned button) override;
 
-        float getPercent() const { return percent; }
-        void setPercent(float val) { percent = val; }
+        float percent() const { return m_percent; }
+        void setPercent(float val) { m_percent = val; }
 
-        Slider * setChangeCallback(const std::function<void (float)> &f) { changeCallback = f; return this; }
+        Slider * setChangeCallback(const std::function<void (float)> &f) { m_change_callback = f; return this; }
     protected:
-        std::function<void (float)> changeCallback = [](float){};
-        bool dragging = false;
-        float percent = 0.0;
+        std::function<void (float)> m_change_callback = [](float){};
+        bool m_dragging = false;
+        float m_percent = 0.0;
 
-        void _limitPercent() { percent = util::clamp(percent, 0.0f, 1.0f); }
+        void _limitPercent() { m_percent = util::clamp(m_percent, 0.0f, 1.0f); }
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_SLIDER_H_

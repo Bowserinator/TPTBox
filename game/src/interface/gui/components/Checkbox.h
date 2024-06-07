@@ -1,5 +1,5 @@
-#ifndef GUI_CHECKBOX_H
-#define GUI_CHECKBOX_H
+#ifndef INTERFACE_GUI_COMPONENTS_CHECKBOX_H_
+#define INTERFACE_GUI_COMPONENTS_CHECKBOX_H_
 
 #include "raylib.h"
 #include "../styles.h"
@@ -8,6 +8,7 @@
 #include "../../FontCache.h"
 
 #include <functional>
+#include <string>
 
 namespace ui {
     class Checkbox: public InteractiveComponent {
@@ -23,27 +24,30 @@ namespace ui {
             DrawRectangleLinesEx(Rectangle { screenPos.x, screenPos.y, styles::CHECKBOX_SIZE, styles::CHECKBOX_SIZE },
                 style.borderThickness,
                 style.getBorderColor(this));
-            if (_checked)
-                DrawRectangle(screenPos.x + PAD, screenPos.y + PAD, styles::CHECKBOX_SIZE - 2 * PAD, styles::CHECKBOX_SIZE - 2 * PAD,
+            if (m_checked)
+                DrawRectangle(
+                    screenPos.x + PAD, screenPos.y + PAD,
+                    styles::CHECKBOX_SIZE - 2 * PAD, styles::CHECKBOX_SIZE - 2 * PAD,
                     style.getTextColor(this));
         }
 
         void onMouseClick(Vector2 localPos, unsigned button) override {
             InteractiveComponent::onMouseClick(localPos, button);
-            if (!disabled) {
+            if (!m_disabled) {
                 toggle();
-                clickCallback(_checked);
+                m_click_callback(m_checked);
             }
         }
-    
-        bool checked() const { return _checked; }
-        void setChecked(bool checked) { _checked = checked; }
-        void toggle() { _checked = !_checked; }
 
-        Checkbox * setClickCallback(const std::function<void (bool)> &f) { clickCallback = f; return this; }
+        bool checked() const { return m_checked; }
+        void setChecked(bool checked) { m_checked = checked; }
+        void toggle() { m_checked = !m_checked; }
+
+        Checkbox * setClickCallback(const std::function<void (bool)> &f) { m_click_callback = f; return this; }
+
     protected:
-        bool _checked = false;
-        std::function<void (bool)> clickCallback = [](bool){};
+        bool m_checked = false;
+        std::function<void (bool)> m_click_callback = [](bool){};
     };
 
 
@@ -57,29 +61,30 @@ namespace ui {
             const Style &style = Style {
                 .horizontalAlign = Style::Align::Left
             }
-        ): Checkbox(pos, style, size), text(text) {
-            tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
+        ): Checkbox(pos, style, size), m_text(text) {
+            m_tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
         }
 
         void setText(const std::string &str) {
-            text = str;
-            tsize = MeasureTextEx(FontCache::ref()->main_font, text.c_str(), FONT_SIZE, FONT_SPACING);
+            m_text = str;
+            m_tsize = MeasureTextEx(FontCache::ref()->main_font, m_text.c_str(), FONT_SIZE, FONT_SPACING);
         }
 
         void draw(const Vector2 &screenPos) override {
             Checkbox::draw(screenPos);
 
-            const Vector2 pad = style.align(size, Vector2{ 5, 5 }, tsize);
+            const Vector2 pad = style.align(size, Vector2{ 5, 5 }, m_tsize);
             SetTextLineSpacing(FONT_SIZE);
-            DrawTextEx(FontCache::ref()->main_font, text.c_str(),
+            DrawTextEx(FontCache::ref()->main_font, m_text.c_str(),
                 Vector2{screenPos.x + styles::CHECKBOX_SIZE + 8 + pad.x, screenPos.y + pad.y},
                 FONT_SIZE, FONT_SPACING,
                 style.getTextColor(this));
         }
-    protected:
-        Vector2 tsize;
-        std::string text;
-    };
-}
 
-#endif
+    protected:
+        Vector2 m_tsize;
+        std::string m_text;
+    };
+} // namespace ui
+
+#endif // INTERFACE_GUI_COMPONENTS_CHECKBOX_H_

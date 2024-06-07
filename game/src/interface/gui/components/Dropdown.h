@@ -1,5 +1,5 @@
-#ifndef GUI_DROPDOWN_H
-#define GUI_DROPDOWN_H
+#ifndef INTERFACE_GUI_COMPONENTS_DROPDOWN_H_
+#define INTERFACE_GUI_COMPONENTS_DROPDOWN_H_
 
 #include "raylib.h"
 #include "../styles.h"
@@ -10,6 +10,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <utility>
 
 class DropdownModal;
 
@@ -25,23 +26,24 @@ namespace ui {
         void draw(const Vector2 &screenPos) override;
         void onMouseClick(Vector2 localPos, unsigned button) override;
 
-        int selected() const { return selectedOption; }
-    
+        int selected() const { return m_selected_option; }
+
         Dropdown * switchToOption(int option);
         Dropdown * switchToOption(const std::string &option);
         Dropdown * addOption(const std::string &name, int id);
         Dropdown * removeOption(int id);
         Dropdown * setOptions(const std::vector<std::pair<std::string, int>> &options);
 
-        Dropdown * setUpdateCallback(const std::function<void (int)> &f) { updateCallback = f; return this; }
+        Dropdown * setUpdateCallback(const std::function<void (int)> &f) { m_update_callback = f; return this; }
+
     protected:
         friend DropdownModal;
-        int selectedOption = -1;
-        std::size_t selectedOptionIndex = -1;
+        int m_selected_option = -1;
+        std::size_t m_selected_option_index = -1;
 
-        std::vector<std::pair<std::string, int>> options;
-        std::function<void (int)> updateCallback = [](int){};
+        std::vector<std::pair<std::string, int>> m_options;
+        std::function<void (int)> m_update_callback = [](int){};
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_DROPDOWN_H_

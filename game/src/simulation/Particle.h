@@ -1,5 +1,5 @@
-#ifndef PARTICLE_H
-#define PARTICLE_H
+#ifndef SIMULATION_PARTICLE_H_
+#define SIMULATION_PARTICLE_H_
 
 #include "SimulationDef.h"
 #include "../graphics/color.h"
@@ -26,7 +26,7 @@ struct Particle {
 
     Particle(): type(0), id(0) {}
     Particle(const Particle&) = delete;
-	Particle& operator=(const Particle&) = delete;
+    Particle& operator=(const Particle&) = delete;
 
     void assign_with_defaults(const Particle &def) {
         ctype = def.ctype;
@@ -38,4 +38,4 @@ struct Particle {
     }
 };
 
-#endif
+#endif // SIMULATION_PARTICLE_H_

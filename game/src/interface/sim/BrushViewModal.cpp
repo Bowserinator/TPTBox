@@ -28,5 +28,6 @@ BrushViewModal::BrushViewModal(const Vector2 &pos, const Vector2 &size, Renderer
     addChild(viewBtn);
     addChild(brushBtn);
 
-    addChild(new ViewPanel(Vector2{ 1, styles::SETTINGS_BUTTON_HEIGHT }, size - Vector2{ 2, 2 + styles::SETTINGS_BUTTON_HEIGHT }, renderer));
+    addChild(new ViewPanel(Vector2{ 1, styles::SETTINGS_BUTTON_HEIGHT },
+        size - Vector2{ 2, 2 + styles::SETTINGS_BUTTON_HEIGHT }, renderer));
 }

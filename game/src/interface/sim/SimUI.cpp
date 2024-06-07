@@ -23,6 +23,9 @@
 #include "../settings/ConfirmExitModal.h"
 #include "../settings/UISettingsModal.h"
 
+#include <string>
+#include <algorithm>
+
 const float SIDE_PANEL_WIDTH = styles::SETTINGS_BUTTON_HEIGHT;
 constexpr float MAIN_PANEL_HEIGHT = 90;
 
@@ -57,7 +60,8 @@ void SimUI::init() {
     // Bottom setting buttons
     auto getBottomIconButton = [this](int slot, guiIconName icon, const std::string &tooltip) {
         auto btn = new ui::IconButton(
-            Vector2{ GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT, GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT },
+            Vector2{ GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT,
+                GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT },
             Vector2{styles::SETTINGS_BUTTON_HEIGHT, styles::SETTINGS_BUTTON_HEIGHT},
             icon);
         btn->setEnterCallback([this, btn, tooltip]() {
@@ -70,8 +74,9 @@ void SimUI::init() {
     };
 
     addChild(getBottomIconButton(2, ICON_IMAGE_SETTINGS, "Graphics Settings")->setClickCallback([this](unsigned int) {
-        addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
-        Vector2{500, 500}, renderer));
+        addChild(new GraphicsSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250,
+            (float)GetScreenHeight() / 2 - 300},
+            Vector2{500, 500}, renderer));
     }));
     addChild(getBottomIconButton(3, ICON_SIM_SETTINGS, "Sim Settings")->setClickCallback([this](unsigned int) {
         addChild(new SimSettingsModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 300},
@@ -195,7 +200,7 @@ void SimUI::switchCategory(const MenuCategory category) {
     for (auto id = 1; id <= __GLOBAL_TOOL_COUNT; id++) {
         const auto &tool = GetTools()[id];
         if (!tool.Enabled || tool.MenuSection != category) continue;
-        
+
         ui::TextButton * btn = getElementButton(i, tool.Name, tool.Color);
         btn->setClickCallback([this, id](unsigned int) { brushRenderer->set_selected_tool(id); });
         btn->setEnterCallback([this, id]() {
@@ -246,7 +251,7 @@ void SimUI::switchCategory(const MenuCategory category) {
 
 void SimUI::update() {
     Scene::update();
-    
+
     // Update positions on resize
     if (IsWindowResized()) {
         mainPanel->pos.x = (float)GetScreenWidth() - mainPanel->size.x;

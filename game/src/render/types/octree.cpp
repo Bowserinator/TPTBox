@@ -14,7 +14,7 @@ void BitOctreeBlock::insert(uint8_t x, uint8_t y, uint8_t z) {
     uint32_t morton = util::morton_decode8(x, y, z);
     unsigned int bit_idx = morton & 0b111; // % 8
     morton >>= 3; // Move to the layer of 2x2x2 cubes
-    
+
     // Layer OCTREE_BLOCK_DEPTH = 1x1x1 voxels
     // We start at the layer above (2x2x2) and write the bit to signify which
     // subvoxel (starting at size 1x1x1) is set, then go up to level 0 (the 64x64x64 block)

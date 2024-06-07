@@ -1,5 +1,5 @@
-#ifndef RENDER_CAMERA_H
-#define RENDER_CAMERA_H
+#ifndef RENDER_CAMERA_CAMERA_H_
+#define RENDER_CAMERA_CAMERA_H_
 
 #include "raylib.h"
 #include "raymath.h"
@@ -108,6 +108,7 @@ public:
 
     /** Return if first person locked */
     bool isLocked() const { return _first_person_locked; }
+
 private:
     bool _viewProjMatrixUpdated;
     bool _isLerping;
@@ -132,4 +133,4 @@ private:
     void updateLerp();
 };
 
-#endif
+#endif // RENDER_CAMERA_CAMERA_H_

@@ -1,6 +1,6 @@
 // Defines the PT_XXXX values
-#ifndef ELEMENT_CLASSES_H
-#define ELEMENT_CLASSES_H
+#ifndef SIMULATION_ELEMENTCLASSES_H_
+#define SIMULATION_ELEMENTCLASSES_H_
 
 #include <array>
 
@@ -14,4 +14,4 @@
 
 std::array<Element, PT_NUM> const &GetElements();
 
-#endif
+#endif // SIMULATION_ELEMENTCLASSES_H_

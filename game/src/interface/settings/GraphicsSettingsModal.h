@@ -1,5 +1,5 @@
-#ifndef GRAPHICS_SETTING_MODAL_H
-#define GRAPHICS_SETTING_MODAL_H
+#ifndef INTERFACE_SETTINGS_GRAPHICSSETTINGSMODAL_H_
+#define INTERFACE_SETTINGS_GRAPHICSSETTINGSMODAL_H_
 
 #include "../gui/components/Window.h"
 #include "../gui/components/Checkbox.h"
@@ -13,10 +13,11 @@ class Renderer;
 class GraphicsSettingsModal : public ui::Window {
 public:
     GraphicsSettingsModal(const Vector2 &pos, const Vector2 &size, Renderer * renderer);
+
 private:
     Renderer * renderer = nullptr;
 
-    ui::LabeledCheckbox 
+    ui::LabeledCheckbox
         * showOctreeCheckbox,
         * enableOutlineCheckbox,
         * enableBlurCheckbox,
@@ -39,4 +40,4 @@ private:
         * shadowColorPicker;
 };
 
-#endif
+#endif // INTERFACE_SETTINGS_GRAPHICSSETTINGSMODAL_H_

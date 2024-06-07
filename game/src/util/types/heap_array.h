@@ -1,9 +1,10 @@
-#ifndef UTIL_HEAP_ARRAY_H
-#define UTIL_HEAP_ARRAY_H
+#ifndef UTIL_TYPES_HEAP_ARRAY_H_
+#define UTIL_TYPES_HEAP_ARRAY_H_
 
 #include <cstddef>
 #include <stdexcept>
 #include <algorithm>
+#include <utility>
 
 namespace util {
     /**
@@ -62,7 +63,7 @@ namespace util {
 
         std::size_t size() const noexcept { return _size; }
         bool empty() const noexcept { return _size == 0; }
-        
+
         void fill(const T& value) {
             std::fill(&_data[0], &_data[N], value);
         }
@@ -71,6 +72,7 @@ namespace util {
             std::swap(other._data, _data);
             std::swap(other._size, _size);
         }
+
     private:
         T * _data;
         std::size_t _size;
@@ -83,4 +85,4 @@ namespace util {
     };
 }
 
-#endif
+#endif // UTIL_TYPES_HEAP_ARRAY_H_

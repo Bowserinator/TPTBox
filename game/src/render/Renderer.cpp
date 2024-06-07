@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cstring>
+#include <algorithm>
 
 // Custom cube mesh generation:
 // a) shows only inside faces
@@ -115,7 +116,7 @@ void Renderer::_generate_render_textures() {
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     // Prevent blur from wrapping around
-    for (unsigned int texId : std::array<unsigned int, 5>({ 
+    for (unsigned int texId : std::array<unsigned int, 5>({
         blur_tmp_tex.texture.id,
         blur1_tex.texture.id,
         blur2_tex.texture.id,
@@ -181,9 +182,11 @@ void Renderer::init() {
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
 
     // SSBOs for color & octree LOD data
-    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t), util::PBFlags::WRITE);
-    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint8_t), util::PBFlags::WRITE);
-    lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER, 
+    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
+        XRES * YRES * ZRES * sizeof(uint32_t), util::PBFlags::WRITE);
+    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
+        XRES * YRES * ZRES * sizeof(uint8_t), util::PBFlags::WRITE);
+    lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
                 sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
                 * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, util::PBFlags::WRITE);
 
@@ -193,7 +196,8 @@ void Renderer::init() {
         glBindTexture(GL_TEXTURE_3D, ao_tex[i]);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS,
+            0, GL_RED, GL_UNSIGNED_BYTE, NULL);
     }
 
     // Shadow texture
@@ -315,7 +319,7 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("DEBUG_MODE", (FragDebugMode)settings->renderMode);
     settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
     settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);
-    
+
     float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
     float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
     float VIEW_SLICE_BEGIN[] = { settings->viewSliceBegin.x, settings->viewSliceBegin.y, settings->viewSliceBegin.z };
@@ -387,12 +391,14 @@ void Renderer::update_colors_and_lod() {
         #pragma omp simd
         for (std::size_t i = 0; i < sim->graphics.ao_blocks.size(); i++)
             ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
-        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE, ao_data);
+        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS,
+            GL_RED, GL_UNSIGNED_BYTE, ao_data);
     }
 
     if (do_shadows) {
         glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED,
+            GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
     }
 
     if (sim->graphics.display_mode != cached_display_mode) {
@@ -489,7 +495,7 @@ void Renderer::draw() {
     glClearColor(0, 0, 0, 0);
     rlEnableFramebuffer(base_tex.frameBuffer);
     if (isPersistentDisplay && !displayModeChanged) {
-        glClear(GL_DEPTH_BUFFER_BIT);  
+        glClear(GL_DEPTH_BUFFER_BIT);
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, 3});
     } else
         rlClearScreenBuffers();

@@ -1,5 +1,5 @@
-#ifndef RENDER_CONSTANTS_H
-#define RENDER_CONSTANTS_H
+#ifndef RENDER_CONSTANTS_H_
+#define RENDER_CONSTANTS_H_
 
 #define EMBED_SHADERS
 
@@ -26,4 +26,4 @@ constexpr float CAMERA_ZOOM_SPEED = 6.0f;
 constexpr float CAMERA_MOUSE_ROTATION_SPEED = 0.002f;
 constexpr float CAMERA_MOUSE_ZOOM_SPEED = 12.0f;
 
-#endif
+#endif // RENDER_CONSTANTS_H_

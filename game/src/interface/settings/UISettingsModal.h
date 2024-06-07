@@ -1,5 +1,5 @@
-#ifndef UI_SETTING_MODAL_H
-#define UI_SETTING_MODAL_H
+#ifndef INTERFACE_SETTINGS_UISETTINGSMODAL_H_
+#define INTERFACE_SETTINGS_UISETTINGSMODAL_H_
 
 #include "../gui/components/Window.h"
 #include "../gui/components/Checkbox.h"
@@ -23,4 +23,4 @@ private:
     ui::Slider * mouseSensitivitySlider;
 };
 
-#endif
+#endif // INTERFACE_SETTINGS_UISETTINGSMODAL_H_

@@ -1,11 +1,12 @@
-#ifndef UTIL_PERSISTENT_BUFFER_H
-#define UTIL_PERSISTENT_BUFFER_H
+#ifndef UTIL_TYPES_PERSISTENT_BUFFER_H_
+#define UTIL_TYPES_PERSISTENT_BUFFER_H_
 
 #include <glad.h>
 #include "rlgl.h"
 #include <cstddef>
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 namespace util {
     enum class PBFlags { NONE, READ, WRITE, READ_AND_WRITE, WRITE_ALT_READ, READ_ALT_WRITE };
@@ -57,6 +58,7 @@ namespace util {
         GLenum getTarget() const { return target; }
 
         void ** ptrs = nullptr;
+
     private:
         GLenum target;
         GLsync * syncObjs = nullptr;
@@ -65,7 +67,6 @@ namespace util {
         unsigned int cycle = 0;
     };
 
-    
     template <std::size_t bufferCount>
     PersistentBuffer<bufferCount>::PersistentBuffer(GLenum target, GLsizeiptr size, PBFlags flag):
         target(target), _size(size)
@@ -150,4 +151,4 @@ namespace util {
     }
 }
 
-#endif
+#endif // UTIL_TYPES_PERSISTENT_BUFFER_H_

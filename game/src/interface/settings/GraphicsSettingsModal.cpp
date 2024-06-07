@@ -12,6 +12,8 @@
 #include "../../util/str_format.h"
 #include "data/SettingsData.h"
 
+#include <string>
+
 using namespace ui;
 
 GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &size, Renderer * renderer):
@@ -39,26 +41,26 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             settings->enableAO = enableAOCheckbox->checked();
             settings->enableShadows = enableShadowsCheckbox->checked();
 
-            settings->aoStrength = aoStrengthSlider->getPercent();
-            settings->shadowStrength = shadowStrengthSlider->getPercent();
+            settings->aoStrength = aoStrengthSlider->percent();
+            settings->shadowStrength = shadowStrengthSlider->percent();
 
             settings->fullScreen = fullscreenCheckbox->checked();
             if (heatMinTextInput->isInputValid())
-                settings->heatViewMin = util::temp_string_to_kelvin(heatMinTextInput->getValue()).value();
+                settings->heatViewMin = util::temp_string_to_kelvin(heatMinTextInput->value()).value();
             if (heatMaxTextInput->isInputValid())
-                settings->heatViewMax = util::temp_string_to_kelvin(heatMaxTextInput->getValue()).value();
+                settings->heatViewMax = util::temp_string_to_kelvin(heatMaxTextInput->value()).value();
             if (renderDownscaleTextInput->isInputValid())
-                settings->renderDownscale = std::stof(renderDownscaleTextInput->getValue());
+                settings->renderDownscale = std::stof(renderDownscaleTextInput->value());
 
-            settings->backgroundColor = bgColorPicker->getValue();
-            settings->shadowColor = shadowColorPicker->getValue();
+            settings->backgroundColor = bgColorPicker->value();
+            settings->shadowColor = shadowColorPicker->value();
 
             this->renderer->update_settings(settings);
             settings::data::ref()->save_settings_to_file();
             tryClose(ui::Window::CloseReason::BUTTON);
         }));
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, 10.0f },
         Vector2{ size.x, 20.0f },
         "Settings will apply once you hit \"OK\"",
@@ -80,8 +82,8 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         ->addOption("Debug: ambient occlusion", (int)Renderer::FragDebugMode::DEBUG_AO)
         ->switchToOption(0);
 
-    panel->addChild(renderModeDropdown);
-    panel->addChild(new Label(
+    m_panel->addChild(renderModeDropdown);
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Renderer mode"
@@ -89,18 +91,18 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
 
     // Helpers
     auto addWarningLabel = [this, &size](const float Y, const Color &c, const char * s) {
-        panel->addChild(new Label(Vector2{ 0, Y }, Vector2 {size.x - 20.0f, styles::CHECKBOX_SIZE},
+        m_panel->addChild(new Label(Vector2{ 0, Y }, Vector2 {size.x - 20.0f, styles::CHECKBOX_SIZE},
             s, ui::Style{ .horizontalAlign = ui::Style::Align::Right, .textColor = c }));
     };
     auto createCheckboxAndAdd = [this, &size](const float Y, const char * s) {
         LabeledCheckbox * ptr = new LabeledCheckbox(Vector2{ 20, Y }, Vector2{ size.x, styles::CHECKBOX_SIZE }, s);
-        panel->addChild(ptr);
+        m_panel->addChild(ptr);
         return ptr;
     };
 
     showOctreeCheckbox = createCheckboxAndAdd(Y + 1.5f * spacing, "Show octree (may be slow)");
     enableOutlineCheckbox = createCheckboxAndAdd(Y + 2.5f * spacing, "Show voxel outlines");
-    panel->addChild(new HR(Vector2{ 0, Y + 3.7f * spacing}, Vector2{ size.x, 0 }));
+    m_panel->addChild(new HR(Vector2{ 0, Y + 3.7f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 120.0f + spacing;
     addWarningLabel(Y + 0 * spacing, YELLOW, "Medium Impact");
@@ -118,29 +120,33 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     enableTransparencyCheckbox = createCheckboxAndAdd(Y + 4 * spacing, "Enable transparency");
     enableReflectionsCheckbox  = createCheckboxAndAdd(Y + 5 * spacing, "Enable reflections");
     enableRefractionsCheckbox  = createCheckboxAndAdd(Y + 6 * spacing, "Enable refractions");
-    panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
+    m_panel->addChild(new HR(Vector2{ 0, Y + 7.3f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 320.0f + spacing;
     aoStrengthSlider     = new Slider(Vector2{ size.x / 2, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
     shadowStrengthSlider = new Slider(Vector2{ size.x / 2, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 });
-    panel->addChild(new Label(Vector2{ 20.0f, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "AO Strength"));
-    panel->addChild(new Label(Vector2{ 20.0f, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "Shadow Strength"));
+    m_panel->addChild(new Label(Vector2{ 20.0f, Y + 0 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "AO Strength"));
+    m_panel->addChild(new Label(Vector2{ 20.0f, Y + 1 * spacing }, Vector2{ size.x / 2 - 20.0f, 30 }, "Shadow Strength"));
 
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { aoStrengthSlider->setPercent(settings::Graphics::defaultAOStrength); }));
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { shadowStrengthSlider->setPercent(settings::Graphics::defaultShadowStrength); }));
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            aoStrengthSlider->setPercent(settings::Graphics::defaultAOStrength); }));
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            shadowStrengthSlider->setPercent(settings::Graphics::defaultShadowStrength); }));
 
-    panel->addChild(aoStrengthSlider);
-    panel->addChild(shadowStrengthSlider);
-    panel->addChild(new HR(Vector2{ 0, Y + 2.5f * spacing}, Vector2{ size.x, 0 }));
+    m_panel->addChild(aoStrengthSlider);
+    m_panel->addChild(shadowStrengthSlider);
+    m_panel->addChild(new HR(Vector2{ 0, Y + 2.5f * spacing}, Vector2{ size.x, 0 }));
 
     Y = 400.0f + spacing;
     fullscreenCheckbox = createCheckboxAndAdd(Y, "Fullscreen");
 
     // Temperature
     Y = 450.0f + spacing;
-    panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
+    m_panel->addChild(new HR(Vector2{ 0, Y - 0.5f * spacing }, Vector2{ size.x, 0 }));
 
     auto validate_temp = [](const std::string &s) -> bool {
         auto val = util::temp_string_to_kelvin(s);
@@ -157,7 +163,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             s == "F" || s == "f";
     };
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 0 * 1.25f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Heat view min (K)"
@@ -169,9 +175,9 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             ->setMaxLength(16)->setPlaceholder("0.0")
             ->setInputAllowed(temp_input_allowed)
             ->setInputValidation(validate_temp);
-    panel->addChild(heatMinTextInput);
+    m_panel->addChild(heatMinTextInput);
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 1 * 1.25f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Heat view max (K)"
@@ -183,12 +189,16 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             ->setMaxLength(16)->setPlaceholder(std::format("{:.2f}K", settings::Graphics::defaultHeatViewMax))
             ->setInputAllowed(temp_input_allowed)
             ->setInputValidation(validate_temp);
-    panel->addChild(heatMaxTextInput);
+    m_panel->addChild(heatMaxTextInput);
 
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { heatMinTextInput->setValue(std::format("{:.2f}K", MIN_TEMP)); }));
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { heatMaxTextInput->setValue(std::format("{:.2f}K", settings::Graphics::defaultHeatViewMax)); }));
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 0 * 1.25f * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            heatMinTextInput->setValue(std::format("{:.2f}K", MIN_TEMP)); }));
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 1 * 1.25f * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            heatMaxTextInput->setValue(std::format("{:.2f}K", settings::Graphics::defaultHeatViewMax)); }));
 
     // Render downscale
     auto validate_downscale = [](const std::string &s) -> bool {
@@ -197,12 +207,12 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
         return 1.0f <= val && val <= 5.0f;
     };
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 2 * 1.25f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Render downscale"
     ));
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + spacing + 2.15f * 1.25f * spacing },
         Vector2{ size.x, styles::DROPDOWN_SIZE.y },
         "Higher number = lower resolution (1-5x)",
@@ -215,9 +225,11 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
             ->setMaxLength(4)->setPlaceholder("1.5")
             ->setInputAllowed(float_input_allowed)
             ->setInputValidation(validate_downscale);
-    panel->addChild(renderDownscaleTextInput);
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { renderDownscaleTextInput->setValue(std::format("{:.1f}", settings::Graphics::defaultRenderDownscale)); }));
+    m_panel->addChild(renderDownscaleTextInput);
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 2 * 1.25f * spacing },
+    Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            renderDownscaleTextInput->setValue(std::format("{:.1f}", settings::Graphics::defaultRenderDownscale)); }));
 
     heatMinTextInput->nextTabInput = heatMaxTextInput;
     heatMaxTextInput->nextTabInput = renderDownscaleTextInput;
@@ -225,7 +237,7 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     heatMaxTextInput->prevTabInput = heatMinTextInput;
 
     // Color pickers
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 4 * 1.25f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Background Color"
@@ -233,11 +245,13 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     bgColorPicker = new ColorPicker(
             Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 4 * 1.25f * spacing },
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y });
-    panel->addChild(bgColorPicker->noAlpha());
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 4 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { bgColorPicker->setValue(settings::Graphics::defaultBackgroundColor); }));
+    m_panel->addChild(bgColorPicker->noAlpha());
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 4 * 1.25f * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            bgColorPicker->setValue(settings::Graphics::defaultBackgroundColor); }));
 
-    panel->addChild(new Label(
+    m_panel->addChild(new Label(
         Vector2{ 20.0f, Y + 5 * 1.25f * spacing },
         Vector2{ size.x - styles::DROPDOWN_SIZE.x, styles::DROPDOWN_SIZE.y },
         "Shadow Color"
@@ -245,9 +259,11 @@ GraphicsSettingsModal::GraphicsSettingsModal(const Vector2 &pos, const Vector2 &
     shadowColorPicker = new ColorPicker(
             Vector2{ size.x - styles::DROPDOWN_SIZE.x * 0.75f - 20.0f, Y + 5 * 1.25f * spacing },
             Vector2{ styles::DROPDOWN_SIZE.x * 0.75f, styles::DROPDOWN_SIZE.y });
-    panel->addChild(shadowColorPicker->noAlpha());
-    panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 5 * 1.25f * spacing }, Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
-        ->setClickCallback([this](unsigned int) { shadowColorPicker->setValue(settings::Graphics::defaultShadowColor); }));
+    m_panel->addChild(shadowColorPicker->noAlpha());
+    m_panel->addChild((new IconButton(Vector2{ size.x / 2 - 30.0f, Y + 5 * 1.25f * spacing },
+        Vector2{ 30.0f, 30 }, ICON_UNDO_FILL))
+        ->setClickCallback([this](unsigned int) {
+            shadowColorPicker->setValue(settings::Graphics::defaultShadowColor); }));
 
     // Update values from settings
     renderModeDropdown->switchToOption((int)settings->renderMode);

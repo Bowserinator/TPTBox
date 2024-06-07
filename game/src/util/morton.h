@@ -1,5 +1,5 @@
-#ifndef UTIL_MORTON_H
-#define UTIL_MORTON_H
+#ifndef UTIL_MORTON_H_
+#define UTIL_MORTON_H_
 
 #include "stdint.h"
 
@@ -30,4 +30,4 @@ namespace util {
     }
 }
 
-#endif
+#endif // UTIL_MORTON_H_

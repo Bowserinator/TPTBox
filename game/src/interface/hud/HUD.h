@@ -1,5 +1,5 @@
-#ifndef HUD_H
-#define HUD_H
+#ifndef INTERFACE_HUD_HUD_H_
+#define INTERFACE_HUD_HUD_H_
 
 #include "raylib.h"
 #include "NavCube.h"
@@ -44,12 +44,13 @@ private:
     char tooltip[MAX_TOOLTIP_LENGTH];
     double tooltip_opacity = 0.0f;
 
-    float avg_fps() const {
+    float avgFPS() const {
         return std::accumulate(fps_avg, fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
-    float avg_sim_fps() const {
+    float avgSimFPS() const {
         return std::accumulate(sim_fps_avg, sim_fps_avg + FPS_AVG_WINDOW_SIZE, 0.0f) / FPS_AVG_WINDOW_SIZE;
     }
+
 public:
     HUD(Simulation * sim, RenderCamera * cam, Renderer * renderer):
         sim(sim), cam(cam), renderer(renderer), cube(cam), state(HUDState::NORMAL) {}
@@ -59,9 +60,9 @@ public:
     void displayTooltip(const char * text);
 
     void init(); // called after OpenGL instance is initialized
-    void update_controls(const BrushRenderer &brush_renderer);
+    void updateControls(const BrushRenderer &brush_renderer);
     void draw(const HUDData &data);
     void setState(HUDState state) { this->state = state; }
 };
 
-#endif
+#endif // INTERFACE_HUD_HUD_H_

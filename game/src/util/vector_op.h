@@ -1,5 +1,5 @@
-#ifndef OPERATORS_H
-#define OPERATORS_H
+#ifndef UTIL_VECTOR_OP_H_
+#define UTIL_VECTOR_OP_H_
 
 // Adds operator overloads to raylib vectors
 
@@ -283,4 +283,4 @@ template <class T> inline Vector3T<T> operator-(Vector3T<T> in) {
     return -1.0f * in;
 }
 
-#endif
+#endif // UTIL_VECTOR_OP_H_

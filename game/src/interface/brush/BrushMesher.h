@@ -1,5 +1,5 @@
-#ifndef BRUSH_MESHER_H
-#define BRUSH_MESHER_H
+#ifndef INTERFACE_BRUSH_BRUSHMESHER_H_
+#define INTERFACE_BRUSH_BRUSHMESHER_H_
 
 #include "raylib.h"
 #include "../../util/vector_op.h"
@@ -42,4 +42,4 @@ struct BrushFaceModels {
     void unload();
 };
 
-#endif
+#endif // INTERFACE_BRUSH_BRUSHMESHER_H_

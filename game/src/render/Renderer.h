@@ -1,5 +1,5 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef RENDER_RENDERER_H_
+#define RENDER_RENDERER_H_
 
 #include "raylib.h"
 #include "rlgl.h"
@@ -39,6 +39,7 @@ public:
         DEBUG_NORMALS = 2,
         DEBUG_AO = 3
     };
+
 private:
     Simulation * sim;
     RenderCamera * cam;
@@ -125,4 +126,4 @@ private:
     void _blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex);
 };
 
-#endif
+#endif // RENDER_RENDERER_H_

@@ -16,4 +16,4 @@ namespace styles {
     constexpr Color SCROLL_TRACK_COLOR{ 60, 60, 60, 255 };
     constexpr Color SCROLL_THUMB_COLOR = WHITE;
     constexpr Color SLIDER_DEFAULT_BG_COLOR = WHITE;
-}
+} // namespace styles

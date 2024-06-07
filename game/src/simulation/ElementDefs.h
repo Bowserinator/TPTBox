@@ -1,5 +1,5 @@
-#ifndef ELEMENT_DEFS_H
-#define ELEMENT_DEFS_H
+#ifndef SIMULATION_ELEMENTDEFS_H_
+#define SIMULATION_ELEMENTDEFS_H_
 
 #include "stdint.h"
 #include "../graphics/color.h"
@@ -22,4 +22,4 @@ namespace ElementProperties {
 #define ON_CREATE_FUNC_ARGS Simulation &sim, part_id i, coord_t x, coord_t y, coord_t z, part_type type, const PartCreateMode mode
 #define ON_CHANGE_TYPE_FUNC_ARGS Simulation &sim, part_id i, coord_t x, coord_t y, coord_t z, part_type oldType, part_type newType
 
-#endif
+#endif // SIMULATION_ELEMENTDEFS_H_

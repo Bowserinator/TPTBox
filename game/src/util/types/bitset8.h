@@ -1,5 +1,5 @@
-#ifndef UTIL_BITSET8
-#define UTIL_BITSET8
+#ifndef UTIL_TYPES_BITSET8_H_
+#define UTIL_TYPES_BITSET8_H_
 
 #include "stdint.h"
 #include <cstddef>
@@ -74,10 +74,11 @@ public:
     bool none() const noexcept { return data == 0; }
 
     constexpr std::size_t size() const { return 8; }
+
 private:
     uint8_t data;
 };
 
 }
 
-#endif
+#endif // UTIL_TYPES_BITSET8_H_

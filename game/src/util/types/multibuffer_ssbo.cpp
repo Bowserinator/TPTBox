@@ -1,5 +1,7 @@
 #include "multibuffer_ssbo.h"
 
+#include <utility>
+
 using namespace util;
 
 MultibufferSSBO::MultibufferSSBO(const std::size_t ssboCount, const std::size_t bufferSize, int usage):

@@ -1,5 +1,5 @@
-#ifndef FRAMETIMEAVG_H
-#define FRAMETIMEAVG_H
+#ifndef INTERFACE_FRAMETIMEAVG_H_
+#define INTERFACE_FRAMETIMEAVG_H_
 
 #include <numeric>
 #include "raylib.h"
@@ -11,7 +11,7 @@ constexpr unsigned int TARGET_FPS = 300;
 // and other animations (so they can be framerate-independent-ish)
 class FrameTime {
 public:
-    FrameTime(FrameTime& other) = delete;
+    FrameTime(const FrameTime& other) = delete;
     void operator=(const FrameTime&) = delete;
     ~FrameTime() = default;
 
@@ -19,7 +19,8 @@ public:
         const float thisDelta = GetTime() - _lastTime;
         _deltaSamples[_deltaSampleIdx] = thisDelta;
         _deltaSampleIdx = (_deltaSampleIdx + 1) % DELTA_SAMPLES_FOR_AVG;
-        deltaAvg = std::accumulate(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
+        deltaAvg = std::accumulate(&_deltaSamples[0],
+            &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f) / DELTA_SAMPLES_FOR_AVG;
         _lastTime = GetTime();
     }
 
@@ -30,6 +31,7 @@ public:
             single = new FrameTime;
         return single;
     };
+
 private:
     float _deltaSamples[DELTA_SAMPLES_FOR_AVG];
     int _deltaSampleIdx;
@@ -43,4 +45,4 @@ private:
     }
 };
 
-#endif
+#endif // INTERFACE_FRAMETIMEAVG_H_

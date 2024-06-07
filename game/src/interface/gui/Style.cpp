@@ -5,23 +5,23 @@
 using namespace ui;
 
 Color Style::getBackgroundColor(Component * c) const {
-    if (c->getDisabled()) return disabledBackgroundColor;
-    if (c->getHovered()) return hoverBackgroundColor;
-    if (c->getFocused()) return focusBackgroundColor;
+    if (c->disabled()) return disabledBackgroundColor;
+    if (c->hovered()) return hoverBackgroundColor;
+    if (c->focused()) return focusBackgroundColor;
     return backgroundColor;
 }
 
 Color Style::getTextColor(Component * c) const {
-    if (c->getDisabled()) return disabledTextColor;
-    if (c->getHovered()) return hoverTextColor;
-    if (c->getFocused()) return focusTextColor;
+    if (c->disabled()) return disabledTextColor;
+    if (c->hovered()) return hoverTextColor;
+    if (c->focused()) return focusTextColor;
     return textColor;
 }
 
 Color Style::getBorderColor(Component * c) const {
-    if (c->getDisabled()) return disabledBorderColor;
-    if (c->getHovered()) return hoverBorderColor;
-    if (c->getFocused()) return focusBorderColor;
+    if (c->disabled()) return disabledBorderColor;
+    if (c->hovered()) return hoverBorderColor;
+    if (c->focused()) return focusBorderColor;
     return borderColor;
 }
 

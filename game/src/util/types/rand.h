@@ -1,7 +1,5 @@
-// Taken from The Powder Toy
-// GPL-3 LICENSED
-#ifndef UTIL_RAND_H
-#define UTIL_RAND_H
+#ifndef UTIL_TYPES_RAND_H_
+#define UTIL_TYPES_RAND_H_
 
 #include "raylib.h"
 
@@ -10,21 +8,21 @@
 
 class RNG {
 public:
-	using State = std::array<__uint128_t, 1>;
+    using State = std::array<__uint128_t, 1>;
 
 private:
-	State s;
-	uint64_t next();
+    State s;
+    uint64_t next();
 
 public:
     // Same as gen()
-	unsigned int operator()();
+    unsigned int operator()();
 
     /**
      * @brief Generate random uint
      * @return unsigned int 
      */
-	unsigned int gen();
+    unsigned int gen();
 
     /**
      * @brief Generate random int
@@ -39,7 +37,7 @@ public:
      * @param upper 
      * @return int 
      */
-	int between(int lower, int upper);
+    int between(int lower, int upper);
 
     /**
      * @brief Return true if rand01() < numerator / denom
@@ -48,13 +46,13 @@ public:
      * @param denominator
      * @return bool
      */
-	bool chance(int numerator, unsigned int denominator);
+    bool chance(int numerator, unsigned int denominator);
 
     /**
      * @brief Random float between 0 and 1
      * @return float 
      */
-	float uniform01();
+    float uniform01();
 
     /**
      * @brief Return random float between two values inclusive
@@ -80,16 +78,16 @@ public:
      */
     Vector3 rand_norm_vector();
 
-	RNG();
-	void seed(unsigned int sd);
+    RNG();
+    void seed(unsigned int sd);
 
-	void state(State ns) {
-		s = ns;
-	}
+    void state(State ns) {
+        s = ns;
+    }
 
-	State state() const {
-		return s;
-	}
+    State state() const {
+        return s;
+    }
 };
 
-#endif
+#endif // UTIL_TYPES_RAND_H_

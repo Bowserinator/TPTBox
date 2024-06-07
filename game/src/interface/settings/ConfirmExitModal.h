@@ -1,5 +1,5 @@
-#ifndef CONFIRM_EXIT_MODAL_H
-#define CONFIRM_EXIT_MODAL_H
+#ifndef INTERFACE_SETTINGS_CONFIRMEXITMODAL_H_
+#define INTERFACE_SETTINGS_CONFIRMEXITMODAL_H_
 
 #include "../gui/components/Window.h"
 
@@ -8,4 +8,4 @@ public:
     ConfirmExitModal(const Vector2 &pos, const Vector2 &size);
 };
 
-#endif
+#endif // INTERFACE_SETTINGS_CONFIRMEXITMODAL_H_

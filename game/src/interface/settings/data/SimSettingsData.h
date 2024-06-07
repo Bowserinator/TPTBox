@@ -1,5 +1,5 @@
-#ifndef SIM_SETTING_DATA_H
-#define SIM_SETTING_DATA_H
+#ifndef INTERFACE_SETTINGS_DATA_SIMSETTINGSDATA_H_
+#define INTERFACE_SETTINGS_DATA_SIMSETTINGSDATA_H_
 
 #include "AbstractSettingsData.h"
 #include "../../../simulation/Simulation.h"
@@ -8,7 +8,7 @@ namespace settings {
     class Sim : public AbstractSettingsData {
     public:
         Sim() {}
-        Sim(Sim&other) = delete;
+        Sim(const Sim& other) = delete;
         void operator=(const Sim&) = delete;
         ~Sim() = default;
 
@@ -17,7 +17,7 @@ namespace settings {
                 enableHeat = json["sim"].value("enableHeat", enableHeat);
                 enableAir = json["sim"].value("enableAir", enableAir);
                 threadCount = json["sim"].value("threadCount", threadCount);
-                
+
                 int tentativeGravityMode = json["sim"].value("gravityMode", (int)gravityMode);
                 if (tentativeGravityMode >= 0 && tentativeGravityMode < (int)GravityMode::LAST)
                     gravityMode = (GravityMode)tentativeGravityMode;
@@ -36,6 +36,6 @@ namespace settings {
         GravityMode gravityMode = GravityMode::VERTICAL;
         int threadCount = -1; // -1 is auto
     };
-}
+} // namespace settings
 
-#endif
+#endif // INTERFACE_SETTINGS_DATA_SIMSETTINGSDATA_H_

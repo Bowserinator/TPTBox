@@ -1,5 +1,5 @@
-#ifndef RENDER_GBUFFER_H
-#define RENDER_GBUFFER_H
+#ifndef RENDER_TYPES_MULTITEXTURE_H_
+#define RENDER_TYPES_MULTITEXTURE_H_
 
 #include "raylib.h"
 #include "rlgl.h"
@@ -28,4 +28,4 @@ public:
     unsigned int depthTexture;
 };
 
-#endif
+#endif // RENDER_TYPES_MULTITEXTURE_H_

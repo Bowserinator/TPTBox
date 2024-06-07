@@ -1,5 +1,5 @@
-#ifndef UTIL_GL_TIME_QUERY_H
-#define UTIL_GL_TIME_QUERY_H
+#ifndef UTIL_TYPES_GL_TIME_QUERY_H_
+#define UTIL_TYPES_GL_TIME_QUERY_H_
 
 #include "rlgl.h"
 #include <glad.h>
@@ -23,4 +23,4 @@ namespace util {
     };
 }
 
-#endif
+#endif // UTIL_TYPES_GL_TIME_QUERY_H_

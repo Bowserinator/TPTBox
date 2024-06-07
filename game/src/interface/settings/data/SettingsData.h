@@ -1,5 +1,5 @@
-#ifndef SETTINGS_DATA_H
-#define SETTINGS_DATA_H
+#ifndef INTERFACE_SETTINGS_DATA_SETTINGSDATA_H_
+#define INTERFACE_SETTINGS_DATA_SETTINGSDATA_H_
 
 #include "../../../util/json.hpp"
 #include "GraphicsSettingsData.h"
@@ -12,7 +12,7 @@ namespace settings {
     class data {
     public:
         data() {}
-        data(data&other) = delete;
+        data(const data &other) = delete;
         void operator=(const data&) = delete;
         ~data() {
             delete graphics;
@@ -58,9 +58,10 @@ namespace settings {
             }
             return single;
         };
+
     private:
         inline static data * single;
     };
-}
+} // namespace settings
 
-#endif
+#endif // INTERFACE_SETTINGS_DATA_SETTINGSDATA_H_

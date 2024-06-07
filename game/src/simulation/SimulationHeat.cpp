@@ -22,13 +22,14 @@ void SimulationHeat::init() {
     heatProgram = rlLoadComputeShaderProgram(heatShader);
     UnloadFileText(heatCode);
 #endif
-    
+
     ssboConstants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
 
-    ssbosUploadDownloadDirty = util::PersistentBuffer<1>(GL_SHADER_STORAGE_BUFFER, sizeof(upload_download_dirty), util::PBFlags::READ_AND_WRITE);
+    ssbosUploadDownloadDirty = util::PersistentBuffer<1>(GL_SHADER_STORAGE_BUFFER,
+        sizeof(upload_download_dirty), util::PBFlags::READ_AND_WRITE);
     ssbosData = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(heat_map), util::PBFlags::WRITE_ALT_READ);
-    
+
     reset();
 }
 
@@ -38,7 +39,8 @@ void SimulationHeat::reset() {
     std::fill(&heat_map[0][0][0], &heat_map[0][0][0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
     for (int i = 0; i < ssbosData.getBufferCount(); i++) {
         ssbosData.wait(i);
-        std::fill(&ssbosData.get<float>(i)[0], &ssbosData.get<float>(i)[0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
+        std::fill(&ssbosData.get<float>(i)[0],
+            &ssbosData.get<float>(i)[0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
         ssbosData.lock(i);
     }
 

@@ -1,5 +1,5 @@
-#ifndef RAYCAST_H
-#define RAYCAST_H
+#ifndef SIMULATION_RAYCAST_H_
+#define SIMULATION_RAYCAST_H_
 
 #include "SimulationDef.h"
 #include "../util/types/bitset8.h"
@@ -22,4 +22,4 @@ struct RaycastOutput {
     PartSwapBehavior move;
 };
 
-#endif
+#endif // SIMULATION_RAYCAST_H_

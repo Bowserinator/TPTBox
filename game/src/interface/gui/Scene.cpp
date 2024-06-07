@@ -58,10 +58,10 @@ void Scene::update() {
                 } \
             }
 
-        for (auto key: keys) {
+        for (auto key : keys) {
             MOUSE_CLICK_EVT(isMouseButtonPressed, onMouseClick);
             MOUSE_CLICK_EVT(isMouseButtonDown, onMouseDown);
-            
+
             if (EventConsumer::ref()->isMouseButtonReleased(key)) {
                 child->onMouseRelease(childLocalPos, key);
                 mouseConsume = true;
@@ -95,6 +95,6 @@ void Scene::update() {
 
 void Scene::draw() {
     for (auto child : children)
-        if (!child->getHidden())
+        if (!child->hidden())
             child->draw(child->pos);
 }

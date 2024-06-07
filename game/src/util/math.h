@@ -1,5 +1,5 @@
-#ifndef UTIL_MATH_H
-#define UTIL_MATH_H
+#ifndef UTIL_MATH_H_
+#define UTIL_MATH_H_
 
 #include <cmath>
 #include "raymath.h"
@@ -200,4 +200,4 @@ namespace util {
     }
 }
 
-#endif
+#endif // UTIL_MATH_H_

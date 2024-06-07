@@ -1,5 +1,5 @@
-#ifndef UTIL_SPINLOCK_H
-#define UTIL_SPINLOCK_H
+#ifndef UTIL_TYPES_SPINLOCK_H_
+#define UTIL_TYPES_SPINLOCK_H_
 
 #include <atomic>
 
@@ -47,4 +47,4 @@ namespace util {
     };
 }
 
-#endif
+#endif // UTIL_TYPES_SPINLOCK_H_

@@ -1,5 +1,5 @@
-#ifndef FONT_CACHE_H
-#define FONT_CACHE_H
+#ifndef INTERFACE_FONTCACHE_H_
+#define INTERFACE_FONTCACHE_H_
 
 #include "raylib.h"
 
@@ -10,7 +10,7 @@ class FontCache {
 public:
     Font main_font;
 
-    FontCache(FontCache &other) = delete;
+    FontCache(const FontCache &other) = delete;
     void operator=(const FontCache&) = delete;
     ~FontCache();
 
@@ -27,6 +27,7 @@ public:
         delete single;
         single = nullptr;
     }
+
 private:
     bool _init;
     static FontCache * single;
@@ -34,4 +35,4 @@ private:
     FontCache(): _init(false) {}
 };
 
-#endif
+#endif // INTERFACE_FONTCACHE_H_

@@ -1,5 +1,5 @@
-#ifndef GUI_TEXT_INPUT_H
-#define GUI_TEXT_INPUT_H
+#ifndef INTERFACE_GUI_COMPONENTS_TEXTINPUT_H_
+#define INTERFACE_GUI_COMPONENTS_TEXTINPUT_H_
 
 #include "raylib.h"
 #include "./abstract/InteractiveComponent.h"
@@ -23,20 +23,23 @@ namespace ui {
         virtual ~TextInput() = default;
 
         void setValue(const std::string &text, const bool noCallback = false) {
-            this->value = text.substr(0, config.maxLength);
-            inputValid = inputValidation(value);
-            if (!noCallback) onValueChange(value);
+            this->m_value = text.substr(0, m_config.maxLength);
+            m_input_valid = m_input_validation(m_value);
+            if (!noCallback) m_on_value_change(m_value);
         }
-        std::string getValue() { return value; }
-        bool isReadOnly() const { return config.readOnly; }
-        bool isInputValid() const { return inputValid; }
+        std::string value() { return m_value; }
+        bool isReadOnly() const { return m_config.readOnly; }
+        bool isInputValid() const { return m_input_valid; }
 
-        TextInput * setPlaceholder(const std::string &text) { this->config.placeholder = text; return this; }
-        TextInput * setMaxLength(const std::size_t maxLength) { this->config.maxLength = maxLength; return this; }
-        TextInput * setReadOnly(const bool readOnly) { this->config.readOnly = readOnly; return this; }
-        TextInput * setOnValueChange(std::function<void(const std::string&)> onValueChange) { this->onValueChange = onValueChange; return this; }
-        TextInput * setInputValidation(std::function<bool(const std::string&)> inputValidation) { this->inputValidation = inputValidation; return this; }
-        TextInput * setInputAllowed(std::function<bool(const std::string&)> inputAllowed) { this->inputAllowed = inputAllowed; return this; }
+        TextInput * setPlaceholder(const std::string &text) { this->m_config.placeholder = text; return this; }
+        TextInput * setMaxLength(const std::size_t maxLength) { this->m_config.maxLength = maxLength; return this; }
+        TextInput * setReadOnly(const bool readOnly) { this->m_config.readOnly = readOnly; return this; }
+        TextInput * setOnValueChange(std::function<void(const std::string&)> onValueChange) {
+            this->m_on_value_change = onValueChange; return this; }
+        TextInput * setInputValidation(std::function<bool(const std::string&)> inputValidation) {
+            this->m_input_validation = inputValidation; return this; }
+        TextInput * setInputAllowed(std::function<bool(const std::string&)> inputAllowed) {
+            this->m_input_allowed = inputAllowed; return this; }
 
         void draw(const Vector2 &screenPos) override;
         void tick(float dt) override;
@@ -59,29 +62,29 @@ namespace ui {
             float xOffset;
         };
 
-        void update_cursor(std::size_t newVal, std::size_t oldVal);
-        CursorClick get_cursor_at_click(const float localPosX) const;
-        void deselect();
-        void deselect_and_delete_selection();
-        void drag_selection_update(const Vector2 localPos);
-        bool has_selection() const { return selectionX[0] >= 0.0f; }
+        void _updateCursor(std::size_t newVal, std::size_t oldVal);
+        CursorClick _getCursorAtClick(const float localPosX) const;
+        void _deselect();
+        void _deselectAndDeleteSelection();
+        void _dragSelectionUpdate(const Vector2 localPos);
+        bool _hasSelection() const { return m_selectionX[0] >= 0.0f; }
 
-        Config config;
-        std::string value = "";
-        std::size_t cursor = 0;
-        bool inputValid = true;
+        Config m_config;
+        std::string m_value = "";
+        std::size_t m_cursor = 0;
+        bool m_input_valid = true;
 
-        std::function<void(const std::string&)> onValueChange = [](const std::string &in){};
-        std::function<bool(const std::string&)> inputValidation = [](const std::string &in) -> bool { return true; };
-        std::function<bool(const std::string&)> inputAllowed = [](const std::string &in) -> bool { return true; };
+        std::function<void(const std::string&)> m_on_value_change = [](const std::string &in){};
+        std::function<bool(const std::string&)> m_input_validation = [](const std::string &in) -> bool { return true; };
+        std::function<bool(const std::string&)> m_input_allowed = [](const std::string &in) -> bool { return true; };
 
         // Computed
-        float cursorX = 0.0f;
-        float scrollX = 0.0f;
-        std::size_t selection[2] = { 0, 0 };
-        float selectionX[2] = {-1.0f, -1.0f};
-        bool valueModifiedInTick = false;
+        float m_cursorX = 0.0f;
+        float m_scrollX = 0.0f;
+        std::size_t m_selection[2] = { 0, 0 };
+        float m_selectionX[2] = {-1.0f, -1.0f};
+        bool m_value_modified_in_tick = false;
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_TEXTINPUT_H_

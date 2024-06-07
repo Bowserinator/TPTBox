@@ -14,6 +14,7 @@
 
 #include <string>
 #include <cstring>
+#include <algorithm>
 
 constexpr float PAD_X = 5.0f;
 constexpr float PAD_Y = 7.0f;
@@ -59,10 +60,10 @@ void HUD::displayTooltip(const char * text) {
     #endif
 
     tooltip_opacity = 1.0;
-    strcpy(tooltip, text);
+    strncpy(tooltip, text, sizeof(tooltip));
 }
 
-void HUD::update_controls(const BrushRenderer &brush_renderer) {
+void HUD::updateControls(const BrushRenderer &brush_renderer) {
     // This updates cube controls and textures
     cube.update();
 
@@ -99,7 +100,8 @@ void HUD::update_controls(const BrushRenderer &brush_renderer) {
         if (EventConsumer::ref()->isKeyPressed(NUM_KEYS[i])) {
             consumeKey = true;
             sim->graphics.set_display_mode((DisplayMode)i);
-            displayTooltip(TextFormat("Display Mode: %s", displayModeProperties[(std::size_t)sim->graphics.display_mode].name.c_str()));
+            displayTooltip(TextFormat("Display Mode: %s",
+                displayModeProperties[(std::size_t)sim->graphics.display_mode].name.c_str()));
             break;
         }
     }
@@ -114,9 +116,9 @@ void HUD::draw(const HUDData &data) {
     const bool debug = state == HUDState::DEBUG_MODE;
 
     // Handle brush tooltips
-    if (data.brush_renderer->tooltip_to_display.length()) {
-        displayTooltip(data.brush_renderer->tooltip_to_display.c_str());
-        data.brush_renderer->tooltip_to_display = "";
+    if (data.brush_renderer->hasTooltip()) {
+        displayTooltip(data.brush_renderer->getTooltip().c_str());
+        data.brush_renderer->clearTooltip();
     }
 
     // Raycast into sim
@@ -135,7 +137,8 @@ void HUD::draw(const HUDData &data) {
     if (showHUD && debug && data.brush_renderer->brush_in_sim()) {
         const Vector3T<int> brush_pos = data.brush_renderer->get_brush_pos();
         drawText(TextFormat("%d, %d, %d / d%d / s%d",
-                brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(), data.brush_renderer->get_size()),
+                brush_pos.x, brush_pos.y, brush_pos.z, data.brush_renderer->get_offset(),
+                data.brush_renderer->get_size()),
             GetMouseX() + 20.0f, GetMouseY() + 20.0f, WHITE);
     }
 
@@ -157,12 +160,13 @@ void HUD::draw(const HUDData &data) {
     if (showHUD) {
         // Top left corner: FPS, [Parts, sim FPS]
         const char * text  = !debug ?
-            TextFormat("FPS: %.3f", avg_fps()) :
-            TextFormat("FPS: %.3f  Parts: %s", avg_fps(), util::format_commas(sim->parts_count).c_str());
+            TextFormat("FPS: %.3f", avgFPS()) :
+            TextFormat("FPS: %.3f  Parts: %s", avgFPS(), util::format_commas(sim->parts_count).c_str());
         drawText(text, 20, 20, BLUE_TEXT);
 
         if (state == HUDState::DEBUG_MODE)
-            drawText(TextFormat("Sim: %.3f  Thrd: %d", avg_sim_fps(), sim->actual_thread_count), 20, 20 + OFFSET, BLUE_TEXT);
+            drawText(TextFormat("Sim: %.3f  Thrd: %d", avgSimFPS(), sim->actual_thread_count),
+                20, 20 + OFFSET, BLUE_TEXT);
 
         // Top right corner
         const int x = util::clamp(rx, 0, XRES);

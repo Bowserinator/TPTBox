@@ -15,7 +15,7 @@ void BrushRenderer::draw(Renderer * renderer) {
 
     if (offset != 0) {
         DrawCube(Vector3{ (float)x, (float)y, (float)z }, 1.0f, 1.0f, 1.0f, WHITE);
-        
+
         // Draw the little dotted line to indicate offset
         constexpr float dotSize = 0.5f;
         constexpr int spacing = 2;
@@ -41,7 +41,8 @@ void BrushRenderer::draw(Renderer * renderer) {
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
 
-    if ((previousBrushIdx != currentBrushIdx || previousSize != size) && (GetTime() - last_remesh_time) >= MIN_BRUSH_REMESH_DELAY_SECONDS) {
+    if ((previousBrushIdx != currentBrushIdx || previousSize != size) &&
+            (GetTime() - last_remesh_time) >= MIN_BRUSH_REMESH_DELAY_SECONDS) {
         last_remesh_time = GetTime();
         previousBrushIdx = currentBrushIdx;
         previousSize = size;
@@ -71,11 +72,11 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // TAB or SHIFT + TAB to change brush
     if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && !EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
         currentBrushIdx = (currentBrushIdx + 1) % BRUSHES.size();
-        tooltip_to_display = "Brush: " + BRUSHES[currentBrushIdx].name;
+        setCurrentTooltip("Brush: " + BRUSHES[currentBrushIdx].name);
     } else if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
         if (currentBrushIdx == 0) currentBrushIdx = BRUSHES.size() - 1;
         else currentBrushIdx--;
-        tooltip_to_display = "Brush: " + BRUSHES[currentBrushIdx].name;
+        setCurrentTooltip("Brush: " + BRUSHES[currentBrushIdx].name);
     }
 
     // LCtrl + scroll to change brush size
@@ -108,7 +109,9 @@ void BrushRenderer::do_controls(Simulation * sim) {
         for (int z = bz - half_size; z <= bz + half_size; z++)
             if (
                 BOUNDS_CHECK(x, y, z) &&
-                BRUSHES[currentBrushIdx].map(Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)}, sizeVec, rotVec) &&
+                BRUSHES[currentBrushIdx].map(
+                    Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)},
+                    sizeVec, rotVec) &&
                 x >= viewBegin.x && y >= viewBegin.y && z >= viewBegin.z &&
                 x <= viewEnd.x && y <= viewEnd.y && z <= viewEnd.z
             ) {

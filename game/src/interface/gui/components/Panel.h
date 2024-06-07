@@ -1,5 +1,5 @@
-#ifndef GUI_PANEL_H
-#define GUI_PANEL_H
+#ifndef INTERFACE_GUI_COMPONENTS_PANEL_H_
+#define INTERFACE_GUI_COMPONENTS_PANEL_H_
 
 #include "raylib.h"
 #include "./abstract/InteractiveComponent.h"
@@ -17,27 +17,27 @@ namespace ui {
         virtual ~Panel();
 
         void tick(float dt) override;
-		void draw(const Vector2 &pos) override;
+        void draw(const Vector2 &pos) override;
 
-		virtual void onMouseMoved(Vector2 localPos) override;
-		virtual void onMouseEnter(Vector2 localPos) override;
-		virtual void onMouseLeave(Vector2 localPos) override;
-		virtual void onMouseDown(Vector2 localPos, unsigned button) override;
-		virtual void onMouseClick(Vector2 localPos, unsigned button) override;
-        virtual void onMouseRelease(Vector2 localPos, unsigned button) override;
-		virtual void onMouseWheel(Vector2 localPos, float d) override;
-		virtual void onMouseWheelInside(Vector2 localPos, float d) override;
-		virtual void updateKeys(bool shift, bool ctrl, bool alt) override;
+        void onMouseMoved(Vector2 localPos) override;
+        void onMouseEnter(Vector2 localPos) override;
+        void onMouseLeave(Vector2 localPos) override;
+        void onMouseDown(Vector2 localPos, unsigned button) override;
+        void onMouseClick(Vector2 localPos, unsigned button) override;
+        void onMouseRelease(Vector2 localPos, unsigned button) override;
+        void onMouseWheel(Vector2 localPos, float d) override;
+        void onMouseWheelInside(Vector2 localPos, float d) override;
+        void updateKeys(bool shift, bool ctrl, bool alt) override;
 
-        virtual void onUnfocus() override;
-        virtual void processDeletion() override;
+        void onUnfocus() override;
+        void processDeletion() override;
 
         // @brief Add a child to the component list
         // @param component Component
         virtual void addChild(Component * component);
 
         // @brief Remove a child from component list by value
-        // @param component 
+        // @param component
         virtual void removeChild(Component * component);
 
         // @brief Remove all children
@@ -57,9 +57,9 @@ namespace ui {
         std::size_t getChildCount() const;
 
     protected:
-        Vector2 eventDelta = Vector2{0, 0}; // Position offset for all events
-        std::vector<Component *> children;
+        Vector2 m_event_delta = Vector2{0, 0}; // Position offset for all events
+        std::vector<Component *> m_children;
     };
-}
+} // namespace ui
 
-#endif
+#endif // INTERFACE_GUI_COMPONENTS_PANEL_H_
