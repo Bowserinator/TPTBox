@@ -2,6 +2,8 @@
 
 The Powder Box is a 3D falling sand game built on top of the [Raylib engine](https://www.raylib.com/), inspired primarily by The Powder Toy. This project is very much a work in progress!
 
+Join our discord: [https://discord.gg/BJzM5hreKT](https://discord.gg/BJzM5hreKT)
+
 ## Build Instructions
 
 This project is based on the [Raylib premake template](https://github.com/raylib-extras/game-premake), which contains the specific build instructions. An abridged version:
@@ -28,11 +30,7 @@ Executables will be in the `_bin` folder. Note that you will need to have a comp
 This code borrows great work by other members of the open-source community. Licenses for portions of the code can be found in the `LICENSES/` folder. Notably,
 
 - Francis Engelmann for [his 3D DDA algorithm](https://github.com/francisengelmann/fast_voxel_traversal) (MIT)
-- The Powder Toy for the RNG implementation (GPLv3)
+- The Powder Toy for some implementation details
 - Jeffery Myers and Ramon Santamaria (@raysan5) for the [Raylib premake project](https://github.com/raylib-extras/game-premake) (zlib)
 
 This project is licensed under the GPLv3 license.
-
-## Known Bugs
-
-The program may not run on some Windows computers that are missing certain dlls. Installing MinGW will fix this until I figure out what's causing the issue.
