@@ -64,7 +64,7 @@ workspace (workspaceName)
         symbols "On"
         openmp "On"
         buildoptions {
-            "-Ofast",
+            "-O1"
         }
 
     filter "configurations:Release"
