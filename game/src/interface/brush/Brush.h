@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
+#include <functional>
 
 constexpr unsigned int MAX_BRUSH_SIZE = std::max(std::max(2 * XRES, 2 * YRES), 2 * ZRES);
 constexpr float MIN_BRUSH_REMESH_DELAY_SECONDS = 0.03;
@@ -23,7 +25,7 @@ class BrushRenderer : public IMiddleTooltip {
 public:
     BrushRenderer(Simulation * sim, RenderCamera * camera):
         offset(0),
-        size(5),
+        size(5, 5, 5),
         x(-1), y(-1), z(-1),
         selected_element(1),
         sim(sim), camera(camera) {}
@@ -40,11 +42,18 @@ public:
     Vector3T<int> get_raycast_pos() const { return Vector3T<int>{ x, y, z }; };
     Vector3T<int> get_brush_pos() const { return Vector3T<int>{ bx, by, bz }; };
     int get_offset() const { return offset; }
-    unsigned int get_size() const { return size; }
+    Vector3T<unsigned int> get_size() const { return size; }
+    std::size_t get_brush_type() const { return currentBrushIdx; }
+
+    void add_change_listener(std::function<void()> f) { change_callbacks.push_back(f); }
+    void set_brush_type(std::size_t currentBrushIdx);
+    void set_size(Vector3T<unsigned int> size) { this->size = size; }
 
 private:
+    std::vector<std::function<void()>> change_callbacks;
+
     int offset;
-    unsigned int size;
+    Vector3T<unsigned int> size;
     int x, y, z;    // Intersection point
     int bx, by, bz; // Actual brush pos
     float last_remesh_time = 0.0f;
@@ -64,7 +73,7 @@ private:
 
     std::size_t currentBrushIdx = 1;
     std::size_t previousBrushIdx = INT_MAX;
-    unsigned int previousSize = INT_MAX;
+    Vector3T<unsigned int> previousSize{ INT_MAX, INT_MAX, INT_MAX };
     BrushFaceModels current_brush_mesh;
 
     void do_raycast(Simulation * sim, RenderCamera * camera);

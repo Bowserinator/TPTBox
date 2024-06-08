@@ -102,8 +102,9 @@ ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * rendere
         ))->setClickCallback([this, textInput](unsigned int button) {
             if (textInput->isInputValid()) {
                 auto val = std::stoi(textInput->value());
-                if (button == MOUSE_BUTTON_LEFT) val++;
-                else if (button == MOUSE_BUTTON_RIGHT) val--;
+                const int inc = IsKeyDown(KEY_LEFT_SHIFT) ? 5 : 1;
+                if (button == MOUSE_BUTTON_LEFT) val += inc;
+                else if (button == MOUSE_BUTTON_RIGHT) val -= inc;
 
                 val = util::clamp(val, 0, maxCurrentCoord());
                 textInput->setValue(std::to_string(val));
@@ -175,8 +176,6 @@ ViewPanel::ViewPanel(const Vector2 &pos, const Vector2 &size, Renderer * rendere
                 minCoordInput->setValue(std::to_string(val));
                 break;
         }
-
-        std::cout << renderer->get_cam()->camera.position.y << '\n';
     }));
 }
 

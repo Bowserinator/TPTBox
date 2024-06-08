@@ -19,25 +19,27 @@ void BrushRenderer::draw(Renderer * renderer) {
         // Draw the little dotted line to indicate offset
         constexpr float dotSize = 0.5f;
         constexpr int spacing = 2;
-        const int half_size = size / 2;
+        const int half_size_x = size.x / 2;
+        const int half_size_y = size.x / 2;
+        const int half_size_z = size.x / 2;
 
-        if (bx - half_size > x)
-            for (float dx = x + 1; dx < bx - half_size; dx += spacing)
+        if (bx - half_size_x > x)
+            for (float dx = x + 1; dx < bx - half_size_x; dx += spacing)
                 DrawCube(Vector3{ dx, (float)y, (float)z }, dotSize, dotSize, dotSize, WHITE);
-        else if (by - half_size > y)
-            for (float dy = y + 1; dy < by - half_size; dy += spacing)
+        else if (by - half_size_y > y)
+            for (float dy = y + 1; dy < by - half_size_y; dy += spacing)
                 DrawCube(Vector3{ (float)x, dy, (float)z }, dotSize, dotSize, dotSize, WHITE);
-        else if (bz - half_size > z)
-            for (float dz = z + 1; dz < bz - half_size; dz += spacing)
+        else if (bz - half_size_z > z)
+            for (float dz = z + 1; dz < bz - half_size_z; dz += spacing)
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
-        else if (bx + half_size < x)
-            for (float dx = x - 1; dx > bx + half_size; dx -= spacing)
+        else if (bx + half_size_x < x)
+            for (float dx = x - 1; dx > bx + half_size_x; dx -= spacing)
                 DrawCube(Vector3{ dx, (float)y, (float)z }, dotSize, dotSize, dotSize, WHITE);
-        else if (by + half_size < y)
-            for (float dy = y - 1; dy > by + half_size; dy -= spacing)
+        else if (by + half_size_y < y)
+            for (float dy = y - 1; dy > by + half_size_y; dy -= spacing)
                 DrawCube(Vector3{ (float)x, dy, (float)z }, dotSize, dotSize, dotSize, WHITE);
-        else if (bz + half_size < z)
-            for (float dz = z - 1; dz > bz + half_size; dz -= spacing)
+        else if (bz + half_size_z < z)
+            for (float dz = z - 1; dz > bz + half_size_z; dz -= spacing)
                 DrawCube(Vector3{ (float)x, (float)y, dz }, dotSize, dotSize, dotSize, WHITE);
     }
 
@@ -47,7 +49,11 @@ void BrushRenderer::draw(Renderer * renderer) {
         previousBrushIdx = currentBrushIdx;
         previousSize = size;
         current_brush_mesh.unload();
-        current_brush_mesh = BrushFaceModels::GenBrushModel(BRUSHES[previousBrushIdx], Vector3T<int>(size, size, size));
+        current_brush_mesh = BrushFaceModels::GenBrushModel(BRUSHES[previousBrushIdx],
+            Vector3T<int>(size.x, size.y, size.z));
+
+        for (auto &f : change_callbacks)
+            f();
     }
 
     current_brush_mesh.draw(
@@ -72,17 +78,21 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // TAB or SHIFT + TAB to change brush
     if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && !EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
         currentBrushIdx = (currentBrushIdx + 1) % BRUSHES.size();
-        setCurrentTooltip("Brush: " + BRUSHES[currentBrushIdx].name);
+        set_brush_type(currentBrushIdx);
     } else if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
         if (currentBrushIdx == 0) currentBrushIdx = BRUSHES.size() - 1;
         else currentBrushIdx--;
-        setCurrentTooltip("Brush: " + BRUSHES[currentBrushIdx].name);
+        set_brush_type(currentBrushIdx);
     }
 
     // LCtrl + scroll to change brush size
     if (EventConsumer::ref()->isKeyDown(KEY_LEFT_CONTROL) && scroll) {
-        size += std::round(scroll * deltaAvg * TARGET_FPS);
-        size = util::clamp(size, 1, MAX_BRUSH_SIZE);
+        size.x += std::round(scroll * deltaAvg * TARGET_FPS);
+        size.y += std::round(scroll * deltaAvg * TARGET_FPS);
+        size.z += std::round(scroll * deltaAvg * TARGET_FPS);
+        size.x = util::clamp(size.x, 1, MAX_BRUSH_SIZE);
+        size.y = util::clamp(size.y, 1, MAX_BRUSH_SIZE);
+        size.z = util::clamp(size.z, 1, MAX_BRUSH_SIZE);
         consumeMouse = true;
     }
 
@@ -97,16 +107,15 @@ void BrushRenderer::do_controls(Simulation * sim) {
     if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         consumeMouse = true;
         const bool delete_mode = EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
-        const int half_size = size / 2;
-        const Vector3 sizeVec{ (float)size, (float)size, (float)size };
+        const Vector3 sizeVec = (Vector3)size;
         const Vector3 rotVec{0.0f, 0.0f, 0.0f};
 
         const Vector3 viewBegin = settings::data::ref()->graphics->viewSliceBegin;
         const Vector3 viewEnd = settings::data::ref()->graphics->viewSliceEnd;
 
-        for (int x = bx - half_size; x <= bx + half_size; x++)
-        for (int y = by - half_size; y <= by + half_size; y++)
-        for (int z = bz - half_size; z <= bz + half_size; z++)
+        for (int x = bx - (int)size.x / 2; x <= bx + (int)size.x / 2; x++)
+        for (int y = by - (int)size.y / 2; y <= by + (int)size.y / 2; y++)
+        for (int z = bz - (int)size.z / 2; z <= bz + (int)size.z / 2; z++)
             if (
                 BOUNDS_CHECK(x, y, z) &&
                 BRUSHES[currentBrushIdx].map(
@@ -124,7 +133,9 @@ void BrushRenderer::do_controls(Simulation * sim) {
                     if (tool.Perform) {
                         int i = ID(sim->pmap[z][y][x]);
                         if (!i) i = ID(sim->photons[z][y][x]);
-                        tool.Perform(*sim, i, x, y, z, sim->parts, sim->pmap, bx, by, bz, size, misc_data);
+                        tool.Perform(*sim, i, x, y, z,
+                            sim->parts, sim->pmap, bx, by, bz,
+                            (size.x + size.y + size.z) / 3.0f, misc_data);
                     }
                 }
             }
@@ -197,4 +208,9 @@ void BrushRenderer::update_offset() {
         else if ((raycast_out.faces & RayCast::FACE_Z).any())
             this->bz = this->z + offset * util::sign(camera->camera.position.z - this->z);
     }
+}
+
+void BrushRenderer::set_brush_type(std::size_t currentBrushIdx) {
+    this->currentBrushIdx = currentBrushIdx;
+    setCurrentTooltip("Brush: " + BRUSHES[currentBrushIdx].name);
 }
