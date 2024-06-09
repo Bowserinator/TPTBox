@@ -582,10 +582,6 @@ void Simulation::recalc_free_particles() {
 
         // Pmap and graphics
         auto &map = part.flag[PartFlags::IS_ENERGY] ? photons : pmap;
-        if (GetElements()[part.type].Graphics ||
-                displayModeProperties[(std::size_t)graphics.display_mode].alwaysUpdate ||
-                graphics.display_mode_force_update)
-            _set_color_data_at(part.rx, part.ry, part.rz, &part);
         if (!map[z][y][x]) {
             map[z][y][x] = PMAP(part.type, i);
             _set_color_data_at(x, y, z, &part);
@@ -593,7 +589,10 @@ void Simulation::recalc_free_particles() {
         } else if (graphics.color_force_update[FLAT_IDX(x, y, z)]) {
             graphics.color_force_update[FLAT_IDX(x, y, z)] = false;
             _set_color_data_at(x, y, z, &part);
-        }
+        } else if (GetElements()[part.type].Graphics ||
+                displayModeProperties[(std::size_t)graphics.display_mode].alwaysUpdate ||
+                graphics.display_mode_force_update)
+            _set_color_data_at(part.rx, part.ry, part.rz, &part);
     }
 
     maxId = newMaxId + 1;
@@ -619,6 +618,10 @@ void Simulation::force_graphics_update() {
 void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part) {
     uint32_t new_color = 0;
     util::Bitset8 new_flags = 0;
+    util::unique_spinlock l(colordata_lock
+        [z / GRAPHICS_LOCK_BLOCK_SIZE]
+        [y / GRAPHICS_LOCK_BLOCK_SIZE]
+        [x / GRAPHICS_LOCK_BLOCK_SIZE]);
 
     if (part != nullptr) {
         const auto &el = GetElements()[part->type];

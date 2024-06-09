@@ -90,6 +90,7 @@ namespace Transition {
 
 constexpr int MIN_CASUALITY_RADIUS = 4; // Width of each slice = 2 * this
 constexpr int MAX_SIM_THREADS = ZRES / (4 * MIN_CASUALITY_RADIUS); // Threads = number of slices / 2
+constexpr unsigned int GRAPHICS_LOCK_BLOCK_SIZE = 32;
 
 // Block size should be a power of 2 for cache alignment
 constexpr unsigned int CAUSALITY_ARRAY_BLOCK_SIZE = 1024;

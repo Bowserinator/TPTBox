@@ -46,6 +46,10 @@ public:
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
     util::Spinlock parts_add_remove_lock;
+    util::Spinlock colordata_lock
+        [ZRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
+        [YRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
+        [XRES / GRAPHICS_LOCK_BLOCK_SIZE + 1];
 
     std::vector<PartHeatDelta> heat_updates;
 
@@ -73,7 +77,6 @@ public:
     bool enable_heat = true;
 
     util::ConcurrentAppendList<part_id, NPARTS, CAUSALITY_ARRAY_BLOCK_SIZE, MAX_SIM_THREADS> causality_violating_parts;
-
 
     Simulation();
     ~Simulation();
