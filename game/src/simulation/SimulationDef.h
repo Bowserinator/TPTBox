@@ -17,8 +17,8 @@ using part_type = uint16_t;
 using part_type_s = int32_t; // Must be larger than part_type
 
 // Pmap and photons store positive ids in this format:
-// [TYP 10 bits][ID 22 bits]
-constexpr uint32_t PMAP_ID_BITS = 22;
+// [TYP 9 bits][ID 23 bits]
+constexpr uint32_t PMAP_ID_BITS = 23;
 constexpr uint16_t PT_NUM = 1 << (32 - PMAP_ID_BITS); // Max number of elements possible
 
 #define ID(r) (r & ((1 << PMAP_ID_BITS) - 1))
