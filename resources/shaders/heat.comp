@@ -13,13 +13,19 @@ layout(std430, binding = 2) readonly restrict buffer Constants {
     ivec4 SIMRES;
     ivec4 COMPUTE_BLOCKS;
     uint HEAT_BLOCK_SIZE;
+    uint FRAME_COUNT;
     uint DIRTY_INDEX_COUNT;
     uint DIRTY_INDICES[];
 };
 layout(std430, binding = 3) writeonly restrict buffer DirtyOut {
     uint dirtyOut[];
 };
+layout(std430, binding = 4) readonly restrict buffer HeatConductInput {
+    uint heatConduct[];
+};
 
+// Random vals for heat conduction
+const uint HEAT_RANDOM_BYTES[] = {180, 225, 22, 187, 20, 252, 115, 190, 237, 10, 219, 26, 133, 196, 48, 169, 165, 179, 151, 27, 60, 28, 97, 90, 111, 88, 228, 185, 212, 236, 215, 13, 39, 8, 155, 127, 23, 253, 136, 41, 15, 217, 118, 211, 243, 142, 152, 57, 121, 241, 183, 83, 70, 75, 113, 45, 242, 77, 69, 4, 67, 29, 63, 71, 153, 93, 147, 56, 5, 122, 34, 226, 74, 216, 86, 78, 193, 109, 209, 105, 18, 232, 244, 206, 11, 229, 43, 186, 36, 117, 246, 96, 106, 255, 53, 159, 173, 125, 2, 141, 144, 197, 62, 108, 64, 177, 157, 25, 7, 175, 208, 234, 104, 101, 55, 80, 94, 98, 191, 204, 1, 162, 170, 176, 103, 240, 79, 102, 166, 116, 158, 205, 249, 247, 161, 178, 192, 52, 200, 140, 172, 174, 42, 68, 31, 130, 65, 76, 33, 58, 99, 54, 221, 202, 201, 137, 87, 37, 194, 0, 66, 112, 184, 44, 238, 100, 251, 156, 47, 38, 120, 126, 207, 107, 32, 92, 149, 245, 254, 91, 135, 124, 167, 19, 129, 214, 154, 81, 128, 50, 199, 223, 84, 233, 150, 49, 46, 188, 119, 198, 85, 250, 21, 235, 195, 24, 35, 203, 132, 72, 146, 218, 61, 181, 220, 51, 163, 210, 17, 123, 9, 12, 189, 14, 3, 40, 168, 230, 227, 138, 114, 110, 160, 224, 95, 131, 231, 239, 148, 6, 171, 143, 139, 145, 213, 16, 182, 73, 222, 89, 248, 134, 164, 59, 82, 30};
 
 uint idx(uint x, uint y, uint z) {
     return x + y * SIMRES.x + z * SIMRES.y * SIMRES.x;
@@ -30,6 +36,12 @@ void markDirty(uint idx) {
     // uint mask = (1 << (8 * (idx & 3))); // 1 at byte idx % 4
     // atomicOr(dirtyOut[idx / 4], mask);
     dirtyOut[idx] = 1;
+}
+
+bool HEAT_CONDUCT_CHANCE(uint x, uint y, uint z, uint heatConductIdx) {
+    uint heatConductVal = heatConduct[heatConductIdx >> 2]; // 4
+    heatConductVal = (heatConductVal >> (8 * (heatConductIdx & 3))) & 0xFF; // % 3
+    return HEAT_RANDOM_BYTES[(FRAME_COUNT + x + 11 * y + 191 * z) & 0xFF] <= heatConductVal;
 }
 
 void main() {
@@ -58,12 +70,20 @@ void main() {
     float total = selfTemp;
     int count = 1;
     float tmp;
-    tmp = heatIn[baseIdx - 1];                   if (tmp >= 0.0f) { count++; total += tmp; } // +- x
-    tmp = heatIn[baseIdx + 1];                   if (tmp >= 0.0f) { count++; total += tmp; }
-    tmp = heatIn[baseIdx - SIMRES.x];            if (tmp >= 0.0f) { count++; total += tmp; } // +- y 
-    tmp = heatIn[baseIdx + SIMRES.x];            if (tmp >= 0.0f) { count++; total += tmp; }
-    tmp = heatIn[baseIdx + SIMRES.x * SIMRES.y]; if (tmp >= 0.0f) { count++; total += tmp; } // +- z
-    tmp = heatIn[baseIdx - SIMRES.x * SIMRES.y]; if (tmp >= 0.0f) { count++; total += tmp; }
+
+    tmp = heatIn[baseIdx - 1];
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x - 1, y, z, baseIdx - 1)) { count++; total += tmp; } // +- x
+    tmp = heatIn[baseIdx + 1];
+    if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x + 1, y, z, baseIdx + 1)) { count++; total += tmp; }
+    tmp = heatIn[baseIdx - SIMRES.x];
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x, y - 1, z, baseIdx - SIMRES.x)) { count++; total += tmp; } // +- y 
+    tmp = heatIn[baseIdx + SIMRES.x];
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x, y + 1, z, baseIdx + SIMRES.x)) { count++; total += tmp; }
+    tmp = heatIn[baseIdx + SIMRES.x * SIMRES.y]; 
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x, y, z - 1, baseIdx - SIMRES.x * SIMRES.y)) { count++; total += tmp; } // +- z
+    tmp = heatIn[baseIdx - SIMRES.x * SIMRES.y]; 
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x, y, z + 1, baseIdx + SIMRES.x * SIMRES.y)) { count++; total += tmp; }
+    
     tmp = total / float(count);
 
     if (heatIn[baseIdx] != tmp)

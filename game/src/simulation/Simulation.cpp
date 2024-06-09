@@ -33,7 +33,7 @@ Simulation::Simulation():
     frame_count = 0;
     parts_count = 0;
     gravity_mode = GravityMode::VERTICAL;
-    heat.uploadedOnce = false;
+    heat.uploaded_once = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
 
@@ -164,8 +164,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].vz = 0.0f;
     parts[old_pfree].assign_with_defaults(el.DefaultProperties);
 
-    if (el.HeatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, el.HeatConduct))
-        heat.update_temperate(x, y, z, parts[old_pfree].temp);
+    heat.update_temperature(x, y, z, parts[old_pfree].temp, el.HeatConduct);
 
     if (el.OnChangeType)
         el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
@@ -177,6 +176,7 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
             _update_shadow_map(x, y, z);
         }
+        heat.changed_while_paused = true;
         parts_count++;
     }
 
@@ -214,7 +214,7 @@ void Simulation::kill_part(const part_id i) {
 
     part.type = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
-    heat.update_temperate(x, y, z, -1.0f);
+    heat.update_temperature(x, y, z, -1.0f, 255);
 
     _set_color_data_at(x, y, z, nullptr);
 
@@ -406,6 +406,11 @@ void Simulation::update() {
             force_graphics_update();
             graphics.display_mode_force_update = false;
         }
+        if (heat.changed_while_paused) {
+            heat.changed_while_paused = false;
+            heat.upload(frame_count);
+        }
+        paused_last_frame = paused;
         return;
     }
 
@@ -441,14 +446,15 @@ void Simulation::update() {
     recalc_free_particles();
     frame_count++;
 
-    if (graphics.display_mode_force_update)
-        graphics.display_mode_force_update = false;
+    graphics.display_mode_force_update = false;
+    heat.changed_while_paused = false;
+    paused_last_frame = paused;
 }
 
 void Simulation::download_heat_from_gpu() {
     // Only download if we uploaded heat values at least once otherwise
     // all we'll get is 0s
-    if (heat.uploadedOnce) {
+    if (heat.uploaded_once) {
         heat.wait_and_get();
 
         #pragma omp parallel for schedule(static)
@@ -496,7 +502,7 @@ void Simulation::download_heat_from_gpu() {
             if (parts[update.id].type) {
                 auto &part = parts[update.id];
                 part.temp = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
-                heat.update_temperate(part.rx, part.ry, part.rz, part.temp);
+                heat.update_temperature(part.rx, part.ry, part.rz, part.temp, GetElements()[part.type].HeatConduct);
             }
         heat_updates.clear();
     }
@@ -559,8 +565,7 @@ void Simulation::recalc_free_particles() {
 
         // Heat map update
         auto heatConduct = GetElements()[part.type].HeatConduct;
-        if (heatConduct && HEAT_CONDUCT_CHANCE(frame_count, x, y, z, heatConduct))
-            heat.update_temperate(x, y, z, util::clampf(part.temp, MIN_TEMP, MAX_TEMP));
+        heat.update_temperature(x, y, z, util::clampf(part.temp, MIN_TEMP, MAX_TEMP), heatConduct);
 
         // GOL check
         if (TYP(pmap[z][y][x]) == PT_GOL)
@@ -599,9 +604,9 @@ void Simulation::recalc_free_particles() {
 }
 
 void Simulation::dispatch_compute_shaders() {
-    if (paused) return;
+    if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
     if (gol.golCount) gol.dispatch();
-    if (enable_heat) heat.dispatch();
+    if (enable_heat) heat.dispatch(frame_count);
 }
 
 void Simulation::force_graphics_update() {

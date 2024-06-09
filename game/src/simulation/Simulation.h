@@ -39,6 +39,7 @@ namespace settings { class Sim; }
 class Simulation {
 public:
     bool paused;
+    bool paused_last_frame = false;
     GravityMode gravity_mode;
 
     Particle parts[NPARTS];

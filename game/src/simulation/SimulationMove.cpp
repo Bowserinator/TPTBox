@@ -230,8 +230,9 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
 
             _set_color_data_at(x, y, z, &parts[idx]);
             _set_color_data_at(oldx, oldy, oldz, nullptr);
-            heat.update_temperate(x, y, z, heat.heat_map[oldz][oldy][oldx]);
-            heat.update_temperate(oldx, oldy, oldz, -1.0f);
+            heat.update_temperature(x, y, z, heat.heat_map[oldz][oldy][oldx],
+                GetElements()[parts[idx].type].HeatConduct);
+            heat.update_temperature(oldx, oldy, oldz, -1.0f, 255);
             break;
         // The special behavior is resolved into one of the three
         // cases above by eval_move
@@ -306,8 +307,8 @@ void Simulation::move_part(const coord_t x1, const coord_t y1, const coord_t z1,
     const auto oldy = parts[id].ry;
     const auto oldz = parts[id].rz;
 
-    heat.update_temperate(x1, y1, z1, heat.heat_map[oldz][oldy][oldx]);
-    heat.update_temperate(oldx, oldy, oldz, -1.0f);
+    heat.update_temperature(x1, y1, z1, heat.heat_map[oldz][oldy][oldx], GetElements()[parts[id].type].HeatConduct);
+    heat.update_temperature(oldx, oldy, oldz, -1.0f, 255);
 
     parts[id].x = parts[id].rx = x1;
     parts[id].y = parts[id].ry = y1;
