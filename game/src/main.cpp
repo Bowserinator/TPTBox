@@ -6,6 +6,8 @@
 #include "interface/IconManager.h"
 #include "interface/FrameTimeAvg.h"
 #include "interface/EventConsumer.h"
+#include "error_screen.h"
+
 #include <GLFW/glfw3.h>
 
 #include <omp.h>
@@ -66,14 +68,20 @@ int main(void) {
 #else
     SetTargetFPS(TARGET_FPS);
 
-    while (!EventConsumer::ref()->shouldExit())
-    {
-        // TODO: do this in seperate thread
-        currentScreen->update();
-        BeginDrawing();
-            currentScreen->draw();
-        EndDrawing();
+    #ifndef DEBUG
+    try {
+    #endif
+        while (!EventConsumer::ref()->shouldExit()) {
+            currentScreen->update();
+            BeginDrawing();
+                currentScreen->draw();
+            EndDrawing();
+        }
+    #ifndef DEBUG
+    } catch(const std::exception &e) {
+        drawErrorScreen(e);
     }
+    #endif
 #endif
 
     currentScreen->unload();

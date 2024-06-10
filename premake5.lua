@@ -72,7 +72,6 @@ workspace (workspaceName)
         defines { "NDEBUG" }
         optimize "Speed"
         buildoptions {
-			"-fno-exceptions",
 			"-Ofast"
 		}
 
