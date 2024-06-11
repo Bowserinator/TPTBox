@@ -146,9 +146,9 @@ void HUD::draw(const HUDData &data) {
     // Bottom left: camera coords + movement mode
     if (showHUD) {
         drawText(TextFormat("Cam: %d, %d, %d %s",
-                std::round(cam->camera.position.x),
-                std::round(cam->camera.position.y),
-                std::round(cam->camera.position.z),
+                (int)std::round(cam->camera.position.x),
+                (int)std::round(cam->camera.position.y),
+                (int)std::round(cam->camera.position.z),
                 cam->isLocked() ? "/ [Cursor Lock (RCLICK)]" : ""),
             20.0f, GetScreenHeight() - 120.0f, WHITE);
     }
