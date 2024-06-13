@@ -28,7 +28,7 @@ const GOLRule golRules[GOL_RULE_COUNT] = {
     GOLRule("678", "678 678. 6-8/6-8/M/3",
         gRule({6,7,8}), gRule({6,7,8}), RGBA(0x6002EEFF), GOLRule::Neighborhood::MOORE, 2),
     GOLRule("445", "4/4/5/M",
-        gRule({4}), gRule({4}), RGBA(0xF44336FF), GOLRule::Neighborhood::MOORE, 1),
+        gRule({4}), gRule({4}), RGBA(0xF44336FF), GOLRule::Neighborhood::MOORE, 4),
     GOLRule("AMBA", "Amoeba. 9-26/5-7,12,13,15/5/M",
         gRule({9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26}),
         gRule({5,6,7,12,13,15}), RGBA(0xAD1457FF), GOLRule::Neighborhood::MOORE, 4),
@@ -140,6 +140,7 @@ void SimulationGol::wait_and_get() {
         &ssbosData.get<uint8_t>(1)[0] + sizeof(gol_map) / sizeof(gol_map[0][0][0]),
         &gol_map[0][0][0]);
 
+    gol_map[0][0][0] = 0; // Placeholder spot for edge padding
     ssbosData.advance_cycle();
     ssbosData.advance_cycle();
 }

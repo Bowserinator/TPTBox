@@ -23,7 +23,7 @@ public:
     // @param neighborhood - MOORE = 26 neighbors, NEUMANN = 6 direct neighbors
     // @param decayTime    - States to decay before dying, 1 = default ALIVE/DEAD state configuration
     GOLRule(const std::string &name, const std::string &description, uint32_t survive, uint32_t birth,
-            RGBA color, Neighborhood neighborhood = Neighborhood::MOORE, unsigned int decayTime = 1):
+            RGBA color, Neighborhood neighborhood, unsigned int decayTime):
         name(name), description(description), survive(survive), birth(birth),
         neighborhood(neighborhood), decayTime(decayTime), color(color) {}
 

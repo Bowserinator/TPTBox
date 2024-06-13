@@ -17,7 +17,8 @@ layout(std430, binding = 2) writeonly restrict buffer GolOutput {
 
 // (x, y, z) -> array IDX (with wrapping on edges), note edges have 1 padding
 uint golIdx(uint x, uint y, uint z) {
-    x = (x == 0) ? (SIMRES.x - 2) : (x == SIMRES.x - 1 ? 1 : x);
+    // I have no idea why the line below breaks x wrapping
+    // x = (x == 0) ? (SIMRES.x - 2) : (x == SIMRES.x - 1 ? 1 : x);
     y = (y == 0) ? (SIMRES.y - 2) : (y == SIMRES.y - 1 ? 1 : y);
     z = (z == 0) ? (SIMRES.z - 2) : (z == SIMRES.z - 1 ? 1 : z);
     return x + y * SIMRES.x + z * SIMRES.y * SIMRES.x;
@@ -54,8 +55,7 @@ void main() {
     for (int dx = 0; dx < 4; dx++) {
         x = 4 * gl_GlobalInvocationID.x + dx;
 
-        if (clamp(ivec3(x, y, z), ivec3(1), SIMRES.xyz - ivec3(2)) != ivec3(x, y, z))
-            continue;
+        if (x >= SIMRES.x) continue;
 
         neighborCount = 0;
         id = ruleId = getGol(x, y, z);
@@ -137,9 +137,9 @@ void main() {
         else if ((rule.y & neighborMask) != 0)
             // Survive
             destVal = setGol(x, y, z, id, destVal);
-        else
+        // else
             // Death
-            destVal = setGol(x, y, z, 0, destVal);
+            // destVal = setGol(x, y, z, 0, destVal);
     }
 
     uint idx = golIdx(4 * gl_GlobalInvocationID.x, y, z);

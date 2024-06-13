@@ -321,8 +321,9 @@ void Simulation::update_zslice(const coord_t pz) {
             if (i >= 0) {
                 gol.gol_map[pz][py][px] = org_gol_type;
                 parts[i].tmp2 = org_gol_type;
+                parts[i].tmp1 = 0;
                 parts[i].life = golRules[org_gol_type - 1].decayTime;
-                parts[i].flag[PartFlags::UPDATE_FRAME] = frame_count & 1;
+                parts[i].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
             }
         }
 
