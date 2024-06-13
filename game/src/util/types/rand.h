@@ -12,23 +12,23 @@ public:
 
 private:
     State s;
-    uint64_t next();
+    uint64_t next() noexcept;
 
 public:
     // Same as gen()
-    unsigned int operator()();
+    unsigned int operator()() noexcept;
 
     /**
      * @brief Generate random uint
      * @return unsigned int 
      */
-    unsigned int gen();
+    unsigned int gen() noexcept;
 
     /**
      * @brief Generate random int
      * @return int 
      */
-    int rand();
+    int rand() noexcept;
 
     /**
      * @brief Generate a random number between lower
@@ -37,7 +37,7 @@ public:
      * @param upper 
      * @return int 
      */
-    int between(int lower, int upper);
+    int between(const int lower, const int upper) noexcept;
 
     /**
      * @brief Return true if rand01() < numerator / denom
@@ -46,13 +46,13 @@ public:
      * @param denominator
      * @return bool
      */
-    bool chance(int numerator, unsigned int denominator);
+    bool chance(const unsigned int numerator, const unsigned int denominator) noexcept;
 
     /**
      * @brief Random float between 0 and 1
      * @return float 
      */
-    float uniform01();
+    float uniform01() noexcept;
 
     /**
      * @brief Return random float between two values inclusive
@@ -60,7 +60,7 @@ public:
      * @param upper 
      * @return float 
      */
-    float uniform(float lower, float upper);
+    float uniform(const float lower, const float upper) noexcept;
 
     /**
      * @brief Returns a random vector3 orthogonal to the given one

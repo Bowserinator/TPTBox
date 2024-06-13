@@ -6,39 +6,37 @@
 #include "../math.h"
 #include "raymath.h"
 
-uint64_t RNG::next() {
+uint64_t RNG::next() noexcept {
     s[0] *= 0xda942042e4dd58b5;
     return s[0] >> 64;
 }
 
-unsigned int RNG::gen() {
+unsigned int RNG::gen() noexcept {
     return next() & 0x7FFFFFFF;
 }
 
-int RNG::rand() {
+int RNG::rand() noexcept {
     return static_cast<int>(gen());
 }
 
-unsigned int RNG::operator()() {
+unsigned int RNG::operator()() noexcept {
     return next() & 0xFFFFFFFF;
 }
 
-int RNG::between(int lower, int upper) {
+int RNG::between(const int lower, const int upper) noexcept {
     unsigned int r = next();
     return static_cast<int>(r % ((unsigned int)(upper) - (unsigned int)(lower) + 1U)) + lower;
 }
 
-bool RNG::chance(int numerator, unsigned int denominator) {
-    if (numerator < 0)
-       return false;
-    return next() % denominator < static_cast<unsigned int>(numerator);
+bool RNG::chance(const unsigned int numerator, const unsigned int denominator) noexcept {
+    return next() % denominator < numerator;
 }
 
-float RNG::uniform01() {
-    return static_cast<float>(next()&0xFFFFFFFF) / (float)0xFFFFFFFF;
+float RNG::uniform01() noexcept {
+    return static_cast<float>(next() & 0xFFFFFFFF) / (float)0xFFFFFFFF;
 }
 
-float RNG::uniform(float lower, float upper) {
+float RNG::uniform(const float lower, const float upper) noexcept {
     return uniform01() * (upper - lower) + lower;
 }
 
