@@ -43,7 +43,7 @@ public:
     Vector3T<int> get_brush_pos() const { return Vector3T<int>{ bx, by, bz }; };
     int get_offset() const { return offset; }
     Vector3T<unsigned int> get_size() const { return size; }
-    std::size_t get_brush_type() const { return currentBrushIdx; }
+    std::size_t get_brush_type() const { return current_brush_idx; }
 
     void add_change_listener(std::function<void()> f) { change_callbacks.push_back(f); }
     void set_brush_type(std::size_t currentBrushIdx);
@@ -52,7 +52,8 @@ public:
 private:
     std::vector<std::function<void()>> change_callbacks;
 
-    int offset;
+    int offset = 0;
+    int face_offset_multiplier = 0;
     Vector3T<unsigned int> size;
     int x, y, z;    // Intersection point
     int bx, by, bz; // Actual brush pos
@@ -63,22 +64,25 @@ private:
     int misc_data;
     bool tool_mode = false;
 
-    Vector2 prevMousePos;
-    Vector3 prevCameraPos;
-    unsigned int prevSimFrameCount = -1;
+    Vector2 prev_mouse_pos;
+    Vector3 prev_camera_pos;
+    unsigned int prev_sim_frame_count = -1;
+    int previous_face_offset_multiplier = 0;
 
     Simulation * sim;
     RenderCamera * camera;
     RaycastOutput raycast_out;
 
-    std::size_t currentBrushIdx = 1;
-    std::size_t previousBrushIdx = INT_MAX;
-    Vector3T<unsigned int> previousSize{ INT_MAX, INT_MAX, INT_MAX };
+    std::size_t current_brush_idx = 1;
+    std::size_t previous_brush_idx = INT_MAX;
+    Vector3T<unsigned int> previous_size{ INT_MAX, INT_MAX, INT_MAX };
     BrushFaceModels current_brush_mesh;
 
     void do_raycast(Simulation * sim, RenderCamera * camera);
     void do_controls(Simulation * sim);
     void update_offset();
+    void update_face_offset_multiplier();
+    bool is_delete_mode();
 };
 
 #endif // INTERFACE_BRUSH_BRUSH_H_

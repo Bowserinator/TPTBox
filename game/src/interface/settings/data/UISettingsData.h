@@ -16,7 +16,7 @@ namespace settings {
 
         virtual void loadFromJSON(const nlohmann::json &json) {
             if (json.contains("ui")) {
-                hideHud = json["ui"].value("hideHud", hideHud);
+                brushOnFace = json["ui"].value("brushOnFace", brushOnFace);
                 oppositeTool = json["ui"].value("oppositeTool", oppositeTool);
                 frameIndependentCam = json["ui"].value("frameIndependentCam", frameIndependentCam);
                 fastQuit = json["ui"].value("fastQuit", fastQuit);
@@ -31,7 +31,7 @@ namespace settings {
         }
 
         virtual void writeToJSON(nlohmann::json &json) const {
-            json["ui"]["hideHud"] = hideHud;
+            json["ui"]["brushOnFace"] = brushOnFace;
             json["ui"]["oppositeTool"] = oppositeTool;
             json["ui"]["frameIndependentCam"] = frameIndependentCam;
             json["ui"]["fastQuit"] = fastQuit;
@@ -40,7 +40,7 @@ namespace settings {
             json["ui"]["mouseSensitivity"] = mouseSensitivity;
         }
 
-        bool hideHud = false;
+        bool brushOnFace = true;
         bool oppositeTool = true;
         bool frameIndependentCam = false;
         bool fastQuit = false;
