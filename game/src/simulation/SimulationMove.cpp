@@ -161,7 +161,7 @@ void Simulation::move_behavior(const part_id idx) {
         }
     }
     else if (el.State == ElementState::TYPE_GAS) {
-        Vector3 randv = rng().rand_norm_vector();
+        Vector3 randv = rng().rand_unit_vector();
         auto nx = x + el.Diffusion * randv.x;
         auto ny = y + el.Diffusion * randv.y;
         auto nz = z + el.Diffusion * randv.z;

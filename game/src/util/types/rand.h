@@ -14,6 +14,8 @@ private:
     State s;
     uint64_t next() noexcept;
 
+    static const std::array<Vector3, 128> NORMAL_VECTORS;
+
 public:
     // Same as gen()
     unsigned int operator()() noexcept;
@@ -76,7 +78,7 @@ public:
      * @brief Generate a random vector with magnitude 1.0f
      * @return Vector3 
      */
-    Vector3 rand_norm_vector();
+    Vector3 rand_unit_vector();
 
     RNG();
     void seed(unsigned int sd);

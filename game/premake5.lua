@@ -14,7 +14,7 @@ project (workspaceName)
 		"-Wno-sign-compare"
 	}
 
-	filter "configurations:Debug"
+	filter "configurations:Release"
 		buildoptions {
 			"-flto", -- Link time optimization
 		}
