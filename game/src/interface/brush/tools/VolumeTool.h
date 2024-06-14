@@ -3,12 +3,17 @@
 
 #include "BrushShapeTool.h"
 
-/** A tool that works by clicking on two points */
+#include <utility>
+
 class VolumeBrushTool : public BrushShapeTool {
 public:
     VolumeBrushTool(): BrushShapeTool("Cuboid") {}
 
     void operation(CLICK_BRUSH_OP_PARAMS) override {
+        if (end.x < start.x) std::swap(end.x, start.x);
+        if (end.y < start.y) std::swap(end.y, start.y);
+        if (end.z < start.z) std::swap(end.z, start.z);
+
         for (int x = start.x; x <= end.x; x++)
         for (int y = start.y; y <= end.y; y++)
         for (int z = start.z; z <= end.z; z++) {

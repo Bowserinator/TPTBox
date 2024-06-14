@@ -102,16 +102,13 @@ void BrushRenderer::do_controls(Simulation * sim) {
             initial_click_location = Vector3T<int>({ bx, by, bz });
         } else {
             Vector3T<int> endLoc{ bx, by, bz };
-            if (endLoc.x < initial_click_location.x) std::swap(endLoc.x, initial_click_location.x);
-            if (endLoc.y < initial_click_location.y) std::swap(endLoc.y, initial_click_location.y);
-            if (endLoc.z < initial_click_location.z) std::swap(endLoc.z, initial_click_location.z);
 
-            initial_click_location.x = util::clamp(initial_click_location.x, 1, XRES - 1);
-            initial_click_location.y = util::clamp(initial_click_location.y, 1, YRES - 1);
-            initial_click_location.z = util::clamp(initial_click_location.z, 1, ZRES - 1);
-            endLoc.x = util::clamp(endLoc.x, 1, XRES - 1);
-            endLoc.y = util::clamp(endLoc.y, 1, YRES - 1);
-            endLoc.z = util::clamp(endLoc.z, 1, ZRES - 1);
+            initial_click_location.x = util::clamp(initial_click_location.x, 1, XRES - 2);
+            initial_click_location.y = util::clamp(initial_click_location.y, 1, YRES - 2);
+            initial_click_location.z = util::clamp(initial_click_location.z, 1, ZRES - 2);
+            endLoc.x = util::clamp(endLoc.x, 1, XRES - 2);
+            endLoc.y = util::clamp(endLoc.y, 1, YRES - 2);
+            endLoc.z = util::clamp(endLoc.z, 1, ZRES - 2);
 
             brush_shape_tool->operation(initial_click_location, endLoc, this, sim,
                 !(tool_mode || is_delete_mode()));
@@ -153,24 +150,28 @@ void BrushRenderer::do_controls(Simulation * sim) {
     // LClick to place parts
     if (!brush_shape_tool && EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         consumeMouse = true;
-        const Vector3 sizeVec = (Vector3)size;
-        const Vector3 rotVec{0.0f, 0.0f, 0.0f};
-
-        for (int x = bx - (int)size.x / 2; x <= bx + (int)size.x / 2; x++)
-        for (int y = by - (int)size.y / 2; y <= by + (int)size.y / 2; y++)
-        for (int z = bz - (int)size.z / 2; z <= bz + (int)size.z / 2; z++)
-            if (
-                BOUNDS_CHECK(x, y, z) && settings::data::ref()->graphics->in_view_slice(x, y, z) &&
-                BRUSHES[current_brush_idx].map(
-                    Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)},
-                    sizeVec, rotVec)
-            ) {
-                apply_brush_op(x, y, z);
-            }
+        draw_brush_at(bx, by, bz);
     }
 
     if (consumeMouse)
         EventConsumer::ref()->consumeMouse();
+}
+
+void BrushRenderer::draw_brush_at(int cx, int cy, int cz) {
+    const Vector3 sizeVec = (Vector3)size;
+    const Vector3 rotVec{0.0f, 0.0f, 0.0f};
+
+    for (int x = cx - (int)size.x / 2; x <= cx + (int)size.x / 2; x++)
+    for (int y = cy - (int)size.y / 2; y <= cy + (int)size.y / 2; y++)
+    for (int z = cz - (int)size.z / 2; z <= cz + (int)size.z / 2; z++)
+        if (
+            BOUNDS_CHECK(x, y, z) && settings::data::ref()->graphics->in_view_slice(x, y, z) &&
+            BRUSHES[current_brush_idx].map(
+                Vector3{(float)(x - cx), (float)(y - cy), (float)(z - cz)},
+                sizeVec, rotVec)
+        ) {
+            apply_brush_op(x, y, z);
+        }
 }
 
 void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {

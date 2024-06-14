@@ -3,6 +3,7 @@
 
 #include "./tools/VolumeTool.h"
 #include "./tools/FillTool.h"
+#include "./tools/LineTool.h"
 #include "./tools/BrushShapeTool.h"
 
 #include <array>
@@ -11,6 +12,7 @@ enum BRUSH_TOOL_NUMBERS {
     BRUSH_TOOL_DEFAULT,
     BRUSH_TOOL_VOLUME,
     BRUSH_TOOL_FILL,
+    BRUSH_TOOL_LINE,
 
     BRUSH_TOOL_LAST // DO NOT USE
 };

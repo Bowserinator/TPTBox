@@ -18,7 +18,8 @@ private:
     ui::IconButton
         * defaultBrushBtn,
         * volumeBrushBtn,
-        * fillBrushBtn;
+        * fillBrushBtn,
+        * lineBrushBtn;
 
     std::vector<ui::IconButton *> btns;
 

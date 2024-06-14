@@ -7,7 +7,6 @@
 #include <vector>
 #include <queue>
 
-/** A tool that works by clicking on two points */
 class FillBrushTool : public BrushShapeTool {
 public:
     FillBrushTool(): BrushShapeTool("Fill") {

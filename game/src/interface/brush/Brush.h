@@ -49,7 +49,9 @@ public:
     void add_change_listener(std::function<void()> f) { change_callbacks.push_back(f); }
     void set_brush_type(std::size_t currentBrushIdx);
     void set_size(Vector3T<unsigned int> size) { this->size = size; }
+
     void apply_brush_op(int x, int y, int z);
+    void draw_brush_at(int x, int y, int z);
 
     bool is_delete_mode();
     void set_brush_shape_tool(BrushShapeTool * brush_shape_tool);
