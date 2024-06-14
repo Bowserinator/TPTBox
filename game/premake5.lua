@@ -11,9 +11,13 @@ project (workspaceName)
 		"-fopenmp",
 		"-Wall",
 		"-Wno-odr",
-		"-Wno-sign-compare",
-		"-flto", -- Link time optimization
+		"-Wno-sign-compare"
 	}
+
+	filter "configurations:Debug"
+		buildoptions {
+			"-flto", -- Link time optimization
+		}
 
     filter "configurations:Release"
 		kind "WindowedApp"
