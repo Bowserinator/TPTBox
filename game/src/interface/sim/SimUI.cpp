@@ -16,6 +16,7 @@
 #include "../gui/styles.h"
 
 #include "BrushViewModal.h"
+#include "BrushShapeToolModal.h"
 
 #include "../settings/data/SettingsData.h"
 #include "../settings/GraphicsSettingsModal.h"
@@ -35,6 +36,10 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
 void SimUI::init() {
     brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f }, renderer, brushRenderer);
     addChild(brushViewWindow);
+
+    brushShapeToolWindow = new BrushShapeToolModal(Vector2{ 15.0f, 460.0f }, Vector2 { 240.0f, 200.0f },
+        renderer, brushRenderer);
+    addChild(brushShapeToolWindow);
 
     mainPanel = new ui::Panel(
         Vector2{ 0, (float)GetScreenHeight() - MAIN_PANEL_HEIGHT },

@@ -8,6 +8,11 @@
 #include "../FrameTimeAvg.h"
 #include "../../util/math.h"
 
+#include "BrushShapeToolNumbers.h"
+#include "./tools/BrushShapeTool.h"
+
+#include <utility>
+
 void BrushRenderer::draw(Renderer * renderer) {
     if (x < 0 || y < 0 || z < 0) return;
 
@@ -71,7 +76,7 @@ void BrushRenderer::update() {
 }
 
 void BrushRenderer::update_face_offset_multiplier() {
-    if (!settings::data::ref()->ui->brushOnFace) {
+    if (brush_shape_tool || !settings::data::ref()->ui->brushOnFace) {
         face_offset_multiplier = 0;
         update_offset();
         return;
@@ -82,10 +87,38 @@ void BrushRenderer::update_face_offset_multiplier() {
         update_offset();
 }
 
+void BrushRenderer::set_brush_shape_tool(BrushShapeTool * brush_shape_tool) {
+    this->brush_shape_tool = brush_shape_tool;
+    setCurrentTooltip("Brush Tool: " + (brush_shape_tool ? brush_shape_tool->name : std::string{"Default"}));
+}
+
 void BrushRenderer::do_controls(Simulation * sim) {
     bool consumeMouse = false;
     const float deltaAvg = FrameTime::ref()->getDelta();
     const float scroll = EventConsumer::ref()->getMouseWheelMove();
+
+    if (brush_shape_tool && EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (initial_click_location == NULL_INITIAL_LOCATION) {
+            initial_click_location = Vector3T<int>({ bx, by, bz });
+        } else {
+            Vector3T<int> endLoc{ bx, by, bz };
+            if (endLoc.x < initial_click_location.x) std::swap(endLoc.x, initial_click_location.x);
+            if (endLoc.y < initial_click_location.y) std::swap(endLoc.y, initial_click_location.y);
+            if (endLoc.z < initial_click_location.z) std::swap(endLoc.z, initial_click_location.z);
+
+            initial_click_location.x = util::clamp(initial_click_location.x, 1, XRES - 1);
+            initial_click_location.y = util::clamp(initial_click_location.y, 1, YRES - 1);
+            initial_click_location.z = util::clamp(initial_click_location.z, 1, ZRES - 1);
+            endLoc.x = util::clamp(endLoc.x, 1, XRES - 1);
+            endLoc.y = util::clamp(endLoc.y, 1, YRES - 1);
+            endLoc.z = util::clamp(endLoc.z, 1, ZRES - 1);
+
+            brush_shape_tool->operation(initial_click_location, endLoc, this, sim,
+                !(tool_mode || is_delete_mode()));
+
+            initial_click_location = NULL_INITIAL_LOCATION;
+        }
+    }
 
     // TAB or SHIFT + TAB to change brush
     if (EventConsumer::ref()->isKeyPressed(KEY_TAB) && !EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)) {
@@ -118,40 +151,21 @@ void BrushRenderer::do_controls(Simulation * sim) {
     update_face_offset_multiplier();
 
     // LClick to place parts
-    if (EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    if (!brush_shape_tool && EventConsumer::ref()->isMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         consumeMouse = true;
-        const bool delete_mode = is_delete_mode();
         const Vector3 sizeVec = (Vector3)size;
         const Vector3 rotVec{0.0f, 0.0f, 0.0f};
-
-        const Vector3 viewBegin = settings::data::ref()->graphics->viewSliceBegin;
-        const Vector3 viewEnd = settings::data::ref()->graphics->viewSliceEnd;
 
         for (int x = bx - (int)size.x / 2; x <= bx + (int)size.x / 2; x++)
         for (int y = by - (int)size.y / 2; y <= by + (int)size.y / 2; y++)
         for (int z = bz - (int)size.z / 2; z <= bz + (int)size.z / 2; z++)
             if (
-                BOUNDS_CHECK(x, y, z) &&
+                BOUNDS_CHECK(x, y, z) && settings::data::ref()->graphics->in_view_slice(x, y, z) &&
                 BRUSHES[current_brush_idx].map(
                     Vector3{(float)(x - bx), (float)(y - by), (float)(z - bz)},
-                    sizeVec, rotVec) &&
-                x >= viewBegin.x && y >= viewBegin.y && z >= viewBegin.z &&
-                x <= viewEnd.x && y <= viewEnd.y && z <= viewEnd.z
+                    sizeVec, rotVec)
             ) {
-                if (delete_mode)
-                    sim->kill_part(ID(sim->pmap[z][y][x]));
-                else if (!tool_mode)
-                    sim->create_part(x, y, z, selected_element, PartCreateMode::BRUSH);
-                else {
-                    auto &tool = GetTools()[selected_tool];
-                    if (tool.Perform) {
-                        int i = ID(sim->pmap[z][y][x]);
-                        if (!i) i = ID(sim->photons[z][y][x]);
-                        tool.Perform(*sim, i, x, y, z,
-                            sim->parts, sim->pmap, bx, by, bz,
-                            (size.x + size.y + size.z) / 3.0f, misc_data);
-                    }
-                }
+                apply_brush_op(x, y, z);
             }
     }
 
@@ -236,4 +250,21 @@ void BrushRenderer::set_brush_type(std::size_t currentBrushIdx) {
 
 bool BrushRenderer::is_delete_mode() {
     return EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT);
+}
+
+void BrushRenderer::apply_brush_op(int x, int y, int z) {
+    if (is_delete_mode())
+        sim->kill_part(ID(sim->pmap[z][y][x]));
+    else if (!tool_mode)
+        sim->create_part(x, y, z, selected_element, PartCreateMode::BRUSH);
+    else {
+        auto &tool = GetTools()[selected_tool];
+        if (tool.Perform) {
+            int i = ID(sim->pmap[z][y][x]);
+            if (!i) i = ID(sim->photons[z][y][x]);
+            tool.Perform(*sim, i, x, y, z,
+                sim->parts, sim->pmap, bx, by, bz,
+                (size.x + size.y + size.z) / 3.0f, misc_data);
+        }
+    }
 }

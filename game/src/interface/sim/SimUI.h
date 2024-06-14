@@ -14,7 +14,9 @@
 class BrushRenderer;
 class Renderer;
 class Simulation;
+
 class BrushViewModal;
+class BrushShapeToolModal;
 
 class SimUI : public ui::Scene {
 public:
@@ -31,6 +33,8 @@ private:
     Simulation * sim;
 
     BrushViewModal * brushViewWindow = nullptr;
+    BrushShapeToolModal * brushShapeToolWindow = nullptr;
+
     ui::Label * elementDescLabel = nullptr;
     ui::Label * menuTooltip = nullptr;
     ui::Label * bottomTooltip = nullptr;

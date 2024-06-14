@@ -20,6 +20,7 @@ constexpr float MIN_BRUSH_REMESH_DELAY_SECONDS = 0.03;
 class Simulation;
 class RenderCamera;
 class Renderer;
+class BrushShapeTool;
 
 class BrushRenderer : public IMiddleTooltip {
 public:
@@ -48,9 +49,18 @@ public:
     void add_change_listener(std::function<void()> f) { change_callbacks.push_back(f); }
     void set_brush_type(std::size_t currentBrushIdx);
     void set_size(Vector3T<unsigned int> size) { this->size = size; }
+    void apply_brush_op(int x, int y, int z);
+
+    bool is_delete_mode();
+    void set_brush_shape_tool(BrushShapeTool * brush_shape_tool);
 
 private:
     std::vector<std::function<void()>> change_callbacks;
+
+    static inline const Vector3T<int> NULL_INITIAL_LOCATION{-1, -1, -1};
+
+    Vector3T<int> initial_click_location = NULL_INITIAL_LOCATION;
+    BrushShapeTool * brush_shape_tool = nullptr;
 
     int offset = 0;
     int face_offset_multiplier = 0;
@@ -62,7 +72,7 @@ private:
     int selected_element;
     int selected_tool;
     int misc_data;
-    bool tool_mode = false;
+    bool tool_mode = false; // For sim modifying tools, not brush tools
 
     Vector2 prev_mouse_pos;
     Vector3 prev_camera_pos;
@@ -82,7 +92,6 @@ private:
     void do_controls(Simulation * sim);
     void update_offset();
     void update_face_offset_multiplier();
-    bool is_delete_mode();
 };
 
 #endif // INTERFACE_BRUSH_BRUSH_H_

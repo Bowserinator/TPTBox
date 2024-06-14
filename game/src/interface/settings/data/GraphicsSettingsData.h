@@ -55,6 +55,11 @@ namespace settings {
             json["graphics"]["shadowColor"] = (unsigned int)ColorToInt(shadowColor);
         }
 
+        bool in_view_slice(int x, int y, int z) const {
+            return x >= viewSliceBegin.x && y >= viewSliceBegin.y && z >= viewSliceBegin.z &&
+                x <= viewSliceEnd.x && y <= viewSliceEnd.y && z <= viewSliceEnd.z;
+        }
+
         Renderer::FragDebugMode renderMode = Renderer::FragDebugMode::NODEBUG;
 
         static constexpr float defaultHeatViewMax = 5000.0f;
