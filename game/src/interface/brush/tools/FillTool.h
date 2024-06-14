@@ -9,7 +9,7 @@
 
 class FillBrushTool : public BrushShapeTool {
 public:
-    FillBrushTool(): BrushShapeTool("Fill") {
+    FillBrushTool(): BrushShapeTool("Fill", 1) {
         visited = std::vector<bool>(XRES * YRES * ZRES, false);
     }
 
@@ -24,6 +24,7 @@ public:
         };
 
         std::queue<Vector3T<coord_t>> to_visit;
+        auto &start = points[0];
         to_visit.push(Vector3T<coord_t>(start.x, start.y, start.z));
 
         // If placing elements, can't fill if start location is occupied

@@ -61,7 +61,8 @@ private:
 
     static inline const Vector3T<int> NULL_INITIAL_LOCATION{-1, -1, -1};
 
-    Vector3T<int> initial_click_location = NULL_INITIAL_LOCATION;
+    std::vector<Vector3T<int>> click_locations;
+    double last_right_click_time = 0;
     BrushShapeTool * brush_shape_tool = nullptr;
 
     int offset = 0;

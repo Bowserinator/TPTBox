@@ -16,14 +16,16 @@
 #include <vector>
 #include <functional>
 
-#define CLICK_BRUSH_OP_PARAMS Vector3T<int> start, Vector3T<int> end, BrushRenderer * brush_renderer, Simulation * sim, bool is_filling_element
+#define CLICK_BRUSH_OP_PARAMS const std::vector<Vector3T<int>> &points, BrushRenderer * brush_renderer, Simulation * sim, bool is_filling_element
 
 /** A tool that works by clicking on two points */
 class BrushShapeTool {
 public:
-    explicit BrushShapeTool(const std::string &name): name(name) {};
+    explicit BrushShapeTool(const std::string &name, const unsigned int points_required):
+        name(name), points_required(points_required) {};
 
     const std::string name;
+    const unsigned int points_required;
 
     /**
      * @brief Apply brush operation

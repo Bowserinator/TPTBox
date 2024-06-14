@@ -7,9 +7,12 @@
 
 class VolumeBrushTool : public BrushShapeTool {
 public:
-    VolumeBrushTool(): BrushShapeTool("Cuboid") {}
+    VolumeBrushTool(): BrushShapeTool("Cuboid", 2) {}
 
     void operation(CLICK_BRUSH_OP_PARAMS) override {
+        Vector3T<int> start = points[0];
+        Vector3T<int> end = points[1];
+
         if (end.x < start.x) std::swap(end.x, start.x);
         if (end.y < start.y) std::swap(end.y, start.y);
         if (end.z < start.z) std::swap(end.z, start.z);

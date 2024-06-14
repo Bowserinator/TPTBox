@@ -89,6 +89,7 @@ void BrushRenderer::update_face_offset_multiplier() {
 
 void BrushRenderer::set_brush_shape_tool(BrushShapeTool * brush_shape_tool) {
     this->brush_shape_tool = brush_shape_tool;
+    click_locations.clear();
     setCurrentTooltip("Brush Tool: " + (brush_shape_tool ? brush_shape_tool->name : std::string{"Default"}));
 }
 
@@ -97,23 +98,30 @@ void BrushRenderer::do_controls(Simulation * sim) {
     const float deltaAvg = FrameTime::ref()->getDelta();
     const float scroll = EventConsumer::ref()->getMouseWheelMove();
 
-    if (brush_shape_tool && EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        if (initial_click_location == NULL_INITIAL_LOCATION) {
-            initial_click_location = Vector3T<int>({ bx, by, bz });
-        } else {
-            Vector3T<int> endLoc{ bx, by, bz };
+    // Handle click based tools
+    if (brush_shape_tool) {
+        // Left click = set point
+        if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            click_locations.push_back(Vector3T<int>(bx, by, bz));
 
-            initial_click_location.x = util::clamp(initial_click_location.x, 1, XRES - 2);
-            initial_click_location.y = util::clamp(initial_click_location.y, 1, YRES - 2);
-            initial_click_location.z = util::clamp(initial_click_location.z, 1, ZRES - 2);
-            endLoc.x = util::clamp(endLoc.x, 1, XRES - 2);
-            endLoc.y = util::clamp(endLoc.y, 1, YRES - 2);
-            endLoc.z = util::clamp(endLoc.z, 1, ZRES - 2);
+            if (click_locations.size() == brush_shape_tool->points_required) {
+                for (auto &loc : click_locations) {
+                    loc.x = util::clamp(loc.x, 1, XRES - 2);
+                    loc.y = util::clamp(loc.y, 1, YRES - 2);
+                    loc.z = util::clamp(loc.z, 1, ZRES - 2);
+                }
+                brush_shape_tool->operation(click_locations, this, sim,
+                    !(tool_mode || is_delete_mode()));
 
-            brush_shape_tool->operation(initial_click_location, endLoc, this, sim,
-                !(tool_mode || is_delete_mode()));
-
-            initial_click_location = NULL_INITIAL_LOCATION;
+                click_locations.clear();
+            }
+        }
+        // Tap right click to cancel
+        else if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            last_right_click_time = GetTime();
+        else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+            if (GetTime() - last_right_click_time < 0.1)
+                click_locations.clear();
         }
     }
 
