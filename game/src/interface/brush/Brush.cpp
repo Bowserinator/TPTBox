@@ -205,9 +205,9 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
             x = y = z = -1; // Invalidate cursor location
             return;
         }
-        cx = std::round(collide.point.x);
-        cy = std::round(collide.point.y);
-        cz = std::round(collide.point.z);
+        cx = (int)(collide.point.x);
+        cy = (int)(collide.point.y);
+        cz = (int)(collide.point.z);
     }
 
     auto pmapOccupied = [sim](const Vector3T<signed_coord_t> &loc) -> PartSwapBehavior {
