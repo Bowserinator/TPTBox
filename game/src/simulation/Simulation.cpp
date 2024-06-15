@@ -16,6 +16,7 @@
 #include <limits>
 #include <cstring>
 #include <cstdint>
+#include <utility>
 
 Simulation::Simulation():
     paused(false),
@@ -444,7 +445,12 @@ void Simulation::update() {
             update_zslice(z);
     }
 
+    if (frame_count - last_defrag_frame > MIN_FRAMES_BETWEEN_DEFRAG &&
+            parts_count > MIN_PARTS_FOR_DEFRAG &&
+            (float)parts_count / (maxId + 1) < 1.0f - DEFRAG_EMPTY_THRESHOLD)
+        defrag_parts();
     recalc_free_particles();
+
     frame_count++;
 
     graphics.display_mode_force_update = false;
@@ -602,6 +608,42 @@ void Simulation::recalc_free_particles() {
     }
 
     maxId = newMaxId + 1;
+}
+
+/** Note: must be done before heat updates are added */
+void Simulation::defrag_parts() {
+    last_defrag_frame = frame_count;
+    part_id front = 1;
+    part_id end = maxId;
+
+    while (front < end) {
+        // Find first free spot in the front
+        while (parts[front].type && front < NPARTS && front < end) front++;
+        if (front >= end) break;
+
+        // Find first occupied spot in the back
+        while (!parts[end].type && end > 1 && end >= front) end--;
+        if (front >= end) break;
+        if (parts[front].type || !parts[end].type) break;
+
+        std::swap(parts[front], parts[end]);
+        coord_t x = parts[front].rx;
+        coord_t y = parts[front].ry;
+        coord_t z = parts[front].rz;
+
+        if (ID(pmap[z][y][x]) == parts[front].id)
+            pmap[z][y][x] = PMAP(parts[front].type, front);
+        else if (ID(photons[z][y][x]) == parts[front].id)
+            photons[z][y][x] = PMAP(parts[front].type, front);
+
+        parts[front].id = front;
+        parts[end].id = 0;
+    }
+
+    #pragma omp parallel for
+    for (end = front + 1; end < NPARTS; end++)
+        parts[end].id = 0;
+    pfree = end + 1;
 }
 
 void Simulation::dispatch_compute_shaders() {

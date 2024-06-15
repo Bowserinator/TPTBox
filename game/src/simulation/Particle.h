@@ -25,8 +25,6 @@ struct Particle {
     RGBA dcolor{0, 0, 0, 0};
 
     Particle(): type(0), id(0) {}
-    Particle(const Particle&) = delete;
-    Particle& operator=(const Particle&) = delete;
 
     void assign_with_defaults(const Particle &def) {
         ctype = def.ctype;

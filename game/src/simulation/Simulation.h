@@ -77,6 +77,8 @@ public:
     bool enable_air = true;
     bool enable_heat = true;
 
+    uint32_t last_defrag_frame = 0;
+
     util::ConcurrentAppendList<part_id, NPARTS, CAUSALITY_ARRAY_BLOCK_SIZE, MAX_SIM_THREADS> causality_violating_parts;
 
     Simulation();
@@ -99,6 +101,7 @@ public:
     void update_zslice(const coord_t zslice);
     void recalc_free_particles();
     void force_graphics_update();
+    void defrag_parts();
 
     void update_part(const part_id i, const bool consider_causality = true);
 

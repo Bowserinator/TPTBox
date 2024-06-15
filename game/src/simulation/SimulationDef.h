@@ -45,6 +45,10 @@ constexpr float MAX_VELOCITY = 50.0f;
 constexpr float MIN_TEMP = 0.0f;
 constexpr float MAX_TEMP = 99999.0f;
 
+constexpr uint32_t MIN_FRAMES_BETWEEN_DEFRAG = 60;
+constexpr float DEFRAG_EMPTY_THRESHOLD = 0.3f; // Defrag when % empty >= this
+constexpr unsigned int MIN_PARTS_FOR_DEFRAG = 300000;
+
 constexpr float operator""_C(long double tempC) { return tempC + R_ZERO_C; }
 
 constexpr bool BOUNDS_CHECK(int x, int y, int z) {

@@ -120,6 +120,9 @@ void ScreenGameplay::update() {
     //      if (sim.pmap[z][90][x] == 0)
     //          sim.create_part(x, 90, z, 1);
 
+    if (IsKeyPressed(KEY_R))
+        sim.defrag_parts();
+
     auto t = GetTime();
     sim.update();
     simTime = GetTime() - t;
