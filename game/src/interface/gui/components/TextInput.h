@@ -30,6 +30,7 @@ namespace ui {
         std::string value() { return m_value; }
         bool isReadOnly() const { return m_config.readOnly; }
         bool isInputValid() const { return m_input_valid; }
+        void submit() { m_on_submit(m_value); }
 
         TextInput * setPlaceholder(const std::string &text) { this->m_config.placeholder = text; return this; }
         TextInput * setMaxLength(const std::size_t maxLength) { this->m_config.maxLength = maxLength; return this; }
@@ -40,6 +41,8 @@ namespace ui {
             this->m_input_validation = inputValidation; return this; }
         TextInput * setInputAllowed(std::function<bool(const std::string&)> inputAllowed) {
             this->m_input_allowed = inputAllowed; return this; }
+        TextInput * setOnSubmit(std::function<void(const std::string&)> onSubmit) {
+            this->m_on_submit = onSubmit; return this; }
 
         void draw(const Vector2 &screenPos) override;
         void tick(float dt) override;
@@ -77,6 +80,7 @@ namespace ui {
         std::function<void(const std::string&)> m_on_value_change = [](const std::string &in){};
         std::function<bool(const std::string&)> m_input_validation = [](const std::string &in) -> bool { return true; };
         std::function<bool(const std::string&)> m_input_allowed = [](const std::string &in) -> bool { return true; };
+        std::function<void(const std::string&)> m_on_submit = [](const std::string &in){};
 
         // Computed
         float m_cursorX = 0.0f;

@@ -21,6 +21,10 @@ void Scene::removeChild(Component * component) {
         delete component;
 }
 
+void Scene::removeChildDontDelete(Component * component) {
+    std::erase(children, component);
+}
+
 void Scene::update() {
     float dt = GetFrameTime();
     bool mouseConsume = false;

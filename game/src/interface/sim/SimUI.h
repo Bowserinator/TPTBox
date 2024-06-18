@@ -7,6 +7,7 @@
 #include "../gui/components/TextButton.h"
 #include "../gui/components/IconButton.h"
 #include "../gui/components/Panel.h"
+#include "ConsolePanel.h"
 
 #include <map>
 #include <vector>
@@ -27,6 +28,8 @@ public:
 
 private:
     void switchCategory(const MenuCategory category);
+    void showConsole();
+    void hideConsole();
 
     BrushRenderer * brushRenderer;
     Renderer * renderer;
@@ -34,6 +37,10 @@ private:
 
     BrushViewModal * brushViewWindow = nullptr;
     BrushShapeToolModal * brushShapeToolWindow = nullptr;
+
+    bool sim_paused_before = false;
+    bool console_active = false;
+    ConsolePanel * consolePanel;
 
     ui::Label * elementDescLabel = nullptr;
     ui::Label * menuTooltip = nullptr;

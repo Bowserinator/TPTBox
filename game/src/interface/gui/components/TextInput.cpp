@@ -151,6 +151,10 @@ void TextInput::tick(float dt) {
             m_value = m_value.substr(0, m_cursor) + m_value.substr(m_cursor + 1);
     }
 
+    // Press enter (submit)
+    if (EventConsumer::ref()->isKeyPressedAny(KEY_ENTER))
+        submit();
+
     // Move cursor
     if (!ctrl && EventConsumer::ref()->isKeyPressedAny(KEY_LEFT))
         m_cursor--;

@@ -26,6 +26,10 @@ namespace ui {
         // @param child - Child pointer
         void removeChild(Component * component);
 
+        // Remove child, but don't free memory
+        // @param child - Child ptr
+        void removeChildDontDelete(Component * component);
+
         // Called after OpenGL context is initialized
         virtual void init() {};
 

@@ -25,6 +25,11 @@ namespace ui {
 
         Vector2 getInternalSize() const { return m_internal_size; }
 
+        void scrollTo(float offset_top) {
+            m_offset_top = -offset_top;
+            _limitScroll();
+        }
+
     protected:
         Vector2 m_internal_size;
         float m_offset_top;
