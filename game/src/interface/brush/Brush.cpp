@@ -61,11 +61,21 @@ void BrushRenderer::draw(Renderer * renderer) {
             f();
     }
 
-    current_brush_mesh.draw(
-        Vector3T<int>(bx, by, bz),
-        renderer,
-        EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)
-    );
+    if ((click_locations_changed || prev_brush_center != Vector3T<int>(bx, by, bz)) && brush_shape_tool) {
+        click_locations_changed = false;
+        prev_brush_center = Vector3T<int>(bx, by, bz);
+        brush_shape_tool->remesh(click_locations, renderer, this, Vector3T<int>(bx, by, bz));
+    }
+
+    if (brush_shape_tool)
+        brush_shape_tool->draw(click_locations, renderer, this, Vector3T<int>(bx, by, bz));
+    else {
+        current_brush_mesh.draw(
+            Vector3T<int>(bx, by, bz),
+            renderer,
+            EventConsumer::ref()->isKeyDown(KEY_LEFT_SHIFT)
+        );
+    }
 
     EndMode3D();
 }
@@ -90,6 +100,7 @@ void BrushRenderer::update_face_offset_multiplier() {
 void BrushRenderer::set_brush_shape_tool(BrushShapeTool * brush_shape_tool) {
     this->brush_shape_tool = brush_shape_tool;
     click_locations.clear();
+    click_locations_changed = true;
     setCurrentTooltip("Brush Tool: " + (brush_shape_tool ? brush_shape_tool->name : std::string{"Default"}));
 }
 
@@ -103,6 +114,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
         // Left click = set point
         if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             click_locations.push_back(Vector3T<int>(bx, by, bz));
+            click_locations_changed = true;
 
             if (click_locations.size() == brush_shape_tool->points_required) {
                 for (auto &loc : click_locations) {
@@ -114,14 +126,17 @@ void BrushRenderer::do_controls(Simulation * sim) {
                     !(tool_mode || is_delete_mode()));
 
                 click_locations.clear();
+                click_locations_changed = true;
             }
         }
         // Tap right click to cancel
         else if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             last_right_click_time = GetTime();
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
-            if (GetTime() - last_right_click_time < 0.1)
+            if (GetTime() - last_right_click_time < 0.1) {
                 click_locations.clear();
+                click_locations_changed = true;
+            }
         }
     }
 

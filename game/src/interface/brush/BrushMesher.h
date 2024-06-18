@@ -4,12 +4,14 @@
 #include "raylib.h"
 #include "../../util/vector_op.h"
 #include "Brushes.h"
+#include "Preview.h"
 
 #include <array>
 
 class Renderer;
 
-enum class BrushFace { X = 0, Y, Z };
+using namespace brush_preview;
+
 struct BrushFaceModels {
     std::array<Model, 3> models;
     Vector3T<int> size{ 0, 0, 0 };

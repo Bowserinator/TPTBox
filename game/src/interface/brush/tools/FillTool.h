@@ -83,6 +83,20 @@ public:
         }
     }
 
+    void draw(CLICK_BRUSH_DRAW_PARAMS) {
+        auto centerOfModel = (Vector3)pos;
+        brush_preview::setup_shader(centerOfModel, renderer);
+        brush_preview::draw_mesh_faces_on_render_tex(renderer, brush_preview::brush_tool_render_tex,
+            preview_models, centerOfModel, false);
+        util::draw_render_texture(brush_preview::brush_tool_render_tex);
+    }
+
+    void remesh(CLICK_BRUSH_REMESH_PARAMS) {
+        if (IsModelReady(preview_models[0]))
+            return;
+        preview_models = brush_preview::generate_cuboid_faces(1, 1, 1);
+    }
+
 private:
     std::vector<bool> visited;
 };

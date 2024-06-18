@@ -63,6 +63,7 @@ private:
 
     std::vector<Vector3T<int>> click_locations;
     double last_right_click_time = 0;
+    bool click_locations_changed = false;
     BrushShapeTool * brush_shape_tool = nullptr;
 
     int offset = 0;
@@ -70,6 +71,7 @@ private:
     Vector3T<unsigned int> size;
     int x, y, z;    // Intersection point
     int bx, by, bz; // Actual brush pos
+    Vector3T<int> prev_brush_center = Vector3T<int>(0, 0, 0);
     float last_remesh_time = 0.0f;
 
     int selected_element;

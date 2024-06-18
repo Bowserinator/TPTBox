@@ -4,6 +4,7 @@
 #include "../../render/camera/camera.h"
 #include "../../util/graphics.h"
 #include "../../simulation/SimulationDef.h"
+#include "Preview.h"
 
 #include <vector>
 #include <GLFW/glfw3.h>
@@ -253,13 +254,6 @@ BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int>
 }
 
 void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool deleteMode) {
-    if (IsWindowResized()) {
-        UnloadRenderTexture(render_tex);
-        render_tex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
-    }
-
-    constexpr Vector3 createModeColor{ 107, 255, 112 };
-    constexpr Vector3 deleteModeColor{ 255, 43, 43 };
     const Vector3 centerOfModel = Vector3{
         static_cast<float>(center.x - (int)size.x / 2),
         static_cast<float>(center.y - (int)size.y / 2),
@@ -290,27 +284,7 @@ void BrushFaceModels::draw(Vector3T<int> center, Renderer * renderer, bool delet
     };
     DrawCubeWires((Vector3)center + boundingBoxOffset, size.x, size.y, size.z, GRAY);
 
-    BeginTextureMode(render_tex);
-    BeginMode3D(renderer->get_cam()->camera);
-        ClearBackground(BLANK);
-
-        for (int i = 0; i < models.size(); i++) {
-            const unsigned char faceShadow = (i == 0) ? 255 : (i == 1) ? 220 : 150;
-            const Vector3 col = deleteMode ? deleteModeColor : createModeColor;
-
-            DrawModel(models[i],
-                centerOfModel, 1.0f,
-                Color{
-                    static_cast<unsigned char>(col.x / 255.0f * faceShadow),
-                    static_cast<unsigned char>(col.y / 255.0f * faceShadow),
-                    static_cast<unsigned char>(col.z / 255.0f * faceShadow),
-                    200
-                });
-        }
-
-    EndMode3D();
-    EndTextureMode();
-
+    brush_preview::draw_mesh_faces_on_render_tex(renderer, render_tex, models, centerOfModel, deleteMode);
     util::draw_render_texture(render_tex);
 }
 

@@ -52,8 +52,8 @@ namespace util {
             target.texture.mipmaps = 1;
 
             rlFramebufferAttach(target.id, target.texture.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0);
-            if (rlFramebufferComplete(target.id))
-                TRACELOG(LOG_INFO, "FBO: [ID %i] Framebuffer object created successfully", target.id);
+            // if (rlFramebufferComplete(target.id))
+            //     TRACELOG(LOG_INFO, "FBO: [ID %i] Framebuffer object created successfully", target.id);
 
             rlDisableFramebuffer();
         }

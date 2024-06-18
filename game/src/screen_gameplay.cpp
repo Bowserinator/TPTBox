@@ -12,6 +12,7 @@
 #include "src/interface/hud/HUD.h"
 #include "src/interface/sim/SimUI.h"
 #include "src/interface/brush/Brush.h"
+#include "src/interface/brush/Preview.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
 #include "src/interface/settings/data/SettingsData.h"
@@ -47,6 +48,7 @@ void ScreenGameplay::init() {
     hud.init();
     hud.setState(HUDState::DEBUG_MODE);
 
+    brush_preview::init();
     renderer.init();
     sim_ui.init();
     sim.init();
