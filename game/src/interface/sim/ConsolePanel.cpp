@@ -4,6 +4,7 @@
 
 #include <format>
 #include <sstream>
+#include <algorithm>
 
 constexpr float LINE_HEIGHT = 22.0f;
 
@@ -15,6 +16,7 @@ ConsolePanel::ConsolePanel(Simulation * sim, const Vector2 &pos, const Vector2 &
         Vector2{ (float)GetScreenWidth() + 2.0f, 30.0f }
     );
     input->setPlaceholder("Type !help for a list of commands");
+    input->setInputAllowed([](const std::string &v) { return v != "`"; });
     input->setOnSubmit([this](const std::string &_val) {
         if (command_running || !_val.length()) return;
         std::string val = _val;
@@ -34,6 +36,8 @@ ConsolePanel::ConsolePanel(Simulation * sim, const Vector2 &pos, const Vector2 &
             }
             submitLine(formatted_cmd);
         }
+        cmd_history.push_back(val);
+        history_cursor = cmd_history.size();
         input->setValue("");
 
         // Run command and submit result
@@ -61,6 +65,16 @@ ConsolePanel::ConsolePanel(Simulation * sim, const Vector2 &pos, const Vector2 &
 }
 
 void ConsolePanel::tick(float dt) {
+    // Cycle history
+    if (EventConsumer::ref()->isKeyPressed(KEY_UP) && cmd_history.size()) {
+        history_cursor = history_cursor == 0 ? 0 : history_cursor - 1;
+        input->setValue(cmd_history[history_cursor]);
+    } else if (EventConsumer::ref()->isKeyPressed(KEY_DOWN) && cmd_history.size()) {
+        history_cursor = history_cursor >= cmd_history.size() - 1 ? history_cursor : history_cursor + 1;
+        input->setValue(cmd_history[std::min(history_cursor, cmd_history.size() - 1)]);
+    }
+
+    // ------ Events after may be consumed by UI ---
     Panel::tick(dt);
 
     if (IsWindowResized()) {

@@ -12,6 +12,7 @@
 #include "../EventConsumer.h"
 
 #include <string>
+#include <vector>
 
 using namespace ui;
 
@@ -39,6 +40,9 @@ private:
     Simulation * sim;
     unsigned int line_count = 0;
     bool command_running = false;
+
+    std::vector<std::string> cmd_history;
+    std::size_t history_cursor = 0;
 };
 
 #endif // INTERFACE_SIM_CONSOLEPANEL_H_

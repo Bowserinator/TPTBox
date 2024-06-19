@@ -260,6 +260,23 @@ void SimUI::switchCategory(const MenuCategory category) {
 }
 
 void SimUI::update() {
+    // ~ to enable console
+    if (!console_active && EventConsumer::ref()->isKeyPressed(KEY_GRAVE))
+        showConsole();
+    // ESC or ~ to exit console
+    else if (console_active &&
+            (EventConsumer::ref()->isKeyPressed(KEY_GRAVE) || EventConsumer::ref()->isKeyPressed(KEY_ESCAPE)))
+        hideConsole();
+    // ESC to exit game (if no current modal)
+    else if (EventConsumer::ref()->isKeyPressed(KEY_ESCAPE) || WindowShouldClose()) {
+        if (!settings::data::ref()->ui->fastQuit)
+            addChild(new ConfirmExitModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 50},
+                Vector2{500, 130}));
+        else
+            EventConsumer::ref()->flagExit();
+    }
+
+    // ----- Events after may be consumed by UI ------
     Scene::update();
 
     // Update positions on resize
@@ -275,23 +292,6 @@ void SimUI::update() {
                 GetScreenWidth() - slot * styles::SETTINGS_BUTTON_HEIGHT,
                 GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT
             };
-    }
-
-    // ~ to enable console
-    if (!console_active && EventConsumer::ref()->isKeyPressed(KEY_GRAVE))
-        showConsole();
-    // ESC or ~ to exit console
-    else if (console_active &&
-            (EventConsumer::ref()->isKeyPressed(KEY_GRAVE) || EventConsumer::ref()->isKeyPressed(KEY_ESCAPE)))
-        hideConsole();
-
-    // ESC to exit game (if no current modal)
-    else if (EventConsumer::ref()->isKeyPressed(KEY_ESCAPE) || WindowShouldClose()) {
-        if (!settings::data::ref()->ui->fastQuit)
-            addChild(new ConfirmExitModal(Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 50},
-                Vector2{500, 130}));
-        else
-            EventConsumer::ref()->flagExit();
     }
 
     // Update the rest
