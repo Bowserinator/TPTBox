@@ -72,6 +72,11 @@ namespace util {
 
     // UploadMesh, but only creates the vertices buffer
     void upload_mesh_vertices_only(Mesh *mesh, bool dynamic);
-}
+
+    // DrawTextEx, but with color escape codes
+    // Note: does not handle newlines
+    void draw_text_colored_ex(Font font, const char *text, Vector2 position, float fontSize,
+        float spacing, Color tintBase);
+} // namespace util
 
 #endif // UTIL_GRAPHICS_H_

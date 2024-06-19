@@ -6,11 +6,12 @@
 
 #include "../../../../simulation/Simulation.h"
 #include "../../../../util/str_format.h"
+#include "../../../../util/colored_text.h"
 
 namespace commands {
     inline auto cmd_set = [](Simulation * sim, const std::vector<std::string> &tokens) -> std::string {
         if (tokens.size() != 4)
-            return "Error: invalid syntax for set";
+            return text_format::F_RED + "Error: invalid syntax for set";
 
         enum class PartProp { type, flag, ctype, life, x, y, z, vx, vy, vz, temp, tmp1, tmp2, dcolor, invalid };
         enum class ValueType { t_float, t_uint, t_int, t_temperature, t_part_type };
@@ -52,14 +53,14 @@ namespace commands {
             prop_to_edit = PartProp::dcolor;
 
         if (prop_to_edit == PartProp::invalid)
-            return "Error: unknown property " + tokens[1];
+            return text_format::F_RED + "Error: unknown property " + tokens[1];
 
         bool apply_to_all = tokens[2] == "all";
         part_type filter = 0;
         if (!apply_to_all) {
             auto tmp = util::parse_string_part_type(tokens[2]);
             if (tmp == std::nullopt)
-                return "Error: invalid type: " + tokens[2];
+                return text_format::F_RED + "Error: invalid type: " + tokens[2];
             filter = tmp.value();
         }
 
@@ -75,35 +76,35 @@ namespace commands {
             case ValueType::t_float: {
                 auto tmp = util::parse_string_float(tokens[3]);
                 if (tmp == std::nullopt)
-                    return "Error: invalid float value: " + tokens[3];
+                    return text_format::F_RED + "Error: invalid float value: " + tokens[3];
                 val_float = tmp.value();
                 break;
             }
             case ValueType::t_uint: {
                 auto tmp = util::parse_string_integer<unsigned int>(tokens[3]);
                 if (tmp == std::nullopt)
-                    return "Error: invalid uint value: " + tokens[3];
+                    return text_format::F_RED + "Error: invalid uint value: " + tokens[3];
                 val_uint = tmp.value();
                 break;
             }
             case ValueType::t_int: {
                 auto tmp = util::parse_string_integer<int>(tokens[3]);
                 if (tmp == std::nullopt)
-                    return "Error: invalid int value: " + tokens[3];
+                    return text_format::F_RED + "Error: invalid int value: " + tokens[3];
                 val_int = tmp.value();
                 break;
             }
             case ValueType::t_temperature: {
                 auto tmp = util::temp_string_to_kelvin(tokens[3]);
                 if (tmp == std::nullopt)
-                    return "Error: invalid temperature value: " + tokens[3];
+                    return text_format::F_RED + "Error: invalid temperature value: " + tokens[3];
                 val_float = tmp.value();
                 break;
             }
             case ValueType::t_part_type: {
                 auto tmp = util::parse_string_part_type(tokens[3]);
                 if (tmp == std::nullopt)
-                    return "Error: invalid type: " + tokens[3];
+                    return text_format::F_RED + "Error: invalid type: " + tokens[3];
                 val_ptype = tmp.value();
                 break;
             }
@@ -111,11 +112,11 @@ namespace commands {
 
         // Bounds check for location
         if (prop_to_edit == PartProp::x && (val_uint == 0 || val_uint >= XRES - 1))
-            return "Error: x must be between 1 and " + std::to_string(XRES - 2) + " inclusive";
+            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(XRES - 2) + " inclusive";
         if (prop_to_edit == PartProp::y && (val_uint == 0 || val_uint >= YRES - 1))
-            return "Error: x must be between 1 and " + std::to_string(YRES - 2) + " inclusive";
+            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(YRES - 2) + " inclusive";
         if (prop_to_edit == PartProp::z && (val_uint == 0 || val_uint >= ZRES - 1))
-            return "Error: x must be between 1 and " + std::to_string(ZRES - 2) + " inclusive";
+            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(ZRES - 2) + " inclusive";
 
         for (part_id i = 1; i <= sim->maxId; i++) {
             if (!sim->parts[i].type) continue;

@@ -1,5 +1,6 @@
 #include "ConsolePanel.h"
 #include "./console/CommandExecutor.h"
+#include "../../util/colored_text.h"
 
 #include <format>
 #include <sstream>
@@ -17,7 +18,22 @@ ConsolePanel::ConsolePanel(Simulation * sim, const Vector2 &pos, const Vector2 &
     input->setOnSubmit([this](const std::string &_val) {
         if (command_running || !_val.length()) return;
         std::string val = _val;
-        submitLine("> " + val);
+        {
+            auto ss = std::stringstream{val};
+            std::string formatted_cmd = "> ";
+            for (std::string token; std::getline(ss, token, ' ');) {
+                if (token[0] == '!')
+                    formatted_cmd += text_format::F_SKYBLUE;
+                else if (token.end() == std::find_if(token.begin(), token.end(),
+                        [](unsigned char c) { return !isdigit(c) && c != '-'; }))
+                    formatted_cmd += text_format::F_GOLD;
+
+                formatted_cmd += token;
+                formatted_cmd += text_format::F_RESET;
+                formatted_cmd += ' ';
+            }
+            submitLine(formatted_cmd);
+        }
         input->setValue("");
 
         // Run command and submit result
@@ -60,14 +76,14 @@ void ConsolePanel::draw(const Vector2 &screenPos) {
 }
 
 void ConsolePanel::submitLine(const std::string &line, const double time_taken) {
-    panel->addChild(new ui::Label(
+    panel->addChild(new ui::RichLabel(
         Vector2{0, line_count * LINE_HEIGHT},
         Vector2{(float)GetScreenWidth(), LINE_HEIGHT},
         line
     ));
 
     if (time_taken >= 0) {
-        panel->addChild(new ui::Label(
+        panel->addChild(new ui::RichLabel(
             Vector2{0, line_count * LINE_HEIGHT},
             Vector2{1000.0f, LINE_HEIGHT},
             std::format("({:.2f}s)", time_taken),

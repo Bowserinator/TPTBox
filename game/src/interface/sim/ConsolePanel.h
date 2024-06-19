@@ -5,7 +5,7 @@
 #include "../gui/styles.h"
 #include "../gui/Style.h"
 #include "../gui/components/Panel.h"
-#include "../gui/components/Label.h"
+#include "../gui/components/RichLabel.h"
 #include "../gui/components/TextInput.h"
 #include "../gui/components/ScrollPanel.h"
 #include "../gui/components/HR.h"
