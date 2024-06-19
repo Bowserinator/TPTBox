@@ -25,54 +25,38 @@ namespace util {
         return out;
     }
 
-    inline std::string unicode_to_utf8(unsigned int codepoint) {
-        std::string out;
+    extern std::string unicode_to_utf8(unsigned int codepoint);
+    extern std::optional<float> parse_string_float(const std::string &s);
+    extern std::optional<float> temp_string_to_kelvin(const std::string &s);
+    extern std::optional<unsigned int> parse_string_part_type(const std::string &s);
 
-        if (codepoint <= 0x7f)
-            out.append(1, static_cast<char>(codepoint));
-        else if (codepoint <= 0x7ff) {
-            out.append(1, static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
-            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+    template <class T> requires std::is_integral_v<T>
+    std::optional<T> parse_string_integer(const std::string &s) {
+        if (!s.length()) return std::nullopt;
+        if constexpr(std::unsigned_integral<T>) { // Can't have negative unsigned ints
+            if (s[0] == '-') return std::nullopt;
         }
-        else if (codepoint <= 0xffff) {
-            out.append(1, static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
-            out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
-            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+        int start = 0;
+        bool is_hex = false;
+
+        if (s[0] == '-')
+            start = 1;
+        if (s.length() > 2 + start && s[start] == '0' && tolower(s[start + 1]) == 'x') {
+            start += 2;
+            is_hex = true;
         }
+
+        for (auto i = start; i < s.length(); i++)
+            if (is_hex ? !isxdigit(s[i]) : !isdigit(s[i])) return std::nullopt;
+
+        if (is_hex)
+            return static_cast<T>(std::strtoull(s.c_str(), nullptr, 16));
         else {
-            out.append(1, static_cast<char>(0xf0 | ((codepoint >> 18) & 0x07)));
-            out.append(1, static_cast<char>(0x80 | ((codepoint >> 12) & 0x3f)));
-            out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
-            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+            std::istringstream ss(s);
+            T num;
+            ss >> num;
+            return num;
         }
-        return out;
-    }
-
-    inline std::optional<float> parse_string_float(const std::string &s) {
-        double val = 0.0f;
-        if (!s.length()) return std::nullopt;
-
-        auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
-        bool isValidFloat = ec == std::errc() && p == s.data() + s.size();
-
-        if (!isValidFloat) return std::nullopt;
-        return val;
-    }
-
-    inline std::optional<float> temp_string_to_kelvin(const std::string &s) {
-        if (!s.length()) return std::nullopt;
-
-        auto val = parse_string_float(s);
-        if (val.has_value()) return val;
-        val = parse_string_float(s.substr(0, s.length() - 1));
-        if (!val.has_value()) return std::nullopt;
-
-        const char last = s[s.length() - 1];
-        if (last == 'C' || last == 'c')
-            return val.value() + 273.15f;
-        else if (last == 'F' || last == 'f')
-            return (val.value() - 32.0f) * 5.0f / 9.0f + 273.15f;
-        return val;
     }
 }
 

@@ -18,6 +18,7 @@
 #include "BrushViewModal.h"
 #include "BrushShapeToolModal.h"
 #include "ConsolePanel.h"
+#include "./console/Command.h"
 
 #include "../settings/data/SettingsData.h"
 #include "../settings/GraphicsSettingsModal.h"
@@ -35,6 +36,8 @@ SimUI::SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * si
     brushRenderer(brushRenderer), renderer(renderer), sim(sim) {}
 
 void SimUI::init() {
+    commands::setup_commands();
+
     brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f }, renderer, brushRenderer);
     addChild(brushViewWindow);
 
@@ -150,7 +153,7 @@ void SimUI::init() {
     switchCategory((MenuCategory)0);
 
     tooltips = { elementDescLabel, menuTooltip, bottomTooltip };
-    consolePanel = new ConsolePanel(Vector2{0, 0}, Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
+    consolePanel = new ConsolePanel(sim, Vector2{0, 0}, Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
 }
 
 void SimUI::switchCategory(const MenuCategory category) {

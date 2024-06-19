@@ -8,15 +8,18 @@
 #include "../gui/components/Label.h"
 #include "../gui/components/TextInput.h"
 #include "../gui/components/ScrollPanel.h"
+#include "../gui/components/HR.h"
 #include "../EventConsumer.h"
 
 #include <string>
 
 using namespace ui;
 
+class Simulation;
+
 class ConsolePanel: public ui::Panel {
 public:
-    ConsolePanel(const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
+    ConsolePanel(Simulation * sim, const Vector2 &pos, const Vector2 &size, const Style &style = Style::getDefault());
 
     void draw(const Vector2 &screenPos) override;
     void tick(float dt) override;
@@ -30,8 +33,10 @@ public:
     ui::ScrollPanel * panel = nullptr;
 
 private:
-    void submitLine(const std::string &command);
+    void submitLine(const std::string &line, const double time_taken = -1.0f);
+    void submitDivider();
 
+    Simulation * sim;
     unsigned int line_count = 0;
     bool command_running = false;
 };
