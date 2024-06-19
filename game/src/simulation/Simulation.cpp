@@ -262,9 +262,9 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
             photons[z][y][x] = 0;
     }
 
-    parts[pfree].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
-    parts[pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
-    parts[pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
+    parts[i].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+    parts[i].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
+    parts[i].flag[PartFlags::IS_ENERGY]    = is_energy;
 
     if (paused && _should_do_lighting(parts[i])) // Do this check again since type changed
         graphics.shadows_force_update = true;
@@ -337,7 +337,8 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
     auto &part = parts[i];
 
     #ifdef DEBUG
-    if (!part.type) throw std::runtime_error("update_part() called on NONE type particle");
+    if (!part.type) throw std::runtime_error("update_part() called on NONE type particle, id = " +
+        std::to_string((int)i));
     #endif
 
     // Since a particle might move we might update it again
