@@ -79,20 +79,26 @@ void Simulation::move_behavior(const part_id idx) {
                     TYP(pmap[z - 1][y][x]) == part.type &&
                     TYP(pmap[z + 1][y][x]) == part.type &&
                     TYP(pmap[z][y][x - 1]) == part.type &&
-                    TYP(pmap[z][y][x + 1]) == part.type
+                    TYP(pmap[z][y][x + 1]) == part.type &&
+
+                    TYP(pmap[z - 1][y][x - 1]) == part.type &&
+                    TYP(pmap[z + 1][y][x + 1]) == part.type &&
+                    TYP(pmap[z + 1][y][x - 1]) == part.type &&
+                    TYP(pmap[z - 1][y][x + 1]) == part.type
                 ) return;
 
+                constexpr int delta[] = {-1, 0, 1};
                 for (int i = 0; i < el.Diffusion; i++) {
-                    float dx = rng().chance(1, 2) ? -1 : 1;
-                    float dz = rng().chance(1, 2) ? -1 : 1;
+                    int dx = delta[rng()() % 3];
+                    int dz = delta[rng()() % 3];
                     const int newy = is_liquid ? y : y - 1;
 
-                    if (REVERSE_BOUNDS_CHECK(x + util::ceil_proper(dx), newy, z + util::ceil_proper(dz)))
+                    if (REVERSE_BOUNDS_CHECK(x + dx, newy, z + dz))
                         return;
 
                     const float newyf = is_liquid ? part.y : part.y - 1.0f;
                     bool can_move_y_check = is_liquid ||
-                        (eval_move(idx, x + util::ceil_proper(dx), y, z + util::ceil_proper(dz))
+                        (eval_move(idx, x + dx, y, z + dz)
                             != PartSwapBehavior::NOOP);
 
                     if (can_move_y_check) {
@@ -112,7 +118,7 @@ void Simulation::move_behavior(const part_id idx) {
                             RaycastOutput out;
                             hit = raycast(RaycastInput {
                                 .x = x, .y = y, .z = z,
-                                .vx = dx, .vy = 0.0f, .vz = dz
+                                .vx = (float)dx, .vy = 0.0f, .vz = (float)dz
                             }, out, pmapOccupied);
 
                             if (hit)

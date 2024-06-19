@@ -24,8 +24,8 @@ unsigned int RNG::operator()() noexcept {
 }
 
 int RNG::between(const int lower, const int upper) noexcept {
-    unsigned int r = next();
-    return static_cast<int>(r % ((unsigned int)(upper) - (unsigned int)(lower) + 1U)) + lower;
+    int r = static_cast<int>(next());
+    return r % (upper - lower + 1) + lower;
 }
 
 bool RNG::chance(const unsigned int numerator, const unsigned int denominator) noexcept {
