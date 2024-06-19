@@ -11,12 +11,19 @@
 namespace text_format {
     // DrawTextEx, but with color escape codes
     // Note: does not handle newlines
-    void draw_text_colored_ex(Font font, const char *text, Vector2 position, float fontSize,
+    extern void draw_text_colored_ex(Font font, const char *text, Vector2 position, float fontSize,
         float spacing, Color tintBase);
+
+    // Measure string size for Font
+    extern Vector2 measure_text_ex(Font font, const char *text, float fontSize, float spacing);
 
     inline void draw_text_colored_ex(Font font, const std::string &text, Vector2 position, float fontSize,
            float spacing, Color tintBase) {
         draw_text_colored_ex(font, text.c_str(), position, fontSize, spacing, tintBase);
+    }
+
+    inline Vector2 measure_text_ex(Font font, const std::string &text, float fontSize, float spacing) {
+        return measure_text_ex(font, text.c_str(), fontSize, spacing);
     }
 
     inline constexpr int C_ESCAPE = 20;
@@ -46,7 +53,9 @@ namespace text_format {
     inline constexpr int C_RESET = 24;
 
     inline constexpr Color C_COLORS[] = { LIGHTGRAY, GRAY, DARKGRAY, YELLOW, GOLD, ORANGE,
-        PINK, RED, MAROON, GREEN, LIME, DARKGREEN, SKYBLUE, BLUE, DARKBLUE, PURPLE, VIOLET,
+        PINK, Color{ 255, 0, 0, 255 } /* red */,
+        MAROON, Color{ 0, 255, 0, 255 } /* green */,
+        LIME, DARKGREEN, SKYBLUE, BLUE, DARKBLUE, PURPLE, VIOLET,
         DARKPURPLE, BEIGE, BROWN, DARKBROWN, WHITE, BLACK };
 
     inline const std::string fcode(int code) {

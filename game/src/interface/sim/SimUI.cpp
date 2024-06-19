@@ -41,7 +41,7 @@ void SimUI::init() {
     brushViewWindow = new BrushViewModal(Vector2{ 15.0f, 250.0f }, Vector2 { 240.0f, 200.0f }, renderer, brushRenderer);
     addChild(brushViewWindow);
 
-    brushShapeToolWindow = new BrushShapeToolModal(Vector2{ 15.0f, 460.0f }, Vector2 { 240.0f, 200.0f },
+    brushShapeToolWindow = new BrushShapeToolModal(Vector2{ 15.0f, 460.0f }, Vector2 { 240.0f, 150.0f },
         renderer, brushRenderer);
     addChild(brushShapeToolWindow);
 

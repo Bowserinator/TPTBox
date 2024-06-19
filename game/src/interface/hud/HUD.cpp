@@ -7,7 +7,7 @@
 #include "../../simulation/ElementClasses.h"
 #include "../../util/str_format.h"
 #include "../../util/math.h"
-#include "../FontCache.h"
+#include "../../util/colored_text.h"
 #include "../brush/Brush.h"
 #include "../../render/Renderer.h"
 #include "../settings/data/SettingsData.h"
@@ -151,6 +151,27 @@ void HUD::draw(const HUDData &data) {
                 (int)std::round(cam->camera.position.z),
                 cam->isLocked() ? "/ [Cursor Lock (RCLICK)]" : ""),
             20.0f, GetScreenHeight() - 120.0f, WHITE);
+
+        for (int line = 0; line < 2; line++) {
+            std::string text;
+            if (line == 0)
+                text = (IsKeyDown(KEY_LEFT_SHIFT) ? text_format::F_WHITE : text_format::F_GRAY)
+                    + "[Shift: Secondary tool]";
+            else if (line == 1)
+                text = (IsKeyDown(KEY_LEFT_CONTROL) ? text_format::F_WHITE : text_format::F_GRAY)
+                    + "[Ctrl+scroll: brush size]";
+
+            const auto tsize = text_format::measure_text_ex(FontCache::ref()->main_font,
+                text.c_str(), FONT_SIZE, FONT_SPACING);
+            const float x = 20.0f;
+            const float y = GetScreenHeight() - 120.0f - tsize.y - (tsize.y + 2 * PAD_Y) * (line + 1);
+            DrawRectangle(x - PAD_X, y - PAD_Y,
+                tsize.x + PAD_X * 2,
+                tsize.y + 2 * PAD_Y,
+                Fade(BLACK, 0.5f));
+            text_format::draw_text_colored_ex(FontCache::ref()->main_font, text,
+                Vector2{ x, y }, FONT_SIZE, FONT_SPACING, WHITE);
+        }
     }
 
     // Update the average fps
