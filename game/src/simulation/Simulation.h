@@ -8,6 +8,7 @@
 #include "Gol.h"
 #include "Raycast.h"
 #include "Air.h"
+#include "Sign.h"
 
 #include "../util/types/rand.h"
 #include "../util/types/heap_array.h"
@@ -57,6 +58,7 @@ public:
     Air air;
     SimulationGol gol;
     SimulationHeat heat;
+    SimulationSigns signs;
 
     part_id pfree;
     part_id maxId;

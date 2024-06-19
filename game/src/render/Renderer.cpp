@@ -447,6 +447,7 @@ void Renderer::draw() {
     update_colors_and_lod();
     if (show_octree)
         draw_octree_debug();
+    sim->signs.update(sim, this);
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
@@ -545,6 +546,8 @@ void Renderer::draw() {
             rlDisableShader();
 
         EndShaderMode();
+
+        sim->signs.draw(this);
     EndMode3D();
 
     frame_count++;

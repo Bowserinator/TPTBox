@@ -58,6 +58,7 @@ Simulation::~Simulation() {}
 void Simulation::init() {
     gol.init();
     heat.init();
+    signs.init();
 }
 
 void Simulation::reset() {
