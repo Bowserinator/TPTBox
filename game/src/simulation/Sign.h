@@ -33,6 +33,7 @@ public:
 
     void add_sign(); // TODO
     void remove_sign(); // TODO
+    void clear() { signs.clear(); }
 
 private:
     constexpr inline static std::size_t MAX_SIGNS = 16;

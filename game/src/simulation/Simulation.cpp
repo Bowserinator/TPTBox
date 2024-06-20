@@ -79,6 +79,7 @@ void Simulation::reset() {
     graphics.reset();
     heat.reset();
     gol.reset();
+    signs.clear();
 }
 
 void Simulation::update_settings(settings::Sim * settings) {
