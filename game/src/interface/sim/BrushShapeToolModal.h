@@ -19,7 +19,8 @@ private:
         * defaultBrushBtn,
         * volumeBrushBtn,
         * fillBrushBtn,
-        * lineBrushBtn;
+        * lineBrushBtn,
+        * signBrushBtn;
 
     std::vector<ui::IconButton *> btns;
 

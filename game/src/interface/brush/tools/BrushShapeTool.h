@@ -24,6 +24,7 @@
 #define CLICK_BRUSH_OP_PARAMS const std::vector<Vector3T<int>> &points, BrushRenderer * brush_renderer, Simulation * sim, bool is_filling_element
 #define CLICK_BRUSH_DRAW_PARAMS const std::vector<Vector3T<int>> &points, Renderer * renderer, BrushRenderer * brush_renderer, const Vector3T<int> pos
 #define CLICK_BRUSH_REMESH_PARAMS const std::vector<Vector3T<int>> &points, Renderer * renderer, BrushRenderer * brush_renderer, const Vector3T<int> pos
+#define CANCEL_BRUSH_PARAMS BrushRenderer * brush_renderer, Simulation * sim
 
 /** A tool that works by clicking on two points */
 class BrushShapeTool {
@@ -41,6 +42,9 @@ public:
      * @param brush_renderer
      */
     virtual void operation(CLICK_BRUSH_OP_PARAMS) = 0;
+
+    /** Called when right click clears all points */
+    virtual void onCancel(CANCEL_BRUSH_PARAMS) { }
 
     /**
      * @brief Draw the tool preview

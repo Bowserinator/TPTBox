@@ -31,7 +31,8 @@ typedef enum {
     ICON_BRUSH,
     ICON_FILL,
     ICON_VOLUME,
-    ICON_LINE
+    ICON_LINE,
+    ICON_SIGN
 } guiIconName;
 
 #endif // INTERFACE_ICONS_H_

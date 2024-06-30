@@ -25,6 +25,7 @@
 #include "../settings/SimSettingsModal.h"
 #include "../settings/ConfirmExitModal.h"
 #include "../settings/UISettingsModal.h"
+#include "windows/ErrorWindow.h"
 
 #include <string>
 #include <algorithm>
@@ -331,4 +332,10 @@ void SimUI::hideConsole() {
     console_active = false;
     sim->set_paused(sim_paused_before);
     removeChildDontDelete(consolePanel);
+}
+
+void SimUI::error_popup(const std::string &error_msg) {
+    addChild(new ErrorWindow(
+        Vector2{(float)GetScreenWidth() / 2 - 250, (float)GetScreenHeight() / 2 - 55},
+        Vector2{500, 110}, error_msg));
 }

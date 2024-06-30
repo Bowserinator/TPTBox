@@ -136,6 +136,7 @@ void BrushRenderer::do_controls(Simulation * sim) {
             if (GetTime() - last_right_click_time < 0.1) {
                 click_locations.clear();
                 click_locations_changed = true;
+                brush_shape_tool->onCancel(this, sim);
             }
         }
     }

@@ -4,34 +4,14 @@
 #include "rlgl.h"
 #include <glad.h>
 
-#include "src/render/camera/camera.h"
-#include "src/render/Renderer.h"
-#include "src/simulation/Simulation.h"
+#include "src/globals.h"
 #include "src/simulation/ElementClasses.h"
-
-#include "src/interface/hud/HUD.h"
-#include "src/interface/sim/SimUI.h"
-#include "src/interface/brush/Brush.h"
 #include "src/interface/brush/Preview.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
 #include "src/interface/settings/data/SettingsData.h"
 
 #include <algorithm>
-
-#if defined(PLATFORM_DESKTOP)
-#define GLSL_VERSION 330
-#else // PLATFORM_ANDROID, PLATFORM_WEB
-#define GLSL_VERSION 100
-#endif
-
-
-static RenderCamera render_camera;
-static Simulation sim;
-static BrushRenderer brush_renderer(&sim, &render_camera);
-static Renderer renderer(&sim, &render_camera);
-static HUD hud(&sim, &render_camera, &renderer);
-static SimUI sim_ui(&brush_renderer, &renderer, &sim);
 
 static double simTime = 0.0f;
 static double drawTime = 0.0f;
@@ -43,7 +23,9 @@ void ScreenGameplay::init() {
     render_camera.camera.target = Vector3{XRES / 2, YRES / 2, ZRES / 2};      // Camera looking at point
     render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
     render_camera.camera.fovy = 45.0f;
-    render_camera.setBounds(Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES }, Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
+    render_camera.setBounds(
+        Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES },
+        Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
 
     hud.init();
     hud.setState(HUDState::DEBUG_MODE);

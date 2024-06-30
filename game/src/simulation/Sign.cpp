@@ -7,12 +7,6 @@
 
 #include <format>
 
-constexpr static float SIGN_UPSCALE = 5.0f;
-constexpr static float MAX_SIGN_WIDTH = 1500.0f;
-constexpr static float SIGN_HEIGHT = 60.0f;
-constexpr static float SIGN_FONT_SIZE = 28.0f;
-constexpr static float PAD_X = 10.0f;
-
 Sign::Sign(const std::string &text, coord_t x, coord_t y, coord_t z):
     text(text), x(x), y(y), z(z) {}
 
@@ -72,36 +66,43 @@ void Sign::update(const Simulation * const sim, Renderer * renderer, const Rende
         m_size = MeasureTextEx(FontCache::ref()->main_font, display_text.c_str(), SIGN_FONT_SIZE, 0.0f);
 
         BeginTextureMode(tex);
-            DrawRectangle(region.x, region.y, m_size.x + 2 * PAD_X, region.height, Color{ 25, 25, 25, 255 });
+            DrawRectangle(region.x, region.y, m_size.x + 2 * SIGN_PAD_X, region.height, Color{ 25, 25, 25, 255 });
             DrawTextEx(FontCache::ref()->main_font, display_text.c_str(),
-                Vector2{ region.x + PAD_X, region.y + (region.height - m_size.y) / 2 },
+                Vector2{ region.x + SIGN_PAD_X, region.y + (region.height - m_size.y) / 2 },
                 SIGN_FONT_SIZE, 0.0f, WHITE);
         EndTextureMode();
     }
 }
 
-void Sign::draw(Renderer * renderer, const RenderTexture2D &tex, Rectangle region) const {
-    region.width = m_size.x + 2 * PAD_X;
+void Sign::draw(Renderer * renderer, const RenderTexture2D &tex, Rectangle region,
+        std::optional<Vector3> pos_, Color tint) const {
+    Vector3 pos = pos_.value_or(Vector3{(float)x, (float)y, (float)z});
+    region.width = m_size.x + 2 * SIGN_PAD_X;
     DrawBillboardRec(renderer->get_cam()->camera, tex.texture, region,
-        Vector3{(float)x, (float)y, (float)z},
+        Vector3{pos.x, pos.y, pos.z},
         Vector2{ SIGN_UPSCALE, SIGN_UPSCALE },
-        WHITE);
+        tint);
 }
 
 // -----------
 void SimulationSigns::init() {
     all_signs_tex = LoadRenderTexture(MAX_SIGN_WIDTH, MAX_SIGNS * SIGN_HEIGHT);
-
-    signs.emplace_back("hello {t} {p} {type} {tmp} {tmp2} {ctype}", 50, 100, 50);
-    signs.emplace_back("this is a sign", 50, 150, 50);
 }
 
-void SimulationSigns::add_sign() {
-    // TODO
+void SimulationSigns::add_sign(const std::string &text, coord_t x, coord_t y, coord_t z) {
+    if (signs.size() == MAX_SIGNS) return;
+    signs.emplace_back(text, x, y, z);
 }
 
-void SimulationSigns::remove_sign() {
-    // TODO
+void SimulationSigns::remove_sign(Sign * sign) {
+    for (std::size_t i = 0; i < signs.size(); i++) {
+        if (&signs[i] == sign) {
+            auto it = signs.begin();
+            std::advance(it, i);
+            signs.erase(it);
+            return;
+        }
+    }
 }
 
 void SimulationSigns::update(const Simulation * const sim, Renderer * renderer) {
@@ -109,6 +110,19 @@ void SimulationSigns::update(const Simulation * const sim, Renderer * renderer) 
     for (auto &sign : signs) {
         sign.update(sim, renderer, all_signs_tex, Rectangle { 0, y * SIGN_HEIGHT, MAX_SIGN_WIDTH, SIGN_HEIGHT });
         y++;
+    }
+}
+
+void SimulationSigns::draw_single_sign(Renderer * renderer, const Sign * draw_sign,
+        std::optional<Vector3> pos, Color tint) {
+    for (int y = 0; y < signs.size(); y++) {
+        const auto &sign = signs[y];
+        if (&sign == draw_sign) {
+            // Note: height is negative because of opengl indexing, different from update
+            sign.draw(renderer, all_signs_tex,
+                Rectangle { 0, -y * SIGN_HEIGHT, MAX_SIGN_WIDTH, -SIGN_HEIGHT }, pos, tint);
+            return;
+        }
     }
 }
 

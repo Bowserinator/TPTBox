@@ -53,10 +53,20 @@ BrushShapeToolModal::BrushShapeToolModal(const Vector2 &pos, const Vector2 &size
         switch_btn(lineBrushBtn);
     });
 
+    signBrushBtn = new ui::IconButton(
+        Vector2{ PAD + 4 * styles::SETTINGS_BUTTON_HEIGHT, PAD },
+        Vector2{ styles::SETTINGS_BUTTON_HEIGHT, styles::SETTINGS_BUTTON_HEIGHT },
+        ICON_SIGN);
+    signBrushBtn->setClickCallback([this, brushRenderer](unsigned int) {
+        brushRenderer->set_brush_shape_tool(BRUSH_TOOLS[BRUSH_TOOL_SIGN]);
+        switch_btn(signBrushBtn);
+    });
+
     btns.push_back(defaultBrushBtn);
     btns.push_back(volumeBrushBtn);
     btns.push_back(fillBrushBtn);
     btns.push_back(lineBrushBtn);
+    btns.push_back(signBrushBtn);
 
     for (auto b : btns)
         addChild(b);

@@ -7,10 +7,12 @@
 #include "../gui/components/TextButton.h"
 #include "../gui/components/IconButton.h"
 #include "../gui/components/Panel.h"
+
 #include "ConsolePanel.h"
 
 #include <map>
 #include <vector>
+#include <string>
 
 class BrushRenderer;
 class Renderer;
@@ -25,6 +27,8 @@ public:
 
     void init() override;
     void update() override;
+
+    void error_popup(const std::string &error_msg);
 
 private:
     void switchCategory(const MenuCategory category);
