@@ -1,9 +1,12 @@
 #include "Simulation.h"
 #include "ElementClasses.h"
 #include "ElementDefs.h"
+
 #include "../graphics/gradient.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
+#include "../util/types/reversible_range.h"
+
 #include "../interface/settings/data/SimSettingsData.h"
 #include "../interface/settings/data/SettingsData.h"
 
@@ -298,8 +301,8 @@ void Simulation::update_zslice(const coord_t pz) {
         y2 = YRES - 1;
     }
 
-    for (coord_t py = y1; py < y2; py++)
-    for (coord_t px = 1; px < XRES - 1; px++) {
+    for (coord_t py : ReversibleRange(y1, y2, (frame_count >> 1) & 1))
+    for (coord_t px : ReversibleRange(1, XRES - 1, (frame_count >> 2) & 1)) {
         if (pmap[pz][py][px]) {
             if (TYP(pmap[pz][py][px]) == PT_GOL) {
                 auto id = ID(pmap[pz][py][px]);
@@ -438,13 +441,13 @@ void Simulation::update() {
         if (tid == 0)
             actual_thread_count = thread_count;
 
-        for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
+        for (coord_t z : ReversibleRange(z_start, z_start + z_chunk_size, frame_count & 1))
             update_zslice(z);
 
         #pragma omp barrier // Synchronize threads before processing 2nd chunk
 
         z_start = z_chunk_size * (2 * tid + 1);
-        for (coord_t z = z_start; z < z_chunk_size + z_start; z++)
+        for (coord_t z : ReversibleRange(z_start, z_start + z_chunk_size, frame_count & 1))
             update_zslice(z);
     }
 

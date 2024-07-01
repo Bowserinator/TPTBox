@@ -78,11 +78,11 @@ void ScreenGameplay::init() {
     // }
 
 
-    // for (auto z = 6; z < AIR_ZRES / 2; z++)
-    // for (auto y = 6; y < AIR_YRES / 2; y++)
-    // for (auto x = 6; x < AIR_XRES / 2; x++) {
-    //     sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
-    // }
+    for (auto z = 6; z < AIR_ZRES / 2; z++)
+    for (auto y = 6; y < AIR_YRES / 2; y++)
+    for (auto x = 6; x < AIR_XRES / 2; x++) {
+        sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
+    }
 
     // int i = sim.create_part(50, 50, 50, 5);
     // sim.parts[i].vx = 35.0f;
@@ -98,14 +98,11 @@ void ScreenGameplay::init() {
 }
 
 void ScreenGameplay::update() {
-    sim.air.cells[AIR_XRES / 2][2][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
+    // sim.air.cells[AIR_XRES / 2][2][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
     // for (int x = 10; x < 100; x += 10)
     //      for (int z = 10; z < 100; z += 10)
     //      if (sim.pmap[z][90][x] == 0)
     //          sim.create_part(x, 90, z, 1);
-
-    if (IsKeyPressed(KEY_R))
-        sim.defrag_parts();
 
     auto t = GetTime();
     sim.update();
@@ -136,7 +133,7 @@ void ScreenGameplay::draw() {
     // for (auto z = 1; z < AIR_ZRES - 1; z++)
     // for (auto y = 1; y < AIR_YRES - 1; y++)
     // for (auto x = 1; x < AIR_XRES - 1; x++) {
-    //     float m = 20.0f;
+    //     float m = 5.0f;
     //     auto alpha = (std::max(-m, std::min(m, sim.air.cells[z][y][x].data[PRESSURE_IDX])) * 255.0f / m);
 
     //     if (alpha > 1) {
