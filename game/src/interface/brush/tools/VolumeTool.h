@@ -9,8 +9,8 @@ public:
     VolumeBrushTool(): BrushShapeTool("Cuboid", 2) {}
 
     void operation(CLICK_BRUSH_OP_PARAMS) override {
-        Vector3T<int> start = points[0];
-        Vector3T<int> end = points[1];
+        Vector3T<int> start = points[0].loc;
+        Vector3T<int> end = points[1].loc;
 
         if (end.x < start.x) std::swap(end.x, start.x);
         if (end.y < start.y) std::swap(end.y, start.y);
@@ -26,7 +26,7 @@ public:
 
     void draw(CLICK_BRUSH_DRAW_PARAMS) {
         auto centerOfModel = points.size() ?
-            (Vector3)(pos + points[0])  / 2.0f :
+            (Vector3)(pos + points[0].loc)  / 2.0f :
             (Vector3)pos;
         brush_preview::setup_shader(centerOfModel, renderer);
 
@@ -42,9 +42,9 @@ public:
                 preview_models = brush_preview::generate_cuboid_faces(1, 1, 1);
         } else {
             preview_models = brush_preview::generate_cuboid_faces(
-                std::abs(pos.x - points[0].x) + 1,
-                std::abs(pos.y - points[0].y) + 1,
-                std::abs(pos.z - points[0].z) + 1
+                std::abs(pos.x - points[0].loc.x) + 1,
+                std::abs(pos.y - points[0].loc.y) + 1,
+                std::abs(pos.z - points[0].loc.z) + 1
             );
         }
     }

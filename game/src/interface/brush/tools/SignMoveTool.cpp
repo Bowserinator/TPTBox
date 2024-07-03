@@ -2,7 +2,7 @@
 #include "SignMoveTool.h"
 
 void SignMoveBrushTool::operation(CLICK_BRUSH_OP_PARAMS) {
-    const auto &start = points[0];
+    const auto &start = points[0].loc;
 
     if (!sign_to_edit) return;
     sign_to_edit->x = start.x;

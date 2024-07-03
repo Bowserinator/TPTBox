@@ -64,7 +64,7 @@ void BrushRenderer::draw(Renderer * renderer) {
     if ((click_locations_changed || prev_brush_center != Vector3T<int>(bx, by, bz)) && brush_shape_tool) {
         click_locations_changed = false;
         prev_brush_center = Vector3T<int>(bx, by, bz);
-        brush_shape_tool->remesh(click_locations, renderer, this, Vector3T<int>(bx, by, bz));
+        brush_shape_tool->remesh(click_locations, renderer, this, Vector3T<int>(bx, by, bz), raycast_out);
     }
 
     if (brush_shape_tool)
@@ -113,14 +113,17 @@ void BrushRenderer::do_controls(Simulation * sim) {
     if (brush_shape_tool) {
         // Left click = set point
         if (EventConsumer::ref()->isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            click_locations.push_back(Vector3T<int>(bx, by, bz));
+            click_locations.push_back(m_ClickData {
+                .loc = Vector3T<int>(bx, by, bz),
+                .faces = raycast_out.faces
+            });
             click_locations_changed = true;
 
             if (click_locations.size() == brush_shape_tool->points_required) {
                 for (auto &loc : click_locations) {
-                    loc.x = util::clamp(loc.x, 1, XRES - 2);
-                    loc.y = util::clamp(loc.y, 1, YRES - 2);
-                    loc.z = util::clamp(loc.z, 1, ZRES - 2);
+                    loc.loc.x = util::clamp(loc.loc.x, 1, XRES - 2);
+                    loc.loc.y = util::clamp(loc.loc.y, 1, YRES - 2);
+                    loc.loc.z = util::clamp(loc.loc.z, 1, ZRES - 2);
                 }
                 brush_shape_tool->operation(click_locations, this, sim,
                     !(tool_mode || is_delete_mode()));

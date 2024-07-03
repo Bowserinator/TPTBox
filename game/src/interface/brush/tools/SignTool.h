@@ -12,7 +12,7 @@ public:
     SignBrushTool(): BrushShapeTool("Sign", 1) {}
 
     void operation(CLICK_BRUSH_OP_PARAMS) override {
-        const auto &start = points[0];
+        const auto &start = points[0].loc;
 
         for (auto &sign : sim->signs.get_signs())
             if (is_sign_clicked(sign)) {

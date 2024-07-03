@@ -20,6 +20,7 @@ private:
         * volumeBrushBtn,
         * fillBrushBtn,
         * lineBrushBtn,
+        * buildToMeBrushBtn,
         * signBrushBtn;
 
     std::vector<ui::IconButton *> btns;

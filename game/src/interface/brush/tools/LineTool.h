@@ -11,8 +11,8 @@ public:
     LineBrushTool(): BrushShapeTool("Line", 2) {}
 
     void operation(CLICK_BRUSH_OP_PARAMS) override {
-        auto &start = points[0];
-        auto &end = points[1];
+        auto &start = points[0].loc;
+        auto &end = points[1].loc;
 
         util::line3D(start.x, start.y, start.z, end.x, end.y, end.z, [brush_renderer](int x, int y, int z) {
             brush_renderer->draw_brush_at(x, y, z);
@@ -37,7 +37,7 @@ public:
                 preview_models = brush_preview::generate_cuboid_faces(1, 1, 1);
         } else {
             auto &start = pos;
-            auto &end = points[0];
+            auto &end = points[0].loc;
 
             std::array<std::vector<float>, 3> vertices;
             auto add_vertex = [&](BrushFace face, float x, float y, float z) {

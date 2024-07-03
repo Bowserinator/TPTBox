@@ -7,4 +7,5 @@ std::array<BrushShapeTool*, (std::size_t)BRUSH_TOOL_LAST> BRUSH_TOOLS{
     new LineBrushTool(),   // BRUSH_TOOL_LINE
     new SignBrushTool(),   // BRUSH_TOOL_SIGN
     new SignMoveBrushTool(), // BRUSH_TOOL_MOVE_SIGN
+    new BuildToBrushTool(), // BRUSH_TOOL_BUILD_TO_ME
 };

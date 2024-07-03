@@ -7,6 +7,7 @@
 #include "./tools/BrushShapeTool.h"
 #include "./tools/SignTool.h"
 #include "./tools/SignMoveTool.h"
+#include "./tools/BuildToTool.h"
 
 #include <array>
 
@@ -17,6 +18,7 @@ enum BRUSH_TOOL_NUMBERS {
     BRUSH_TOOL_LINE,
     BRUSH_TOOL_SIGN,
     BRUSH_TOOL_MOVE_SIGN,
+    BRUSH_TOOL_BUILD_TO_ME,
 
     BRUSH_TOOL_LAST // DO NOT USE
 };

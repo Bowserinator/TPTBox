@@ -24,7 +24,7 @@ public:
         };
 
         std::queue<Vector3T<coord_t>> to_visit;
-        auto &start = points[0];
+        auto &start = points[0].loc;
         to_visit.push(Vector3T<coord_t>(start.x, start.y, start.z));
 
         // If placing elements, can't fill if start location is occupied

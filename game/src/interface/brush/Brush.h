@@ -56,12 +56,17 @@ public:
     bool is_delete_mode();
     void set_brush_shape_tool(BrushShapeTool * brush_shape_tool);
 
+    struct m_ClickData {
+        Vector3T<int> loc;
+        RayCast::RayHitFace faces;
+    };
+
 private:
     std::vector<std::function<void()>> change_callbacks;
 
     static inline const Vector3T<int> NULL_INITIAL_LOCATION{-1, -1, -1};
 
-    std::vector<Vector3T<int>> click_locations;
+    std::vector<m_ClickData> click_locations;
     double last_right_click_time = 0;
     bool click_locations_changed = false;
     BrushShapeTool * brush_shape_tool = nullptr;
