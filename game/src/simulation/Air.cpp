@@ -1,222 +1,115 @@
 #include "Air.h"
+#include "../util/types/gl_time_query.h"
 
 #include <algorithm>
 #include <memory>
 #include <iostream>
 #include <cstring>
+#include <glad.h>
+#include <cmath>
 
-// How much to reduce on edges
-constexpr float PRESSURE_MULTI = 0.9f;
-constexpr float VELOCITY_MULTI = 0.8f;
+Air::Air(Simulation &sim): sim(sim) {}
 
-constexpr float AIR_TSTEPP = 0.3f;
-constexpr float AIR_TSTEPV = 0.4f;
-constexpr float AIR_VADV   = 0.3f;
-constexpr float AIR_VLOSS  = 0.999f;  // Vel reduction / frame
-constexpr float AIR_PLOSS  = 0.9999f;
-constexpr float ADV_DISTANCE_MULT = 0.7f;
+void Air::init() {
+#ifdef EMBED_SHADERS
+    #include "../../resources/shaders/generated/air_divergence.comp.h"
+    #include "../../resources/shaders/generated/air_advection.comp.h"
 
-/**
- * 3x3x3 gaussian blur kernel
- * Since the kernel is symmetric, there are only three values. If we imagine
- * the kernel in layers, where (distances = manhattan distance to center)
- * 
- * A = dis = 1 = KERNEL_ADJ
- * B = dis = 3 = KERNEL_CORNER2
- * C = dis = 2 = KERNEL_CORNER1
- * X = dis = 0 = KERNEL_CENTER
- * 
- * BCB (top and bottom)
- * CAC
- * BCB
- * 
- * CAC (middle slice)
- * AXA
- * CAC
- */
-constexpr float SCALE = 1.7250451807374247; // Normalize so all terms of kernel sum to 1.0f
-constexpr float KERNEL_CORNER1 = 0.058549832f / SCALE;
-constexpr float KERNEL_CORNER2 = 0.035512268f / SCALE;
-constexpr float KERNEL_ADJ  = 0.096532352f / SCALE;
-constexpr float KERNEL_MID = 0.15915494f / SCALE;
+    unsigned int div_shader = rlCompileShader(air_divergence_comp_source, RL_COMPUTE_SHADER);
+    divergence_program = rlLoadComputeShaderProgram(div_shader);
+    unsigned int adv_shader = rlCompileShader(air_advection_comp_source, RL_COMPUTE_SHADER);
+    adv_program = rlLoadComputeShaderProgram(adv_shader);
+#else
+    char * div_code = LoadFileText("resources/shaders/air_divergence.comp");
+    unsigned int div_shader = rlCompileShader(div_code, RL_COMPUTE_SHADER);
+    divergence_program = rlLoadComputeShaderProgram(div_shader);
+    UnloadFileText(div_code);
 
+    char * adv_code = LoadFileText("resources/shaders/air_advection.comp");
+    unsigned int adv_shader = rlCompileShader(adv_code, RL_COMPUTE_SHADER);
+    advection_program = rlLoadComputeShaderProgram(adv_shader);
+    UnloadFileText(adv_code);
+#endif
 
-Air::Air(Simulation &sim): sim(sim) {
+    ssbo_constants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
+    rlUpdateShaderBuffer(ssbo_constants, &constants, sizeof(constants), 0);
+
+    ssbos_vx = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER,
+        sizeof(pressure_map), util::PBFlags::READ_AND_WRITE);
+    ssbos_vy = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER,
+        sizeof(pressure_map), util::PBFlags::READ_AND_WRITE);
+    ssbos_vz = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER,
+        sizeof(pressure_map), util::PBFlags::READ_AND_WRITE);
+
     clear();
 }
 
 void Air::clear() {
-    memset(cells, 0.0f, sizeof(cells));
-    memset(out_cells, 0.0f, sizeof(cells));
+    memset(pressure_map, 0.0f, sizeof(pressure_map));
+    for (auto i = 0; i < ssbos_vx.getBufferCount(); i++) {
+        ssbos_vx.wait(i);
+        ssbos_vy.wait(i);
+        ssbos_vz.wait(i);
+
+        std::fill(&ssbos_vx.get<float>(i)[0],
+            &ssbos_vx.get<float>(i)[0] + (sizeof(pressure_map) / sizeof(pressure_map[0][0][0])), 0.0f);
+        std::fill(&ssbos_vy.get<float>(i)[0],
+            &ssbos_vy.get<float>(i)[0] + (sizeof(pressure_map) / sizeof(pressure_map[0][0][0])), 0.0f);
+        std::fill(&ssbos_vz.get<float>(i)[0],
+            &ssbos_vz.get<float>(i)[0] + (sizeof(pressure_map) / sizeof(pressure_map[0][0][0])), 0.0f);
+
+        ssbos_vx.lock(i);
+        ssbos_vy.lock(i);
+        ssbos_vz.lock(i);
+    }
 }
 
 void Air::update() {
-    setEdgesAndWalls();
-    setPressureFromVelocity();
-    setVelocityFromPressure();
-    diffusion();
-    advection();
-
-    std::swap(cells, out_cells);
+    solve_incompressibility();
+    fill_edges_and_advect_velocities();
 }
 
+void Air::solve_incompressibility() {
+    rlEnableShader(divergence_program);
+    rlBindShaderBuffer(ssbos_vx.getId(0), 0);
+    rlBindShaderBuffer(ssbos_vy.getId(0), 1);
+    rlBindShaderBuffer(ssbos_vz.getId(0), 2);
+    rlBindShaderBuffer(ssbo_constants, 3);
 
-void Air::setEdgesAndWalls() {
-    // Reduce pressure and velocity on edges
-    auto reduce_cell = [this](coord_t x, coord_t y, coord_t z) {
-        cells[z][y][x].data[PRESSURE_IDX] *= PRESSURE_MULTI;
-        cells[z][y][x].data[VX_IDX] *= VELOCITY_MULTI;
-        cells[z][y][x].data[VY_IDX] *= VELOCITY_MULTI;
-        cells[z][y][x].data[VZ_IDX] *= VELOCITY_MULTI;
-    };
+    // util::GlTimeQuery query;
 
-    // Top and bottom faces (Y axis)
-    for (auto z = 0; z < AIR_ZRES; z++) {
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, 0, z);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, 1, z);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, AIR_YRES - 2, z);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, AIR_YRES - 1, z);
-    }
+    for (int i = 0; i < 1; i++) // Number of divergence removing iterations
+        rlComputeShaderDispatch(
+            std::ceil((AIR_XRES - 2.0f) / 10.0f),
+            std::ceil((AIR_YRES - 2.0f) / 10.0f),
+            std::ceil((AIR_ZRES - 2.0f) / 10.0f));
 
-    // Z axis
-    for (auto y = 0; y < AIR_YRES; y++) {
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, y, 0);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, y, 1);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, y, AIR_ZRES - 2);
-        for (auto x = 0; x < AIR_XRES; x++)
-            reduce_cell(x, y, AIR_ZRES - 1);
-    }
+    rlDisableShader();
 
-    // X axis
-    for (auto z = 0; z < AIR_ZRES; z++) {
-        for (auto y = 0; y < AIR_YRES; y++) {
-            reduce_cell(0, y, z);
-            reduce_cell(1, y, z);
-            reduce_cell(AIR_XRES - 2, y, z);
-            reduce_cell(AIR_XRES - 1, y, z);
-        }
-    }
-
-    // TODO: apply walls
+    // std::cout << query.timeElapsedMs() << " ms (air sim)" << "\n";
 }
 
-void Air::setPressureFromVelocity() {
-    for (auto z = 1; z < AIR_ZRES - 1; z++)
-    for (auto y = 1; y < AIR_YRES - 1; y++)
-    for (auto x = 1; x < AIR_XRES - 1; x++) {
-        float dp = 
-              cells[z][y][x - 1].data[VX_IDX] - cells[z][y][x + 1].data[VX_IDX]
-            + cells[z][y - 1][x].data[VY_IDX] - cells[z][y + 1][x].data[VY_IDX]
-            + cells[z - 1][y][x].data[VZ_IDX] - cells[z + 1][y][x].data[VZ_IDX];
+void Air::fill_edges_and_advect_velocities() {
+    rlEnableShader(advection_program);
+    rlBindShaderBuffer(ssbos_vx.getId(0), 0);
+    rlBindShaderBuffer(ssbos_vy.getId(0), 1);
+    rlBindShaderBuffer(ssbos_vz.getId(0), 2);
+    rlBindShaderBuffer(ssbo_constants, 3);
+    rlBindShaderBuffer(ssbos_vx.getId(1), 4);
+    rlBindShaderBuffer(ssbos_vy.getId(1), 5);
+    rlBindShaderBuffer(ssbos_vz.getId(1), 6);
 
-        cells[z][y][x].data[PRESSURE_IDX] *= AIR_PLOSS;
-        cells[z][y][x].data[PRESSURE_IDX] += dp * AIR_TSTEPP * 0.5f;
-    }   
-}
+    // util::GlTimeQuery query;
 
-void Air::setVelocityFromPressure() {
-    for (auto z = 1; z < AIR_ZRES - 1; z++)
-    for (auto y = 1; y < AIR_YRES - 1; y++)
-    for (auto x = 1; x < AIR_XRES - 1; x++) {
-        float dx = cells[z][y][x - 1].data[PRESSURE_IDX] - cells[z][y][x + 1].data[PRESSURE_IDX];
-        float dy = cells[z][y - 1][x].data[PRESSURE_IDX] - cells[z][y + 1][x].data[PRESSURE_IDX];
-        float dz = cells[z - 1][y][x].data[PRESSURE_IDX] - cells[z + 1][y][x].data[PRESSURE_IDX];
+    rlComputeShaderDispatch(
+        std::ceil((AIR_XRES - 2.0f) / 10.0f),
+        std::ceil((AIR_YRES - 2.0f) / 10.0f),
+        std::ceil((AIR_ZRES - 2.0f) / 10.0f));
+    rlDisableShader();
 
-        cells[z][y][x].data[VX_IDX] = cells[z][y][x].data[VX_IDX] * AIR_VLOSS + dx * AIR_TSTEPV * 0.5f;
-        cells[z][y][x].data[VY_IDX] = cells[z][y][x].data[VY_IDX] * AIR_VLOSS + dy * AIR_TSTEPV * 0.5f;
-        cells[z][y][x].data[VZ_IDX] = cells[z][y][x].data[VZ_IDX] * AIR_VLOSS + dz * AIR_TSTEPV * 0.5f;
+    // std::cout << query.timeElapsedMs() << " ms (air sim - advection)" << "\n";
 
-        // TODO: set vel to 0 if wall adjacent or on cell
-    }
-}
-
-void Air::diffusion() {
-    // TODO: also blur on the edges, but edges assume 0 outside?
-
-    for (auto z = 1; z < AIR_ZRES - 1; z++)
-    for (auto y = 1; y < AIR_YRES - 1; y++)
-    for (auto x = 1; x < AIR_XRES - 1; x++) {
-        for (auto property = 0; property < 4; property++) {
-            float corners1 = 
-                  cells[z - 1][y][x - 1].data[property] + cells[z - 1][y][x + 1].data[property]
-                + cells[z + 1][y][x - 1].data[property] + cells[z + 1][y][x + 1].data[property] // Middle slice
-                + cells[z][y - 1][x - 1].data[property] + cells[z][y - 1][x + 1].data[property]
-                + cells[z - 1][y - 1][x].data[property] + cells[z + 1][y - 1][x].data[property] // Bot slice
-                + cells[z][y + 1][x - 1].data[property] + cells[z][y + 1][x + 1].data[property]
-                + cells[z - 1][y + 1][x].data[property] + cells[z + 1][y + 1][x].data[property]; // Top slice
-            float corners2 = cells[z - 1][y - 1][x - 1].data[property] + cells[z - 1][y - 1][x + 1].data[property]
-                + cells[z + 1][y - 1][x - 1].data[property] + cells[z + 1][y - 1][x + 1].data[property]
-                + cells[z - 1][y + 1][x - 1].data[property] + cells[z - 1][y + 1][x + 1].data[property]
-                + cells[z + 1][y + 1][x - 1].data[property] + cells[z + 1][y + 1][x + 1].data[property];
-            float adjacent = cells[z - 1][y][x].data[property] + cells[z + 1][y][x].data[property]
-                + cells[z][y - 1][x].data[property] + cells[z][y + 1][x].data[property]
-                + cells[z][y][x - 1].data[property] + cells[z][y][x + 1].data[property];
-
-            out_cells[z][y][x].data[property] = corners1 * KERNEL_CORNER1 + corners2 * KERNEL_CORNER2
-                + adjacent * KERNEL_ADJ + cells[z][y][x].data[property] * KERNEL_MID;
-        }
-    }
-}
-
-void Air::advection() {
-    for (auto z = 1; z < AIR_ZRES - 1; z++)
-    for (auto y = 1; y < AIR_YRES - 1; y++)
-    for (auto x = 1; x < AIR_XRES - 1; x++) {
-        auto dx = out_cells[z][y][x].data[VX_IDX];
-        auto dy = out_cells[z][y][x].data[VY_IDX];
-        auto dz = out_cells[z][y][x].data[VZ_IDX];
-
-        auto tx = x - dx * ADV_DISTANCE_MULT;
-        auto ty = y - dy * ADV_DISTANCE_MULT;
-        auto tz = z - dz * ADV_DISTANCE_MULT;
-
-        auto txi = (int)tx;
-        auto tyi = (int)ty;
-        auto tzi = (int)tz;
-
-        tx -= txi;
-        ty -= tyi;
-        tz -= tzi;
-
-        // TODO: wall check here
-        if (txi >= 2 && txi <= AIR_XRES - 3 && tyi >= 2 && tyi <= AIR_YRES - 3 && tzi >= 2 && tzi <= AIR_ZRES - 3) {
-            dx *= 1.0f - AIR_VADV;
-            dy *= 1.0f - AIR_VADV;
-            dz *= 1.0f - AIR_VADV;
-
-            float y_mult = 1.0f - ty;
-
-            // Linearly interpolate between 8 neighbors :sweat:
-            for (int i = 0; i < 2; i++) {
-                if (i == 1) y_mult = ty;
-
-                dx += AIR_VADV * (1.0f - tx) * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi].data[VX_IDX];
-                dy += AIR_VADV * (1.0f - tx) * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi].data[VY_IDX];
-                dz += AIR_VADV * (1.0f - tx) * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi].data[VZ_IDX];
-
-                dx += AIR_VADV * tx * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi + 1].data[VX_IDX];
-                dy += AIR_VADV * tx * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi + 1].data[VY_IDX];
-                dz += AIR_VADV * tx * y_mult * (1.0f - tz) * cells[tzi][tyi + i][txi + 1].data[VZ_IDX];
-
-                dx += AIR_VADV * (1.0f - tx) * y_mult * tz * cells[tzi + 1][tyi + i][txi].data[VX_IDX];
-                dy += AIR_VADV * (1.0f - tx) * y_mult * tz * cells[tzi + 1][tyi + i][txi].data[VY_IDX];
-                dz += AIR_VADV * (1.0f - tx) * y_mult * tz * cells[tzi + 1][tyi + i][txi].data[VZ_IDX];
-
-                dx += AIR_VADV * tx * y_mult * tz * cells[tzi + 1][tyi + i][txi + 1].data[VX_IDX];
-                dy += AIR_VADV * tx * y_mult * tz * cells[tzi + 1][tyi + i][txi + 1].data[VY_IDX];
-                dz += AIR_VADV * tx * y_mult * tz * cells[tzi + 1][tyi + i][txi + 1].data[VZ_IDX];
-            }
-        }
-
-        out_cells[z][y][x].data[VX_IDX] = dx;
-        out_cells[z][y][x].data[VY_IDX] = dy;
-        out_cells[z][y][x].data[VZ_IDX] = dz;
-    }
+    ssbos_vx.advance_cycle();
+    ssbos_vy.advance_cycle();
+    ssbos_vz.advance_cycle();
 }

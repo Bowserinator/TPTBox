@@ -196,7 +196,7 @@ void HUD::draw(const HUDData &data) {
         const int z = util::clamp(rz, 0, ZRES);
 
         const char * air_data = TextFormat("Pressure: %.2f",
-            sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
+            0.0f); // TODO // sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
 
         // Ctype
         std::string ctype_data = "";

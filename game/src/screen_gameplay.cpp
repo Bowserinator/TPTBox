@@ -81,7 +81,7 @@ void ScreenGameplay::init() {
     for (auto z = 6; z < AIR_ZRES / 2; z++)
     for (auto y = 6; y < AIR_YRES / 2; y++)
     for (auto x = 6; x < AIR_XRES / 2; x++) {
-        sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
+        // sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
     }
 
     // int i = sim.create_part(50, 50, 50, 5);

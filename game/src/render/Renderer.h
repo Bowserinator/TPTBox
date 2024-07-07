@@ -44,9 +44,10 @@ private:
     Simulation * sim;
     RenderCamera * cam;
     UBOWriter * settings_writer = nullptr;
+    UBOWriter * air_constants_writer = nullptr;
     Vector2 preFullscreenWindowRes;
 
-    Shader part_shader, post_shader, blur_shader;
+    Shader part_shader, post_shader, blur_shader, air_shader;
     int part_shader_res_loc,
         part_shader_uv1_loc,
         part_shader_uv2_loc,
@@ -60,6 +61,11 @@ private:
     int blur_shader_base_texture_loc,
         blur_shader_res_loc,
         blur_shader_dir_loc;
+    int air_shader_res_loc,
+        air_shader_uv1_loc,
+        air_shader_uv2_loc,
+        air_shader_camera_pos_loc,
+        air_shader_camera_dir_loc;
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     util::PersistentBuffer<BUFFER_COUNT> colorBuf;
@@ -69,6 +75,7 @@ private:
     unsigned int ssbo_constants;
     unsigned int ubo_settings;
     unsigned int ssbo_display_mode;
+    unsigned int air_ubo;
     uint8_t * ao_data;
 
     float downscaleRatio = 1.5f;

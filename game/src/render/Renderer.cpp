@@ -86,6 +86,7 @@ Renderer::~Renderer() {
     UnloadShader(post_shader);
     UnloadShader(blur_shader);
     UnloadShader(grid_shader);
+    UnloadShader(air_shader);
 
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
@@ -95,11 +96,14 @@ Renderer::~Renderer() {
 
     glDeleteBuffers(1, &ssbo_constants);
     glDeleteBuffers(1, &ubo_settings);
+    glDeleteBuffers(1, &air_ubo);
     glDeleteBuffers(1, &ssbo_display_mode);
     glDeleteTextures(BUFFER_COUNT, ao_tex);
     glDeleteTextures(BUFFER_COUNT, shadow_tex);
+
     delete[] ao_data;
     delete settings_writer;
+    delete air_constants_writer;
 }
 
 void Renderer::_generate_render_textures() {
@@ -135,16 +139,19 @@ void Renderer::init() {
     #include "../../resources/shaders/generated/post.fs.h"
     #include "../../resources/shaders/generated/blur.fs.h"
     #include "../../resources/shaders/generated/grid.fs.h"
+    #include "../../resources/shaders/generated/air.fs.h"
 
     part_shader = LoadShaderFromMemory(fullscreen_vs_source, part_fs_source);
     post_shader = LoadShaderFromMemory(fullscreen_vs_source, post_fs_source);
     blur_shader = LoadShaderFromMemory(fullscreen_vs_source, blur_fs_source);
     grid_shader = LoadShaderFromMemory(nullptr, grid_fs_source);
+    air_shader  = LoadShaderFromMemory(fullscreen_vs_source, air_fs_source);
 #else
     part_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/part.fs");
     post_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/post.fs");
     blur_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/blur.fs");
     grid_shader = LoadShader(nullptr, "resources/shaders/grid.fs");
+    air_shader  = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/air.fs");
 #endif
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
@@ -180,6 +187,12 @@ void Renderer::init() {
     blur_shader_base_texture_loc = GetShaderLocation(blur_shader, "baseTexture");
     blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
     blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
+
+    air_shader_res_loc = GetShaderLocation(air_shader, "resolution");
+    air_shader_camera_pos_loc = GetShaderLocation(air_shader, "cameraPos");
+    air_shader_camera_dir_loc = GetShaderLocation(air_shader, "cameraDir");
+    air_shader_uv1_loc = GetShaderLocation(air_shader, "uv1");
+    air_shader_uv2_loc = GetShaderLocation(air_shader, "uv2");
 
     // SSBOs for color & octree LOD data
     colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
@@ -250,6 +263,28 @@ void Renderer::init() {
         rlUpdateShaderBuffer(ssbo_constants, &data, sizeof(data), 0);
     }
 
+    float VIEW_SLICE_BEGIN[] = { 0.0f, 0.0f, 0.0f };
+    float VIEW_SLICE_END[] = { (float)XRES, (float)YRES, (float)ZRES };
+
+    // UBO: Air constants for air render
+    {
+        glGenBuffers(1, &air_ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, air_ubo);
+        air_constants_writer = new UBOWriter(air_shader.id, air_ubo, "Constants");
+        glBufferData(GL_UNIFORM_BUFFER, air_constants_writer->size(), NULL, GL_STATIC_DRAW);
+
+        int32_t AIRRES[] = { (int)AIR_XRES, (int)AIR_YRES, (int)AIR_ZRES };
+        float SIMRES[] = { (float)XRES, (float)YRES, (float)ZRES };
+
+        air_constants_writer->write_member("AIRRES", AIRRES);
+        air_constants_writer->write_member("SIMRES", SIMRES);
+        air_constants_writer->write_member("CELL_SIZE", AIR_CELL_SIZE);
+        air_constants_writer->write_member("FOV_DIV2", cam->camera.fovy * DEG2RAD / 2.0f);
+        air_constants_writer->write_member("VIEW_SLICE_BEGIN", VIEW_SLICE_BEGIN);
+        air_constants_writer->write_member("VIEW_SLICE_END", VIEW_SLICE_END);
+        air_constants_writer->upload();
+    }
+
     // UBO: settings
     {
         glGenBuffers(1, &ubo_settings);
@@ -259,8 +294,6 @@ void Renderer::init() {
 
         float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
         float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
-        float VIEW_SLICE_BEGIN[] = { 0.0f, 0.0f, 0.0f };
-        float VIEW_SLICE_END[] = { (float)XRES, (float)YRES, (float)ZRES };
 
         settings_writer->write_member("MAX_RAY_STEPS", 256 * 3);
         settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
@@ -329,6 +362,8 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
     settings_writer->write_member("VIEW_SLICE_BEGIN", VIEW_SLICE_BEGIN);
     settings_writer->write_member("VIEW_SLICE_END", VIEW_SLICE_END);
+    air_constants_writer->write_member("VIEW_SLICE_BEGIN", VIEW_SLICE_BEGIN);
+    air_constants_writer->write_member("VIEW_SLICE_END", VIEW_SLICE_END);
 
     settings_writer->write_member("ENABLE_OUTLINES", settings->showOutline ? 1 : 0);
     settings_writer->write_member("ENABLE_TRANSPARENCY", settings->enableTransparency ? 1 : 0);
@@ -341,6 +376,7 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("HEAT_VIEW_MIN", settings->heatViewMin);
     settings_writer->write_member("HEAT_VIEW_MAX", settings->heatViewMax);
     settings_writer->upload();
+    air_constants_writer->upload();
 
     _generate_render_textures();
 }
@@ -501,18 +537,39 @@ void Renderer::draw() {
     } else
         rlClearScreenBuffers();
 
-    BeginMode3D(cam->camera);
-    BeginShaderMode(part_shader);
+    // BeginMode3D(cam->camera);
+    // BeginShaderMode(part_shader);
+    //     util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
+    //     util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
+    //     util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
+    //     util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
+    //     util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+    //     util::draw_dummy_triangle();
 
-        util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
-        util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
-        util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
-        util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
-        util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+    // EndShaderMode();
+    // EndMode3D();
+
+    // TODO AIR
+    rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
+    rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
+    rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
+
+    BeginMode3D(cam->camera);
+    BeginShaderMode(air_shader);
+
+        util::set_shader_value(air_shader, air_shader_res_loc, virtual_resolution);
+        util::set_shader_value(air_shader, air_shader_camera_pos_loc, cam->camera.position);
+        util::set_shader_value(air_shader, air_shader_camera_dir_loc, look_ray);
+        util::set_shader_value(air_shader, air_shader_uv1_loc, uv1);
+        util::set_shader_value(air_shader, air_shader_uv2_loc, uv2);
         util::draw_dummy_triangle();
 
     EndShaderMode();
     EndMode3D();
+
+
+
     rlDisableFramebuffer();
 
     auto glow_tex_id = base_tex.glowOnlyTexture;

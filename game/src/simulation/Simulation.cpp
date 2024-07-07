@@ -62,6 +62,7 @@ void Simulation::init() {
     gol.init();
     heat.init();
     signs.init();
+    air.init();
 }
 
 void Simulation::reset() {
@@ -82,6 +83,7 @@ void Simulation::reset() {
     graphics.reset();
     heat.reset();
     gol.reset();
+    air.clear();
     signs.clear();
 }
 
@@ -379,10 +381,11 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         part.vz *= el.Loss;
 
         if (el.Advection) {
-            const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-            part.vx += el.Advection * airCell.data[VX_IDX];
-            part.vy += el.Advection * airCell.data[VY_IDX];
-            part.vz += el.Advection * airCell.data[VZ_IDX];
+            // TODO
+            // const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            // part.vx += el.Advection * airCell.data[VX_IDX];
+            // part.vy += el.Advection * airCell.data[VY_IDX];
+            // part.vz += el.Advection * airCell.data[VZ_IDX];
         }
 
         if (el.Update) {
@@ -429,8 +432,6 @@ void Simulation::update() {
     auto end = (GetTime() - t);
     // std::cout << end << "\n";
 
-    // air.update(); // TODO
-
     #pragma omp parallel num_threads(sim_thread_count)
     {
         const int thread_count = omp_get_num_threads();
@@ -471,7 +472,7 @@ void Simulation::download_heat_from_gpu() {
         heat.wait_and_get();
 
         #pragma omp parallel for schedule(static)
-        for (int i = 0; i < maxId; i++) {
+        for (int i = 0; i <= maxId; i++) {
             coord_t x = parts[i].rx;
             coord_t y = parts[i].ry;
             coord_t z = parts[i].rz;
@@ -656,6 +657,7 @@ void Simulation::dispatch_compute_shaders() {
     if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
     if (gol.golCount) gol.dispatch();
     if (enable_heat) heat.dispatch(frame_count);
+    air.update();
 }
 
 void Simulation::force_graphics_update() {

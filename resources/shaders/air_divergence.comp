@@ -1,0 +1,56 @@
+#version 430
+
+// Multiplication of local sizes <= 1024
+layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
+
+layout(std430, binding = 0) restrict buffer VX { float vx[]; };
+layout(std430, binding = 1) restrict buffer VY { float vy[]; };
+layout(std430, binding = 2) restrict buffer VZ { float vz[]; };
+
+layout(std430, binding = 3) readonly restrict buffer Constants {
+    ivec4 AIRRES;
+    uint CELL_SIZE;
+};
+
+const float OVER_RELAXATION = 1.9;
+
+
+uint idx(uint x, uint y, uint z) {
+    return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x + 1;
+    uint y = gl_GlobalInvocationID.y + 1;
+    uint z = gl_GlobalInvocationID.z + 1;
+    
+    if (x >= AIRRES.x - 2 || y >= AIRRES.y - 2 || z >= AIRRES.z - 2)
+        return;
+
+    // for (int dz = 0; dz < 2; dz++)
+    // for (int dy = 0; dy < 2; dy++)
+    // for (int dx = 0; dx < 2; dx++) {
+    //     if (x % 2 == dx && y % 2 == dy && z % 2 == dz) {
+
+        // Yes this can overwrite cells but *most* of the
+        // time it seems fine? Significantly speeds up the code
+            float s = 6.0;
+
+            float divergence =
+                vx[idx(x + 1, y, z)] - vx[idx(x, y, z)] +
+                vy[idx(x, y + 1, z)] - vy[idx(x, y, z)] +
+                vz[idx(x, y, z + 1)] - vz[idx(x, y, z)];
+            divergence /= CELL_SIZE;
+            float p = -divergence / s * OVER_RELAXATION;
+
+            vx[idx(x, y, z)]     -= p;
+            vx[idx(x + 1, y, z)] += p; // TODO: walls
+            vy[idx(x, y, z)]     -= p;
+            vy[idx(x, y + 1, z)] += p; // TODO: walls
+            vz[idx(x, y, z)]     -= p;
+            vz[idx(x, y, z + 1)] += p; // TODO: walls
+    //     }
+
+    //     barrier();
+    // }
+}

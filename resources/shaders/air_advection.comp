@@ -1,0 +1,118 @@
+#version 430
+
+// Multiplication of local sizes <= 1024
+layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
+
+layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
+layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
+layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
+
+layout(std430, binding = 3) readonly restrict buffer Constants {
+    ivec4 AIRRES;
+    uint CELL_SIZE;
+};
+
+layout(std430, binding = 4) writeonly restrict buffer NVX { float new_vx[]; };
+layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
+layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
+
+const float dt = 1;
+
+uint idx(uint x, uint y, uint z) {
+    return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
+}
+
+float sample_field_bilinear(vec3 pos, int field) {
+    float h1 = 1.0 / float(CELL_SIZE);
+    float h = float(CELL_SIZE);
+
+    vec3 delta = vec3(0.0);
+    delta[field] = h / 2.0;
+    pos = clamp(pos, vec3(h), vec3(h) * vec3(AIRRES.xyz));
+
+    uvec3 MAX_COORD = uvec3(AIRRES.xyz) - uvec3(1);
+    uvec3 top = min(uvec3((pos - delta) * h1), MAX_COORD); // top left upper corner
+    uvec3 bot = min(top + uvec3(1), MAX_COORD);            // opposite corner
+    vec3 s = ((pos - delta) - (vec3(top) * h)) * h1;
+    vec3 t = vec3(1.0) - s;
+    float c00, c01, c10, c11;
+
+    if (field == 0) { // vx
+        c00 = vx[idx(top.x, top.y, top.z)] * s.x + vx[idx(bot.x, top.y, top.z)] * t.x;
+        c01 = vx[idx(top.x, top.y, bot.z)] * s.x + vx[idx(bot.x, top.y, bot.z)] * t.x;
+        c10 = vx[idx(top.x, bot.y, top.z)] * s.x + vx[idx(bot.x, bot.y, top.z)] * t.x;
+        c11 = vx[idx(top.x, bot.y, bot.z)] * s.x + vx[idx(bot.x, bot.y, bot.z)] * t.x;
+    } else if (field == 1) { // vy
+        c00 = vy[idx(top.x, top.y, top.z)] * s.x + vy[idx(bot.x, top.y, top.z)] * t.x;
+        c01 = vy[idx(top.x, top.y, bot.z)] * s.x + vy[idx(bot.x, top.y, bot.z)] * t.x;
+        c10 = vy[idx(top.x, bot.y, top.z)] * s.x + vy[idx(bot.x, bot.y, top.z)] * t.x;
+        c11 = vy[idx(top.x, bot.y, bot.z)] * s.x + vy[idx(bot.x, bot.y, bot.z)] * t.x;
+    } else { // vz
+        c00 = vz[idx(top.x, top.y, top.z)] * s.x + vz[idx(bot.x, top.y, top.z)] * t.x;
+        c01 = vz[idx(top.x, top.y, bot.z)] * s.x + vz[idx(bot.x, top.y, bot.z)] * t.x;
+        c10 = vz[idx(top.x, bot.y, top.z)] * s.x + vz[idx(bot.x, bot.y, top.z)] * t.x;
+        c11 = vz[idx(top.x, bot.y, bot.z)] * s.x + vz[idx(bot.x, bot.y, bot.z)] * t.x;
+    }
+
+    float c0 = c00 * s.y + c10 * t.y;
+    float c1 = c01 * s.y + c11 * t.y;
+    return c0 * s.z + c1 * t.z;
+}
+
+float sample_vx(vec3 pos) { return sample_field_bilinear(pos, 0); }
+float sample_vy(vec3 pos) { return sample_field_bilinear(pos, 1); }
+float sample_vz(vec3 pos) { return sample_field_bilinear(pos, 2); }
+
+void main() {
+    uint x = gl_GlobalInvocationID.x + 1;
+    uint y = gl_GlobalInvocationID.y + 1;
+    uint z = gl_GlobalInvocationID.z + 1;
+
+    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1)
+        return;
+
+    // TODO: check walls
+    // TODO: explaination
+    // new_vx[idx(x, y, z)] = 0.0;
+    // new_vy[idx(x, y, z)] = 0.0;
+    // new_vz[idx(x, y, z)] = 0.0;
+
+    vec3 rpos = vec3(x, y, z) * CELL_SIZE;
+    vec3 vel_here;
+
+    // vx
+    if (y < AIRRES.y - 1 && z < AIRRES.z - 1) {
+        vel_here = vec3(
+            vx[idx(x, y, z)],
+            0.25 * (vy[idx(x, y, z)] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
+            0.25 * (vz[idx(x, y, z)] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
+        );
+        new_vx[idx(x, y, z)] = sample_vx(rpos - dt * vel_here);
+    }
+
+    // vy
+    if (x < AIRRES.x - 1 && z < AIRRES.z - 1) {
+        vel_here = vec3(
+            0.25 * (vx[idx(x, y, z)] + vx[idx(x + 1, y, z)] + vx[idx(x, y - 1, z)] + vx[idx(x + 1, y - 1, z)]),
+            vy[idx(x, y, z)],
+            0.25 * (vz[idx(x, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
+        );
+        new_vy[idx(x, y, z)] = sample_vy(rpos - dt * vel_here);
+    }
+
+    // vz
+    if (y < AIRRES.y - 1 && x < AIRRES.x - 1) {
+        vel_here = vec3(
+            0.25 * (vx[idx(x, y, z)] + vx[idx(x + 1, y, z)] + vx[idx(x, y, z - 1)] + vx[idx(x + 1, y, z - 1)]),
+            0.25 * (vy[idx(x, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
+            vz[idx(x, y, z)]
+        );
+        new_vz[idx(x, y, z)] = sample_vz(rpos - dt * vel_here);
+    }
+
+    if ((z >= 20 && z <= 30) && (y > 0 && y < 10) && x ==15) {
+        new_vx[idx(x,y,z)] = 1.0;
+        new_vy[idx(x,y,z)] = 10.0;
+        new_vz[idx(x,y,z)] = 0.0;
+    }
+}
