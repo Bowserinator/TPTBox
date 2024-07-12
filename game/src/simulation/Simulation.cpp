@@ -303,8 +303,9 @@ void Simulation::update_zslice(const coord_t pz) {
         y2 = YRES - 1;
     }
 
-    for (coord_t py : ReversibleRange(y1, y2, (frame_count >> 1) & 1))
-    for (coord_t px : ReversibleRange(1, XRES - 1, (frame_count >> 2) & 1)) {
+    coord_t px, py;
+    for (ReversibleRange r1(y1, y2, py, (frame_count >> 1) & 1); r1.has_next(); py = r1.next())
+    for (ReversibleRange r2(1, XRES - 1, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
         if (pmap[pz][py][px]) {
             if (TYP(pmap[pz][py][px]) == PT_GOL) {
                 auto id = ID(pmap[pz][py][px]);
@@ -442,13 +443,14 @@ void Simulation::update() {
         if (tid == 0)
             actual_thread_count = thread_count;
 
-        for (coord_t z : ReversibleRange(z_start, z_start + z_chunk_size, frame_count & 1))
+        coord_t z;
+        for (ReversibleRange r1(z_start, z_start + z_chunk_size, z, frame_count & 1); r1.has_next(); z = r1.next())
             update_zslice(z);
 
         #pragma omp barrier // Synchronize threads before processing 2nd chunk
 
         z_start = z_chunk_size * (2 * tid + 1);
-        for (coord_t z : ReversibleRange(z_start, z_start + z_chunk_size, frame_count & 1))
+        for (ReversibleRange r1(z_start, z_start + z_chunk_size, z, frame_count & 1); r1.has_next(); z = r1.next())
             update_zslice(z);
     }
 
