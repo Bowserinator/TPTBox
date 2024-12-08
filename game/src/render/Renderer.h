@@ -82,6 +82,7 @@ private:
     float blurDownscaleRatio = 1.5f;
 
     RenderTexture2D blur1_tex = {0}, blur2_tex = {0}, blur_tmp_tex = {0};
+    RenderTexture2D vel_tex = {0};
     MultiTexture base_tex;
     unsigned int frame_count = 0;
     bool show_octree = false;

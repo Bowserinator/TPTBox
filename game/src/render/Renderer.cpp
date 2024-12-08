@@ -91,6 +91,7 @@ Renderer::~Renderer() {
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
+    UnloadRenderTexture(vel_tex);
 
     UnloadModel(grid_model);
 
@@ -110,6 +111,7 @@ void Renderer::_generate_render_textures() {
     UnloadRenderTexture(blur1_tex);
     UnloadRenderTexture(blur2_tex);
     UnloadRenderTexture(blur_tmp_tex);
+    UnloadRenderTexture(vel_tex);
 
     base_tex = MultiTexture(GetScreenWidth() / downscaleRatio, GetScreenHeight() / downscaleRatio);
 
@@ -118,6 +120,7 @@ void Renderer::_generate_render_textures() {
     blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    vel_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     // Prevent blur from wrapping around
     for (unsigned int texId : std::array<unsigned int, 5>({
@@ -537,39 +540,17 @@ void Renderer::draw() {
     } else
         rlClearScreenBuffers();
 
-    // BeginMode3D(cam->camera);
-    // BeginShaderMode(part_shader);
-    //     util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
-    //     util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
-    //     util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
-    //     util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
-    //     util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
-    //     util::draw_dummy_triangle();
-
-    // EndShaderMode();
-    // EndMode3D();
-
-    // TODO AIR
-    rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
-    rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
-    rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
-
     BeginMode3D(cam->camera);
-    BeginShaderMode(air_shader);
-
-        util::set_shader_value(air_shader, air_shader_res_loc, virtual_resolution);
-        util::set_shader_value(air_shader, air_shader_camera_pos_loc, cam->camera.position);
-        util::set_shader_value(air_shader, air_shader_camera_dir_loc, look_ray);
-        util::set_shader_value(air_shader, air_shader_uv1_loc, uv1);
-        util::set_shader_value(air_shader, air_shader_uv2_loc, uv2);
+    BeginShaderMode(part_shader);
+        util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
+        util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
+        util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
+        util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
+        util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
         util::draw_dummy_triangle();
 
     EndShaderMode();
     EndMode3D();
-
-
-
     rlDisableFramebuffer();
 
     auto glow_tex_id = base_tex.glowOnlyTexture;
@@ -606,6 +587,34 @@ void Renderer::draw() {
 
         sim->signs.draw(this);
     EndMode3D();
+
+    // Draw other render textures
+    if (sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY) { // TODO: also pressure
+        BeginTextureMode(vel_tex);
+            ClearBackground(BLANK);
+            rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
+            rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
+            rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
+
+            BeginMode3D(cam->camera);
+            BeginShaderMode(air_shader);
+
+                util::set_shader_value(air_shader, air_shader_res_loc, virtual_resolution);
+                util::set_shader_value(air_shader, air_shader_camera_pos_loc, cam->camera.position);
+                util::set_shader_value(air_shader, air_shader_camera_dir_loc, look_ray);
+                util::set_shader_value(air_shader, air_shader_uv1_loc, uv1);
+                util::set_shader_value(air_shader, air_shader_uv2_loc, uv2);
+                util::draw_dummy_triangle();
+
+            EndShaderMode();
+            EndMode3D();
+        EndTextureMode();
+
+        util::draw_render_texture(vel_tex, Vector2{0.0f, 0.0f},
+            Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() },
+            Color { 255, 255, 255, 200 });
+    }
 
     frame_count++;
 }

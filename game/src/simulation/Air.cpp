@@ -40,12 +40,20 @@ void Air::init() {
         sizeof(pressure_map), util::PBFlags::READ_AND_WRITE);
     ssbos_vz = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER,
         sizeof(pressure_map), util::PBFlags::READ_AND_WRITE);
+    ssbos_walls = util::PersistentBuffer<1>(GL_SHADER_STORAGE_BUFFER,
+        sizeof(wall_map), util::PBFlags::WRITE);
 
     clear();
 }
 
 void Air::clear() {
     memset(pressure_map, 0.0f, sizeof(pressure_map));
+    memset(wall_map, 0, sizeof(wall_map));
+
+    for (int x = 0; x < AIR_XRES; x++)
+    for (int z = 0; z < AIR_ZRES; z++)
+        wall_map[(x + z * AIR_XRES * AIR_YRES + 40 * AIR_XRES) / 8] = 0xFF;
+
     for (auto i = 0; i < ssbos_vx.getBufferCount(); i++) {
         ssbos_vx.wait(i);
         ssbos_vy.wait(i);
@@ -65,6 +73,8 @@ void Air::clear() {
 }
 
 void Air::update() {
+    memcpy(ssbos_walls.get<uint8_t>(0), wall_map, sizeof(wall_map)); // TODO diff
+
     solve_incompressibility();
     fill_edges_and_advect_velocities();
 }
@@ -75,10 +85,11 @@ void Air::solve_incompressibility() {
     rlBindShaderBuffer(ssbos_vy.getId(0), 1);
     rlBindShaderBuffer(ssbos_vz.getId(0), 2);
     rlBindShaderBuffer(ssbo_constants, 3);
+    rlBindShaderBuffer(ssbos_walls.getId(0), 4);
 
     // util::GlTimeQuery query;
 
-    for (int i = 0; i < 1; i++) // Number of divergence removing iterations
+    for (int i = 0; i < 10; i++) // Number of divergence removing iterations
         rlComputeShaderDispatch(
             std::ceil((AIR_XRES - 2.0f) / 10.0f),
             std::ceil((AIR_YRES - 2.0f) / 10.0f),
@@ -98,6 +109,7 @@ void Air::fill_edges_and_advect_velocities() {
     rlBindShaderBuffer(ssbos_vx.getId(1), 4);
     rlBindShaderBuffer(ssbos_vy.getId(1), 5);
     rlBindShaderBuffer(ssbos_vz.getId(1), 6);
+    rlBindShaderBuffer(ssbos_walls.getId(0), 7);
 
     // util::GlTimeQuery query;
 

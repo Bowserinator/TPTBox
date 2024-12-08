@@ -6,17 +6,27 @@ layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
 layout(std430, binding = 0) restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) restrict buffer VZ { float vz[]; };
-
 layout(std430, binding = 3) readonly restrict buffer Constants {
     ivec4 AIRRES;
     uint CELL_SIZE;
 };
+layout(std430, binding = 4) restrict buffer Walls { uint walls[]; };
 
 const float OVER_RELAXATION = 1.9;
 
-
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
+}
+
+// Also modify in air_advection
+uint is_empty(uint x, uint y, uint z) {
+    if (y > 20) return 0;
+    if (x >= AIRRES.x - 2) return 0;
+
+    return 1;
+
+    uint id = idx(x, y, z);
+    return (walls[id >> 3] & (1 << (id & 7))) > 0 ? 0 : 1;
 }
 
 void main() {
@@ -26,31 +36,39 @@ void main() {
     
     if (x >= AIRRES.x - 2 || y >= AIRRES.y - 2 || z >= AIRRES.z - 2)
         return;
+    if (1 != is_empty(x, y, z))
+        return;
 
-    // for (int dz = 0; dz < 2; dz++)
-    // for (int dy = 0; dy < 2; dy++)
-    // for (int dx = 0; dx < 2; dx++) {
-    //     if (x % 2 == dx && y % 2 == dy && z % 2 == dz) {
+    float s1 = is_empty(x - 1, y, z);
+    float s2 = is_empty(x + 1, y, z);
+    float s3 = is_empty(x, y - 1, z);
+    float s4 = is_empty(x, y + 1, z);
+    float s5 = is_empty(x, y, z - 1);
+    float s6 = is_empty(x, y, z + 1);
 
-        // Yes this can overwrite cells but *most* of the
-        // time it seems fine? Significantly speeds up the code
-            float s = 6.0;
+    // Yes this can overwrite cells but *most* of the
+    // time it seems fine? Significantly speeds up the code
+    float s = s1 + s2 + s3 + s4 + s5 + s6;
+    if (s == 0) return;
 
-            float divergence =
-                vx[idx(x + 1, y, z)] - vx[idx(x, y, z)] +
-                vy[idx(x, y + 1, z)] - vy[idx(x, y, z)] +
-                vz[idx(x, y, z + 1)] - vz[idx(x, y, z)];
-            divergence /= CELL_SIZE;
-            float p = -divergence / s * OVER_RELAXATION;
+    float divergence =
+        vx[idx(x + 1, y, z)] - vx[idx(x, y, z)] +
+        vy[idx(x, y + 1, z)] - vy[idx(x, y, z)] +
+        vz[idx(x, y, z + 1)] - vz[idx(x, y, z)];
+    divergence /= CELL_SIZE;
+    float p = -divergence / s * OVER_RELAXATION;
 
-            vx[idx(x, y, z)]     -= p;
-            vx[idx(x + 1, y, z)] += p; // TODO: walls
-            vy[idx(x, y, z)]     -= p;
-            vy[idx(x, y + 1, z)] += p; // TODO: walls
-            vz[idx(x, y, z)]     -= p;
-            vz[idx(x, y, z + 1)] += p; // TODO: walls
-    //     }
+    vx[idx(x, y, z)]     -= s1 * p;
+    vx[idx(x + 1, y, z)] += s2 * p;
+    vy[idx(x, y, z)]     -= s3 * p;
+    vy[idx(x, y + 1, z)] += s4 * p;
+    vz[idx(x, y, z)]     -= s5 * p;
+    vz[idx(x, y, z + 1)] += s6 * p;
 
-    //     barrier();
-    // }
+    if (0 == s1) vx[idx(x, y, z)] = 0.0;
+    if (0 == s2) vx[idx(x + 1, y, z)] = 0.0;
+    if (0 == s3) vy[idx(x, y, z)] = 0.0;
+    if (0 == s4) vy[idx(x, y + 1, z)] = 0.0;
+    if (0 == s5) vz[idx(x, y, z)] = 0.0;
+    if (0 == s6) vz[idx(x, y, z + 1)] = 0.0;
 }

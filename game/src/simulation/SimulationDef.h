@@ -29,9 +29,9 @@ constexpr uint16_t ELEMENT_COUNT = __GLOBAL_ELEMENT_COUNT;
 
 // Should be <= 256, larger values may break it especially for morton codes
 // in util and the part fragment shader
-constexpr unsigned int XRES = 200;
-constexpr unsigned int YRES = 200;
-constexpr unsigned int ZRES = 200;
+constexpr unsigned int XRES = 160;
+constexpr unsigned int YRES = 160;
+constexpr unsigned int ZRES = 160;
 constexpr unsigned int NPARTS = XRES * YRES * ZRES;
 
 constexpr unsigned int SHADOW_MAP_SCALE = 1; // Mostly unused, needs to be set in shader as well

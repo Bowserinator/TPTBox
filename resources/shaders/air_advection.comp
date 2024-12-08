@@ -15,11 +15,21 @@ layout(std430, binding = 3) readonly restrict buffer Constants {
 layout(std430, binding = 4) writeonly restrict buffer NVX { float new_vx[]; };
 layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
+layout(std430, binding = 7) restrict buffer Walls { uint walls[]; };
 
 const float dt = 1;
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
+}
+
+// Also modify in air_divergence
+uint is_empty(uint x, uint y, uint z) {
+    if ( y > 20) return 0;
+    return 1;
+
+    uint id = idx(x, y, z);
+    return (walls[id >> 3] & (1 << (id & 7))) > 0 ? 0 : 1;
 }
 
 float sample_field_bilinear(vec3 pos, int field) {
@@ -71,48 +81,58 @@ void main() {
     if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1)
         return;
 
+    uint idx_here = idx(x, y, z);
+
     // TODO: check walls
     // TODO: explaination
-    // new_vx[idx(x, y, z)] = 0.0;
-    // new_vy[idx(x, y, z)] = 0.0;
-    // new_vz[idx(x, y, z)] = 0.0;
+    // new_vx[idx_here] = 0.0;
+    // new_vy[idx_here] = 0.0;
+    // new_vz[idx_here] = 0.0;
 
     vec3 rpos = vec3(x, y, z) * CELL_SIZE;
     vec3 vel_here;
 
     // vx
-    if (y < AIRRES.y - 1 && z < AIRRES.z - 1) {
+    if (is_empty(x, y, z) == 1 && is_empty(x - 1, y, z) == 1 && y < AIRRES.y - 1 && z < AIRRES.z - 1) {
         vel_here = vec3(
-            vx[idx(x, y, z)],
-            0.25 * (vy[idx(x, y, z)] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
-            0.25 * (vz[idx(x, y, z)] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
+            vx[idx_here],
+            0.25 * (vy[idx_here] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
+            0.25 * (vz[idx_here] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
         );
-        new_vx[idx(x, y, z)] = sample_vx(rpos - dt * vel_here);
+        new_vx[idx_here] = sample_vx(rpos - dt * vel_here);
     }
 
     // vy
-    if (x < AIRRES.x - 1 && z < AIRRES.z - 1) {
+    if (is_empty(x, y, z) == 1 && is_empty(x, y - 1, z) == 1 && x < AIRRES.x - 1 && z < AIRRES.z - 1) {
         vel_here = vec3(
-            0.25 * (vx[idx(x, y, z)] + vx[idx(x + 1, y, z)] + vx[idx(x, y - 1, z)] + vx[idx(x + 1, y - 1, z)]),
-            vy[idx(x, y, z)],
-            0.25 * (vz[idx(x, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
+            0.25 * (vx[idx_here] + vx[idx(x + 1, y, z)] + vx[idx(x, y - 1, z)] + vx[idx(x + 1, y - 1, z)]),
+            vy[idx_here],
+            0.25 * (vz[idx_here] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
         );
-        new_vy[idx(x, y, z)] = sample_vy(rpos - dt * vel_here);
+        new_vy[idx_here] = sample_vy(rpos - dt * vel_here);
     }
 
     // vz
-    if (y < AIRRES.y - 1 && x < AIRRES.x - 1) {
+    if (is_empty(x, y, z) == 1 && is_empty(x, y, z - 1) == 1 && y < AIRRES.y - 1 && x < AIRRES.x - 1) {
         vel_here = vec3(
-            0.25 * (vx[idx(x, y, z)] + vx[idx(x + 1, y, z)] + vx[idx(x, y, z - 1)] + vx[idx(x + 1, y, z - 1)]),
-            0.25 * (vy[idx(x, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
-            vz[idx(x, y, z)]
+            0.25 * (vx[idx_here] + vx[idx(x + 1, y, z)] + vx[idx(x, y, z - 1)] + vx[idx(x + 1, y, z - 1)]),
+            0.25 * (vy[idx_here] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
+            vz[idx_here]
         );
-        new_vz[idx(x, y, z)] = sample_vz(rpos - dt * vel_here);
+        new_vz[idx_here] = sample_vz(rpos - dt * vel_here);
     }
 
-    if ((z >= 20 && z <= 30) && (y > 0 && y < 10) && x ==15) {
-        new_vx[idx(x,y,z)] = 1.0;
-        new_vy[idx(x,y,z)] = 10.0;
+    if ((z >= 40 && z <= 50) && (y > 0 && y < 10) && x == 50) {
+        new_vx[idx(x,y,z)] = 20.0;
+        new_vy[idx(x,y,z)] = 0.0;
         new_vz[idx(x,y,z)] = 0.0;
     }
+
+    // Lower velocity on edges
+    if (x <= 1 || x >= AIRRES.x - 2)
+        new_vx[idx_here] = 0.0;
+    if (y <= 1 || y >= AIRRES.y - 2)
+        new_vy[idx_here] = 0.0;
+    if (z <= 1 || z >= AIRRES.z - 2)
+        new_vz[idx_here] = 0.0;
 }

@@ -93,9 +93,9 @@ const uint G_REFLECT = 8;
 const uint G_NO_LIGHTING = 16;
 
 // Display modes - same as DisplayMode.h enum
-const uint D_MODE_PRESSURE = 0;
-const uint D_MODE_PERSISTENT = 1;
-const uint D_MODE_BLOB = 2;
+const uint D_MODE_VELOCITY = 0;
+const uint D_MODE_PRESSURE = 1;
+const uint D_MODE_PERSISTENT = 2;
 const uint D_MODE_HEAT = 3;
 const uint D_MODE_FANCY = 4;
 const uint D_MODE_NOTHING = 5;

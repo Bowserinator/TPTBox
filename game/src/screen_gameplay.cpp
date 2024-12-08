@@ -50,22 +50,37 @@ void ScreenGameplay::init() {
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    for (int x = 10; x < XRES - 1; x++) 
-    for (int z = 10; z < 15; z++)
-    for (int y = 51; y < 52; y++) {
-        int i = sim.create_part(x, y, z, PT_PHOT);
-        sim.parts[i].vz = 1.0f;
-        sim.parts[i].vx = sim.parts[i].vy = 0.0f;
-    }
+    // for (int x = 10; x < XRES - 1; x++) 
+    // for (int z = 10; z < 15; z++)
+    // for (int y = 51; y < 52; y++) {
+    //     int i = sim.create_part(x, y, z, PT_PHOT);
+    //     sim.parts[i].vz = 1.0f;
+    //     sim.parts[i].vx = sim.parts[i].vy = 0.0f;
+    // }
 
     for (int x = 1; x < XRES - 1; x++) 
     for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 2; y++) {
+    for (int y = 1; y < 10; y++) {
         // sim.create_part(x, y, z, PT_DUST);
         sim.create_part(x, y, z, PT_WATR);
 
         sim.create_part(x, y + 50, z, PT_GLAS);
     }
+
+    // Demo -------------
+    auto tmp = GenImageColor(200, 200, BLACK);
+    ImageDrawText(&tmp,  "THE POWDER BOX", 5.0f, 70.0f, 20.0f, WHITE);
+
+    // for (int y = 0; y < YRES; y++) {
+    //     for (int x = 0; x < XRES; x++) {
+    //         if (GetImageColor(tmp, x, YRES - y).r == 255)
+    //             for (int z = 50; z < 55; z++) {
+    //                     sim.create_part(x, y, z, PT_DUST);
+    //             }
+    //     }
+    // }
+    sim.set_paused(true);
+    // Demo end
 
     // for (int x = 1; x < XRES - 1; x++) 
     // for (int z = 1; z < ZRES - 1; z++)

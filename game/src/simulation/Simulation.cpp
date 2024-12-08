@@ -491,12 +491,18 @@ void Simulation::download_heat_from_gpu() {
                 if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature) {
                     toType = el.HighTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.HighTemperatureTransition;
+                    if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
+                        toType = 0;
+
                     transition = true;
                     part_change_type(i, toType);
                 }
                 else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature) {
                     toType = el.LowTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.LowTemperatureTransition;
+                    if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
+                        toType = 0;
+
                     transition = true;
                     part_change_type(i, toType);
                 }
@@ -676,10 +682,6 @@ void Simulation::force_graphics_update() {
 void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part) {
     uint32_t new_color = 0;
     util::Bitset8 new_flags = 0;
-    util::unique_spinlock l(colordata_lock
-        [z / GRAPHICS_LOCK_BLOCK_SIZE]
-        [y / GRAPHICS_LOCK_BLOCK_SIZE]
-        [x / GRAPHICS_LOCK_BLOCK_SIZE]);
 
     if (part != nullptr) {
         const auto &el = GetElements()[part->type];
@@ -703,6 +705,11 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
     unsigned int idx = FLAT_IDX(x, y, z);
     if (graphics.color_data[idx] == new_color && graphics.color_flags[idx] == new_flags)
         return; // Color did not actually change
+
+    util::unique_spinlock l(colordata_lock
+        [z / GRAPHICS_LOCK_BLOCK_SIZE]
+        [y / GRAPHICS_LOCK_BLOCK_SIZE]
+        [x / GRAPHICS_LOCK_BLOCK_SIZE]);
 
     auto &tree = graphics.octree_blocks[
         (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +

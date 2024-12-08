@@ -28,10 +28,11 @@ namespace util {
     }
 
     // Draw render texture
-    inline void draw_render_texture(const RenderTexture2D &tex, const Vector2 origin, const Vector2 size) {
+    inline void draw_render_texture(const RenderTexture2D &tex, const Vector2 origin, const Vector2 size,
+            const Color tint = WHITE) {
         const Rectangle source{ 0.0f, 0.0f, (float)tex.texture.width, -(float)tex.texture.height };
         const Rectangle dest{ origin.x, origin.y, size.x, size.y };
-        DrawTexturePro(tex.texture, source, dest, Vector2{ 0.0f, 0.0f }, 0.0f, WHITE);
+        DrawTexturePro(tex.texture, source, dest, Vector2{ 0.0f, 0.0f }, 0.0f, tint);
     }
     inline void draw_render_texture(const RenderTexture2D &tex) {
         draw_render_texture(tex, Vector2{0.0f, 0.0f}, Vector2{ (float)tex.texture.width, (float)tex.texture.height });
