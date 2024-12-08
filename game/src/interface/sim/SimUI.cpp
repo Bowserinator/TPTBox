@@ -260,6 +260,16 @@ void SimUI::switchCategory(const MenuCategory category) {
     categoryBtn->style.setAllTextColors(BLACK);
 }
 
+void SimUI::draw() {
+    // Ensure bottom panel covers entire bottom
+    DrawRectangle(
+        0, (float)GetScreenHeight() - MAIN_PANEL_HEIGHT,
+        (float)GetScreenWidth(), MAIN_PANEL_HEIGHT,
+        BLACK
+    );
+    Scene::draw();
+}
+
 void SimUI::update() {
     // ~ to enable console
     if (!console_active && EventConsumer::ref()->isKeyPressed(KEY_GRAVE))
@@ -285,7 +295,7 @@ void SimUI::update() {
         mainPanel->pos.x = (float)GetScreenWidth() - mainPanel->size.x;
         mainPanel->pos.y = (float)GetScreenHeight() - MAIN_PANEL_HEIGHT;
         sidePanel->pos.x = (float)GetScreenWidth() - SIDE_PANEL_WIDTH;
-        sidePanel->pos.y = (float)GetScreenHeight() - sidePanel->size.y;
+        sidePanel->pos.y = (float)GetScreenHeight() - sidePanel->size.y - styles::SETTINGS_BUTTON_HEIGHT;
         bottomTooltip->pos.y = GetScreenHeight() - styles::SETTINGS_BUTTON_HEIGHT * 2 - 5.0f;
 
         for (auto [slot, btn] : bottomBarButtons)

@@ -25,6 +25,7 @@ class SimUI : public ui::Scene {
 public:
     SimUI(BrushRenderer * brushRenderer, Renderer * renderer, Simulation * sim);
 
+    void draw() override;
     void init() override;
     void update() override;
 
