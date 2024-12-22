@@ -46,5 +46,12 @@ namespace graphics {
                 { 0xFF0000FF, 0.71f },
                 { 0xFF00DCFF, 1.00f },
             }, 1024);
+
+            const Gradient fire_gradient = generate_gradient_table({
+                { 0x000000FF, 0.00f },
+                { 0x60300FFF, 0.50f },
+                { 0xDFBF6FFF, 0.90f },
+                { 0xAF9F0FFF, 1.00f },
+            }, 200);
     } // namespace gradients
 } // namespace graphics

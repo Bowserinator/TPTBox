@@ -25,9 +25,6 @@ uint idx(uint x, uint y, uint z) {
 
 // Also modify in air_divergence
 uint is_empty(uint x, uint y, uint z) {
-    if ( y > 20) return 0;
-    return 1;
-
     uint id = idx(x, y, z);
     return (walls[id >> 3] & (1 << (id & 7))) > 0 ? 0 : 1;
 }
@@ -122,9 +119,14 @@ void main() {
         new_vz[idx_here] = sample_vz(rpos - dt * vel_here);
     }
 
-    if ((z >= 40 && z <= 50) && (y > 0 && y < 10) && x == 50) {
-        new_vx[idx(x,y,z)] = 20.0;
-        new_vy[idx(x,y,z)] = 0.0;
+    if ((z >= 40 && z <= 50) && (y > 40 && y < 50) && x == 40) {
+        new_vx[idx(x,y,z)] = 0.0;
+        new_vy[idx(x,y,z)] = 10.0;
+        new_vz[idx(x,y,z)] = 0.0;
+    }
+    if ((z >= 40 && z <= 50) && (y > 30 && y < 40) && x == 40) {
+        new_vx[idx(x,y,z)] = 0.0;
+        new_vy[idx(x,y,z)] = -10.0;
         new_vz[idx(x,y,z)] = 0.0;
     }
 

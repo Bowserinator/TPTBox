@@ -1,0 +1,143 @@
+::basic_c_compilation
+echo > Setup required Environment
+echo -------------------------------------
+SET RAYLIB_PATH=C:\raylib\raylib
+SET COMPILER_PATH=C:\raylib\w64devkit\bin
+ENV_SET PATH=$(COMPILER_PATH)
+SET CC=gcc
+cd $(CURRENT_DIRECTORY)
+echo
+echo > Saving Current File
+echo -------------------------
+npp_save
+echo
+echo > Compile simple C file
+echo ----------------------------
+$(CC) -o $(NAME_PART).exe $(FILE_NAME) -Wall -Wextra -std=c99
+echo
+echo > Reset Environment
+echo --------------------------
+ENV_UNSET PATH
+
+::resource_file_compilation
+echo > Setup required Environment
+echo -------------------------------------
+SET RAYLIB_PATH=C:\raylib\raylib
+SET COMPILER_PATH=C:\raylib\w64devkit\bin
+ENV_SET PATH=$(COMPILER_PATH)
+SET RESC=windres
+cd $(CURRENT_DIRECTORY)
+echo
+echo > Compile simple .rc file
+echo ----------------------------
+// Choose CPU architecture target: --target=pe-i386 (32bit) / --target=pe-x86-64 (64bit)
+$(RESC) $(NAME_PART).rc -o $(NAME_PART).rc.data --target=pe-i386
+echo
+echo > Reset Environment
+echo --------------------------
+ENV_UNSET PATH
+
+::raylib_compile_execute
+echo > Setup required Environment
+echo -------------------------------------
+SET RAYLIB_PATH=C:\raylib\raylib
+SET COMPILER_PATH=C:\raylib\w64devkit\bin
+ENV_SET PATH=$(COMPILER_PATH)
+SET CC=gcc
+SET CFLAGS=$(RAYLIB_PATH)\src\raylib.rc.data -s -static -O2 -std=c99 -Wall -I$(RAYLIB_PATH)\src -Iexternal -DPLATFORM_DESKTOP
+SET LDFLAGS=-lraylib -lopengl32 -lgdi32 -lwinmm
+cd $(CURRENT_DIRECTORY)
+echo
+echo > Clean latest build
+echo ------------------------
+cmd /c IF EXIST $(NAME_PART).exe del /F $(NAME_PART).exe
+echo
+echo > Saving Current File
+echo -------------------------
+npp_save
+echo
+echo > Compile program
+echo -----------------------
+$(CC) -o $(NAME_PART).exe $(FILE_NAME) $(CFLAGS) $(LDFLAGS)
+echo
+echo > Reset Environment
+echo --------------------------
+ENV_UNSET PATH
+echo
+echo > Execute program
+echo -----------------------
+cmd /c IF EXIST $(NAME_PART).exe $(NAME_PART).exe
+
+::raylib_source_compile
+echo > Choose compile options
+echo -------------------------------
+echo Set desired OpenGL API version: 1.1, 2.1, 3.3, 4.3
+SET GRAPHIC_API=GRAPHICS_API_OPENGL_33
+echo
+echo > Setup required Environment
+echo -------------------------------------
+SET RAYLIB_PATH=C:\raylib\raylib
+SET COMPILER_PATH=C:\raylib\w64devkit\bin
+ENV_SET PATH=$(COMPILER_PATH)
+SET CC=gcc
+SET AR=ar
+SET CFLAGS=-std=c99 -Wall -DPLATFORM_DESKTOP -D$(GRAPHIC_API)
+SET RELEASE_PATH=$(COMPILER_PATH)\..\i686-w64-mingw32
+cd $(RAYLIB_PATH)\src
+echo
+echo > Clean latest build
+echo -----------------------
+cmd /c del /F *.o
+cmd /c del /F libraylib.a
+echo
+echo > Compile raylib modules
+echo ------------------------------
+$(CC) -c rcore.c -Iexternal/glfw/include $(CFLAGS)
+$(CC) -c rglfw.c $(CFLAGS)
+$(CC) -c rshapes.c $(CFLAGS)
+$(CC) -c rtextures.c $(CFLAGS)
+$(CC) -c rtext.c $(CFLAGS)
+$(CC) -c rmodels.c $(CFLAGS)
+$(CC) -c raudio.c $(CFLAGS)
+$(CC) -c utils.c $(CFLAGS)
+echo
+echo > Generate raylib library
+echo ------------------------------
+$(AR) rcs libraylib.a rcore.o rglfw.o rshapes.o rtextures.o rtext.o rmodels.o raudio.o utils.o
+echo
+echo > Install raylib library
+echo --------------------------
+cmd /c copy raylib.h $(RELEASE_PATH)\include /Y
+cmd /c copy rlgl.h $(RELEASE_PATH)\include /Y
+cmd /c copy libraylib.a $(RELEASE_PATH)\lib /Y
+echo
+echo > Reset Environment
+echo --------------------------
+ENV_UNSET PATH
+
+::raylib_makefile
+echo > Choose compile options
+echo -------------------------------
+echo Set desired PLATFORM: DESKTOP, RPI, ANDROID, WEB
+SET PLATFORM=PLATFORM_DESKTOP
+echo
+echo > Setup required Environment
+echo -------------------------------------
+SET RAYLIB_PATH=C:\raylib\raylib
+SET COMPILER_PATH=C:\raylib\w64devkit\bin
+ENV_SET PATH=$(COMPILER_PATH)
+SET MAKE=mingw32-make
+cd $(CURRENT_DIRECTORY)
+echo
+echo WARNING: Makefile to be executed must be open and selected!
+echo
+echo > Execute makefile
+echo -----------------------
+//$(MAKE) clean
+$(MAKE) PLATFORM=$(PLATFORM) -B
+// Build a single example using raylib/examples/Makefile
+//$(MAKE) core/core_basic_window PLATFORM=$(PLATFORM) -B
+echo
+echo > Reset Environment
+echo --------------------------
+ENV_UNSET PATH

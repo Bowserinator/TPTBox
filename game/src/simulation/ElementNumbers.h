@@ -1,4 +1,4 @@
-// 3182902672
+// 460402574
 // Do not modify the hash above, it is used for determining
 // if the element list has changed
 
@@ -27,6 +27,7 @@ ELEMENT_DEFINE(LAVA,7);
 ELEMENT_DEFINE(WTRV,8);
 ELEMENT_DEFINE(ICE,9);
 ELEMENT_DEFINE(LN2,10);
+ELEMENT_DEFINE(FIRE,11);
 
 
 #undef ELEMENT_DEFINE

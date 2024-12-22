@@ -50,7 +50,7 @@ public:
             static_cast<uint8_t>((other.r * a2 + r * a1 * (1 - a2)) / a_out),
             static_cast<uint8_t>((other.g * a2 + g * a1 * (1 - a2)) / a_out),
             static_cast<uint8_t>((other.b * a2 + b * a1 * (1 - a2)) / a_out),
-            a_out
+            static_cast<uint8_t>(a_out * 255.0f)
         );
     }
 

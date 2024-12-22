@@ -11,6 +11,7 @@
 #include "BrushShapeToolNumbers.h"
 #include "./tools/BrushShapeTool.h"
 
+#include <iostream>
 #include <utility>
 
 void BrushRenderer::draw(Renderer * renderer) {

@@ -21,6 +21,7 @@ namespace graphics {
 
     namespace gradients {
         extern const Gradient heat_gradient;
+        extern const Gradient fire_gradient;
     }
 } // namespace graphics
 

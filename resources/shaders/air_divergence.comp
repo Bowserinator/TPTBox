@@ -20,11 +20,6 @@ uint idx(uint x, uint y, uint z) {
 
 // Also modify in air_advection
 uint is_empty(uint x, uint y, uint z) {
-    if (y > 20) return 0;
-    if (x >= AIRRES.x - 2) return 0;
-
-    return 1;
-
     uint id = idx(x, y, z);
     return (walls[id >> 3] & (1 << (id & 7))) > 0 ? 0 : 1;
 }

@@ -50,9 +50,9 @@ void Air::clear() {
     memset(pressure_map, 0.0f, sizeof(pressure_map));
     memset(wall_map, 0, sizeof(wall_map));
 
-    for (int x = 0; x < AIR_XRES; x++)
-    for (int z = 0; z < AIR_ZRES; z++)
-        wall_map[(x + z * AIR_XRES * AIR_YRES + 40 * AIR_XRES) / 8] = 0xFF;
+    // for (int x = 0; x < AIR_XRES; x++)
+    // for (int z = 0; z < AIR_ZRES; z++)
+    //     wall_map[(x + z * AIR_XRES * AIR_YRES + 50 * AIR_XRES) / 8] = 0xFF;
 
     for (auto i = 0; i < ssbos_vx.getBufferCount(); i++) {
         ssbos_vx.wait(i);
