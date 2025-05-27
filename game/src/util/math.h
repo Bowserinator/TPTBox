@@ -2,12 +2,14 @@
 #define UTIL_MATH_H_
 
 #include <cmath>
+#include <utility>
+
 #include "raymath.h"
 #include "types/rand.h"
 #include "vector_op.h"
 
 template <class T>
-concept arithmetic = std::integral<T> or std::floating_point<T>;
+concept arithmetic = std::integral<T> || std::floating_point<T>;
 
 namespace util {
     /**
@@ -17,7 +19,8 @@ namespace util {
      */
     constexpr unsigned int roundf(const float r) {
         #ifdef DEBUG
-        if (r < 0.0f) throw std::invalid_argument("Input to util::roundf must be non-negative, got " + std::to_string(r));
+        if (r < 0.0f) throw std::invalid_argument("Input to util::roundf must be non-negative, got " +
+            std::to_string(r));
         #endif
         return (unsigned int)(r + 0.5f);
     }
@@ -40,15 +43,7 @@ namespace util {
         return 4.0f * (0.5f - 0.31830988618f * x) * (1.0f - std::abs(0.5f - 0.31830988618f * x));
     }
 
-    /**
-     * @brief Clamp a float between two values
-     * 
-     * @param val Value
-     * @param min Min of range
-     * @param max Max of range
-     * @return constexpr float 
-     */
-    constexpr float clampf(const float val, const float min, const float max) {
+    constexpr float clampf(float val, const float min, const float max) {
         const float tmp = val < min ? min : val;
         return tmp > max ? max : tmp;
     }

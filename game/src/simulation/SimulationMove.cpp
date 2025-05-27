@@ -3,6 +3,7 @@
 #include "ElementDefs.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
+#include "../util/simd.h"
 
 #include "raylib.h"
 #include "raymath.h"
@@ -77,14 +78,13 @@ void Simulation::move_behavior(const part_id idx) {
 
                 if ( // No neighboring spots anyways, terminate
                     TYP(pmap[z - 1][y][x]) == part.type &&
-                    TYP(pmap[z + 1][y][x]) == part.type &&
+                    TYP(pmap[z - 1][y][x - 1]) == part.type &&
+                    TYP(pmap[z - 1][y][x + 1]) == part.type &&
                     TYP(pmap[z][y][x - 1]) == part.type &&
                     TYP(pmap[z][y][x + 1]) == part.type &&
-
-                    TYP(pmap[z - 1][y][x - 1]) == part.type &&
+                    TYP(pmap[z + 1][y][x]) == part.type &&
                     TYP(pmap[z + 1][y][x + 1]) == part.type &&
-                    TYP(pmap[z + 1][y][x - 1]) == part.type &&
-                    TYP(pmap[z - 1][y][x + 1]) == part.type
+                    TYP(pmap[z + 1][y][x - 1]) == part.type
                 ) return;
 
                 constexpr int delta[] = {-1, 0, 1};
@@ -185,7 +185,8 @@ void Simulation::move_behavior(const part_id idx) {
  * @param y Target y
  * @param z Target z
  */
-void Simulation::try_move(const part_id idx, const float tx, const float ty, const float tz, PartSwapBehavior behavior) {
+void Simulation::try_move(const part_id idx, const float tx, const float ty,
+        const float tz, PartSwapBehavior behavior) {
     const coord_t x = util::roundf(tx);
     const coord_t y = util::roundf(ty);
     const coord_t z = util::roundf(tz);
@@ -244,7 +245,8 @@ void Simulation::try_move(const part_id idx, const float tx, const float ty, con
         // cases above by eval_move
         #ifdef DEBUG
         case PartSwapBehavior::SPECIAL:
-            throw std::invalid_argument("Particle of type " + std::to_string(parts[idx].type) + " in try_move() has unresolved move behavior of SPECIAL");
+            throw std::invalid_argument("Particle of type " + std::to_string(parts[idx].type) +
+                " in try_move() has unresolved move behavior of SPECIAL");
             break;
         #endif
         default: break;
@@ -339,9 +341,7 @@ void Simulation::move_part(const coord_t x1, const coord_t y1, const coord_t z1,
 // Try to move a particle with velocity to new location
 void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z) {
     auto &part = parts[idx];
-    part.vx = util::clampf(part.vx, -MAX_VELOCITY, MAX_VELOCITY);
-    part.vy = util::clampf(part.vy, -MAX_VELOCITY, MAX_VELOCITY);
-    part.vz = util::clampf(part.vz, -MAX_VELOCITY, MAX_VELOCITY);
+    simd_util::clamp3f_ip(part.vx, part.vy, part.vz, -MAX_VELOCITY, MAX_VELOCITY);
 
     RaycastOutput out;
     coord_t sx = x; // Starting point of raycast, can change with repeated casts
@@ -368,7 +368,7 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
             .x = sx, .y = sy, .z = sz,
             .vx = part.vx * portion_velocity,
             .vy = part.vy * portion_velocity,
-            .vz = part.vz * portion_velocity
+            .vz = part.vz * portion_velocity,
         }, out, pmapOccupied);
 
         if (!hit) break;
@@ -392,13 +392,13 @@ void Simulation::_raycast_movement(const part_id idx, const coord_t x, const coo
         // We add a small offset since voxels are always 1.0f apart, so we add a small bit to prevent
         // rounding error (optimistically over-consuming distance to avoid extra unnecessary rays)
         portion_velocity -= util::hypot(out.x - sx, out.y - sy, out.z - sz) / org_dis + 0.001f;
-    } while(!(hit || no_move || portion_velocity <= 0.01f));
+    } while (!(hit || no_move || portion_velocity <= 0.01f));
 
     if (no_move || !hit) {
-        try_move(idx,
-            util::clampf(part.x + part.vx, 1.0f, XRES - 2.0f),
-            util::clampf(part.y + part.vy, 1.0f, YRES - 2.0f),
-            util::clampf(part.z + part.vz, 1.0f, ZRES - 2.0f));
+        Vector3 new_pos = Vector3(part.x + part.vx, part.y + part.vy, part.z + part.vz);
+        simd_util::clamp3f_ip_full(new_pos.x, new_pos.y, new_pos.z, 1.0f, 1.0f, 1.0f,
+            XRES - 2.0f, YRES - 2.0f, ZRES - 2.0f);
+        try_move(idx, new_pos.x, new_pos.y, new_pos.z);
     } else {
         try_move(idx, out.x, out.y, out.z, out.move);
     }

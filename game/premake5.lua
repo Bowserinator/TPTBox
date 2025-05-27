@@ -6,12 +6,17 @@ project (workspaceName)
     location "../_build"
     targetdir "../_bin/%{cfg.buildcfg}"
 
-	linkoptions { "-fopenmp" }
+	linkoptions { 
+		"-fopenmp"
+		-- "-pg" -- enable for gprof 
+	}
 	buildoptions {
 		"-fopenmp",
 		"-Wall",
 		"-Wno-odr",
-		"-Wno-sign-compare"
+		"-Wno-sign-compare",
+		"-mmmx", "-msse", "-march=x86-64-v3" -- todo: setup better build presets in the future
+		-- "-pg", "-no-pie", "-fno-pie", "-g" -- enable for gprof 
 	}
 
 	filter "configurations:Release"
@@ -38,7 +43,6 @@ project (workspaceName)
 	}
 
 	include "src/simulation"
-
 	files {"**.c", "**.cpp", "**.h", "**.hpp"}
 
     includedirs { "./" }

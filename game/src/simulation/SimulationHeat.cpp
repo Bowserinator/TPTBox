@@ -124,6 +124,7 @@ void SimulationHeat::wait_and_get() {
         &ssbosUploadDownloadDirty.get<uint32_t>(1)[0] + upload_download_dirty.size(),
         &upload_download_dirty[0]);
 
+    #pragma omp parallel for schedule(static)
     for (auto z = 0; z < ZRES; z++)
     for (auto y = 0; y < SIM_HEAT_YBLOCKS; y++) {
         if (upload_download_dirty[z * SIM_HEAT_YBLOCKS + y]) {

@@ -1,5 +1,4 @@
-#ifndef SIMULATION_SIMULATIONDEF_H_
-#define SIMULATION_SIMULATIONDEF_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -91,5 +90,3 @@ constexpr unsigned int GRAPHICS_LOCK_BLOCK_SIZE = 32;
 
 // Block size should be a power of 2 for cache alignment
 constexpr unsigned int CAUSALITY_ARRAY_BLOCK_SIZE = 1024;
-
-#endif // SIMULATION_SIMULATIONDEF_H_

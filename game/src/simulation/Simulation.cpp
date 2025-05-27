@@ -5,6 +5,7 @@
 #include "../graphics/gradient.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
+#include "../util/simd.h"
 #include "../util/types/reversible_range.h"
 
 #include "../interface/settings/data/SimSettingsData.h"
@@ -377,9 +378,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         }
 
         // Air acceleration
-        part.vx *= el.Loss;
-        part.vy *= el.Loss;
-        part.vz *= el.Loss;
+        simd_util::mul3f_ip(part.vx, part.vy, part.vz, el.Loss);
 
         if (el.Advection) {
             // TODO
@@ -430,8 +429,8 @@ void Simulation::update() {
     if (gol.golCount) gol.wait_and_get();
     if (enable_heat) download_heat_from_gpu();
 
-    auto end = (GetTime() - t);
-    // std::cout << end << "\n";
+    std::cout << (GetTime() - t) << " heat\n";
+    t = GetTime();
 
     #pragma omp parallel num_threads(sim_thread_count)
     {
@@ -459,6 +458,8 @@ void Simulation::update() {
             (float)parts_count / (maxId + 1) < 1.0f - DEFRAG_EMPTY_THRESHOLD)
         defrag_parts();
     recalc_free_particles();
+
+    //std::cout << (GetTime() - t) << " sim\n";
 
     frame_count++;
 

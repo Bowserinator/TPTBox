@@ -52,7 +52,7 @@ void ScreenGameplay::init() {
 
     // for (int x = 10; x < XRES - 1; x++) 
     // for (int z = 10; z < 15; z++)
-    // for (int y = 51; y < 52; y++) {
+    // for (int y = 51; y < 120; y++) {
     //     int i = sim.create_part(x, y, z, PT_PHOT);
     //     sim.parts[i].vz = 1.0f;
     //     sim.parts[i].vx = sim.parts[i].vy = 0.0f;
@@ -66,6 +66,7 @@ void ScreenGameplay::init() {
 
         sim.create_part(x, y + 50, z, PT_GLAS);
     }
+    sim.create_part(10, 10, 11, PT_FIRE);
 
     // Demo -------------
     auto tmp = GenImageColor(200, 200, BLACK);

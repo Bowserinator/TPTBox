@@ -16,7 +16,7 @@
 class RenderCamera {
 public:
     Camera3D camera;
-    Matrix viewProjMatrix;
+    Matrix viewProjMatrix{0.0f};
     std::vector<Plane> frustum;
 
     Vector3 minBound;
@@ -116,9 +116,9 @@ private:
     int _hash;
     bool _first_person_locked;
 
-    Vector3 _lerpTarget;
-    Vector3 _lerpPos;
-    Vector3 _lerpUp;
+    Vector3 _lerpTarget{0.0f, 0.0f, 0.0f};
+    Vector3 _lerpPos{0.0f, 0.0f, 0.0f};
+    Vector3 _lerpUp{0.0f, 0.0f, 0.0f};
 
     void generateFrustum();
     void updateViewProjMatrix();

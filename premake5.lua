@@ -64,7 +64,7 @@ workspace (workspaceName)
         symbols "On"
         openmp "On"
         buildoptions {
-            "-O0",
+            "-O2",
             "-g3"
         }
 

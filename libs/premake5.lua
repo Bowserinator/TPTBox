@@ -1,1 +1,2 @@
 includedirs { "./glm" }
+includedirs { "./simde" }

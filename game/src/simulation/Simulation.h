@@ -174,17 +174,20 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
     bool early_stop = false;
 
-    if (largest_axis == 0 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
+    if (largest_axis == 0 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{
+            (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
         early_stop = true;
         if (compute_faces)
             out.faces = RayCast::FACE_X;
     }
-    else if (largest_axis == 1 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
+    else if (largest_axis == 1 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x,
+            (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
         early_stop = true;
         if (compute_faces)
             out.faces = RayCast::FACE_Y;
     }
-    else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
+    else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x,
+            (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
         early_stop = true;
         if (compute_faces)
             out.faces = RayCast::FACE_Z;

@@ -60,7 +60,7 @@ void HUD::displayTooltip(const char * text) {
     #endif
 
     tooltip_opacity = 1.0;
-    strncpy(tooltip, text, sizeof(tooltip));
+    strncpy(tooltip, text, sizeof(tooltip) - 1);
 }
 
 void HUD::updateControls(const BrushRenderer &brush_renderer) {
