@@ -66,7 +66,7 @@ void ScreenGameplay::init() {
 
         sim.create_part(x, y + 50, z, PT_GLAS);
     }
-    sim.create_part(10, 10, 11, PT_FIRE);
+    // sim.create_part(10, 10, 11, PT_FIRE);
 
     // Demo -------------
     auto tmp = GenImageColor(200, 200, BLACK);

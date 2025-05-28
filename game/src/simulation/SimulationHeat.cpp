@@ -55,6 +55,7 @@ void SimulationHeat::upload(const uint32_t frame_count) {
     ssbosData.wait(0);
     ssbosHeatConduct.wait(0);
 
+    #pragma omp parallel
     for (auto z = 0; z < ZRES; z++)
     for (auto y = 0; y < SIM_HEAT_YBLOCKS; y++) {
         if (upload_download_dirty[z * SIM_HEAT_YBLOCKS + y]) {
@@ -124,10 +125,16 @@ void SimulationHeat::wait_and_get() {
         &ssbosUploadDownloadDirty.get<uint32_t>(1)[0] + upload_download_dirty.size(),
         &upload_download_dirty[0]);
 
-    #pragma omp parallel for schedule(static)
+    // Fraction of dirty chunks
+    unsigned int dirtyFracTop = 0;
+    unsigned int dirtyFracBot = 0;
+
+    #pragma omp parallel for schedule(static) reduction(+:dirtyFracTop) reduction(+:dirtyFracBot)
     for (auto z = 0; z < ZRES; z++)
     for (auto y = 0; y < SIM_HEAT_YBLOCKS; y++) {
+        dirtyFracBot++;
         if (upload_download_dirty[z * SIM_HEAT_YBLOCKS + y]) {
+            dirtyFracTop++;
             int y_ = y * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
             int bufIdx = z * (XRES * YRES) + y_ * XRES;
 
@@ -138,13 +145,14 @@ void SimulationHeat::wait_and_get() {
             );
         }
     }
-    memset(&upload_download_dirty[0], 0, sizeof(upload_download_dirty));
 
+    downloadDirtyRatio = static_cast<double>(dirtyFracTop) / dirtyFracBot;
     ssbosData.advance_cycle();
     ssbosData.advance_cycle();
 }
 
 void SimulationHeat::reset_dirty_chunks() {
+    memset(&upload_download_dirty[0], 0, sizeof(upload_download_dirty));
     memset(dirty_chunks, 0, sizeof(dirty_chunks));
 }
 

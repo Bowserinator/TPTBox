@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cmath>
+#include <utility>
 
 constexpr int SIM_HEAT_DIRTY_BLOCK_SIZE = 10; // For flagging updates
 constexpr int SIM_HEAT_ZBLOCKS = (int)std::ceil((float)ZRES / SIM_HEAT_DIRTY_BLOCK_SIZE);
@@ -44,6 +45,11 @@ public:
     void reset_dirty_chunks();
 
     inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
+    inline double get_download_dirty_ratio() const { return downloadDirtyRatio; }
+
+    // Significantly faster than vector<bool>
+    bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
+    std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty; // z is per voxel, y is divided into y strips
 
 private:
     util::PersistentBuffer<2> ssbosData;
@@ -54,10 +60,7 @@ private:
 
     unsigned int heatShader;
     unsigned int heatProgram;
-
-    // Significantly faster than vector<bool>
-    bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
-    std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty;
+    double downloadDirtyRatio;
 };
 
 #endif // SIMULATION_SIMULATIONHEAT_H_

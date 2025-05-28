@@ -477,13 +477,8 @@ void Simulation::download_heat_from_gpu() {
     if (heat.uploaded_once) {
         heat.wait_and_get();
 
-        #pragma omp parallel for schedule(static)
-        for (int i = 0; i <= maxId; i++) {
-            coord_t x = parts[i].rx;
-            coord_t y = parts[i].ry;
-            coord_t z = parts[i].rz;
-
-            if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
+        auto &&do_heat_conduct = [this](coord_t x, coord_t y, coord_t z, part_id i) {
+            if (GetElements()[parts[i].type].HeatConduct) {
                 p_temp[i] = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
 
                 // Heat transition
@@ -520,7 +515,39 @@ void Simulation::download_heat_from_gpu() {
                         parts[i].ctype = PT_NONE;
                 }
             }
+        };
+
+        if (heat.get_download_dirty_ratio() < 0.02) {
+            #pragma omp parallel for schedule(static)
+            for (auto z = 1; z < ZRES - 1; z++)
+            for (auto by = 0; by < SIM_HEAT_YBLOCKS; by++) {
+                if (!heat.upload_download_dirty[z * SIM_HEAT_YBLOCKS + by]) continue;
+
+                int y_ = by * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
+                for (auto y = std::max(y_, 1); y < std::min(y_ + SIM_HEAT_DIRTY_BLOCK_SIZE, (int)(YRES - 1)); y++)
+                for (auto x = 1; x < XRES - 1; x++) {
+                    if (heat.heat_map[z][y][x] < 0)
+                        continue;
+                    if (pmap[z][y][x])
+                        do_heat_conduct(x, y, z, ID(pmap[z][y][x]));
+                    if (photons[z][y][x])
+                        do_heat_conduct(x, y, z, ID(photons[z][y][x]));
+                }
+            }
+        } else {
+            #pragma omp parallel for schedule(static)
+            for (int i = 0; i <= maxId; i++) {
+                coord_t x = parts[i].rx;
+                coord_t y = parts[i].ry;
+                coord_t z = parts[i].rz;
+
+                if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f)
+                    // Check if Top-most particle in stack to match behavior
+                    if (parts[i].id == ID(pmap[z][y][x]) || parts[i].id == ID(photons[z][y][x]))
+                        do_heat_conduct(x, y, z, i);
+            }
         }
+
         heat.reset_dirty_chunks();
 
         // Apply out-of-GPU heat updates

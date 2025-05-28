@@ -1,8 +1,6 @@
 #pragma once
 
-#ifdef DEBUG
 #define ENABLE_PROFILE
-#endif
 
 #include <vector>
 #include <string>
@@ -14,7 +12,7 @@
 
 
 namespace profiler {
-    constexpr std::size_t MAX_DURATIONS = 128;
+    constexpr std::size_t MAX_DURATIONS = 512;
 
     class Profiler {
     private:
