@@ -8,6 +8,7 @@
 #include "../../util/str_format.h"
 #include "../../util/math.h"
 #include "../../util/colored_text.h"
+#include "../../util/profiler.h"
 #include "../brush/Brush.h"
 #include "../../render/Renderer.h"
 #include "../settings/data/SettingsData.h"
@@ -56,7 +57,8 @@ void HUD::drawTextRAlign(const char * text, const int x, const int y, const Colo
 void HUD::displayTooltip(const char * text) {
     #ifdef DEBUG
     if (strlen(text) > MAX_TOOLTIP_LENGTH)
-        throw std::invalid_argument(TextFormat("Tooltip '%s' exceeds max length of %i characters", text, MAX_TOOLTIP_LENGTH));
+        throw std::invalid_argument(TextFormat("Tooltip '%s' exceeds max length of %i characters",
+            text, MAX_TOOLTIP_LENGTH));
     #endif
 
     tooltip_opacity = 1.0;
@@ -219,6 +221,14 @@ void HUD::draw(const HUDData &data) {
         const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
         const char * line12 = (idx && debug) ? TextFormat("#%i, %s", idx, pos_data) : pos_data;
         drawTextRAlign(TextFormat("%s,  %s", line11, line12), GetScreenWidth() - RHUD_X_OFFSET, 20, WHITE);
+
+        // Profiler
+    #ifdef ENABLE_PROFILE
+        for (std::size_t i = 0; i < profiler::profilers.size(); i++) {
+            drawTextRAlign(profiler::summarize(i).c_str(),
+                GetScreenWidth() - RHUD_X_OFFSET, 60 + (3 + i) * OFFSET, YELLOW);
+        }
+    #endif
 
         // Additional lines if currently hovering an element
         if (idx) {

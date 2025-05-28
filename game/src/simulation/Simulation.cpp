@@ -5,6 +5,7 @@
 #include "../graphics/gradient.h"
 #include "../util/vector_op.h"
 #include "../util/math.h"
+#include "../util/profiler.h"
 #include "../util/simd.h"
 #include "../util/types/reversible_range.h"
 
@@ -64,6 +65,9 @@ void Simulation::init() {
     heat.init();
     signs.init();
     air.init();
+
+    profiler::add("simulation");
+    profiler::add("heat");
 }
 
 void Simulation::reset() {
@@ -425,12 +429,12 @@ void Simulation::update() {
         return;
     }
 
-    auto t = GetTime();
+    profiler::reset_and_start(1);
     if (gol.golCount) gol.wait_and_get();
     if (enable_heat) download_heat_from_gpu();
 
-    std::cout << (GetTime() - t) << " heat\n";
-    t = GetTime();
+    profiler::end(1);
+    profiler::reset_and_start(0);
 
     #pragma omp parallel num_threads(sim_thread_count)
     {
@@ -458,8 +462,7 @@ void Simulation::update() {
             (float)parts_count / (maxId + 1) < 1.0f - DEFRAG_EMPTY_THRESHOLD)
         defrag_parts();
     recalc_free_particles();
-
-    //std::cout << (GetTime() - t) << " sim\n";
+    profiler::end(0);
 
     frame_count++;
 
