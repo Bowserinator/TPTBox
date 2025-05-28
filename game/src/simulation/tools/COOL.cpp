@@ -19,6 +19,6 @@ static void PerformFunc(PERFORM_FUNC_ARGS) {
     if (parts[i].type)
         sim.heat_updates.push_back(PartHeatDelta {
             .id = i,
-            .newTemp = parts[i].temp - brushStrength
+            .newTemp = sim.p_temp[i] - brushStrength
         });
 }

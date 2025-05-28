@@ -175,9 +175,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].vx = 0.0f;
     parts[old_pfree].vy = 0.0f;
     parts[old_pfree].vz = 0.0f;
-    parts[old_pfree].assign_with_defaults(el.DefaultProperties);
 
-    heat.update_temperature(x, y, z, parts[old_pfree].temp, el.HeatConduct);
+    _set_default_properties(old_pfree, el.DefaultProperties);
+    heat.update_temperature(x, y, z, p_temp[old_pfree], el.HeatConduct);
 
     if (el.OnChangeType)
         el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
@@ -484,7 +484,7 @@ void Simulation::download_heat_from_gpu() {
             coord_t z = parts[i].rz;
 
             if (parts[i].type && heat.heat_map[z][y][x] >= 0.0f && GetElements()[parts[i].type].HeatConduct) {
-                parts[i].temp = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
+                p_temp[i] = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
 
                 // Heat transition
                 const auto &el = GetElements()[parts[i].type];
@@ -492,7 +492,7 @@ void Simulation::download_heat_from_gpu() {
                 part_type toType = PT_NONE;
                 bool transition = false;
 
-                if (el.HighTemperatureTransition != Transition::NONE && parts[i].temp > el.HighTemperature) {
+                if (el.HighTemperatureTransition != Transition::NONE && p_temp[i] > el.HighTemperature) {
                     toType = el.HighTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.HighTemperatureTransition;
                     if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
@@ -501,7 +501,7 @@ void Simulation::download_heat_from_gpu() {
                     transition = true;
                     part_change_type(i, toType);
                 }
-                else if (el.LowTemperatureTransition != Transition::NONE && parts[i].temp < el.LowTemperature) {
+                else if (el.LowTemperatureTransition != Transition::NONE && p_temp[i] < el.LowTemperature) {
                     toType = el.LowTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.LowTemperatureTransition;
                     if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
@@ -527,8 +527,9 @@ void Simulation::download_heat_from_gpu() {
         for (const auto &update : heat_updates)
             if (parts[update.id].type) {
                 auto &part = parts[update.id];
-                part.temp = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
-                heat.update_temperature(part.rx, part.ry, part.rz, part.temp, GetElements()[part.type].HeatConduct);
+                p_temp[update.id] = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
+                heat.update_temperature(part.rx, part.ry, part.rz,
+                    p_temp[update.id], GetElements()[part.type].HeatConduct);
             }
         heat_updates.clear();
     }
@@ -591,7 +592,7 @@ void Simulation::recalc_free_particles() {
 
         // Heat map update
         auto heatConduct = GetElements()[part.type].HeatConduct;
-        heat.update_temperature(x, y, z, util::clampf(part.temp, MIN_TEMP, MAX_TEMP), heatConduct);
+        heat.update_temperature(x, y, z, util::clampf(p_temp[i], MIN_TEMP, MAX_TEMP), heatConduct);
 
         // GOL check
         if (TYP(pmap[z][y][x]) == PT_GOL)
@@ -646,6 +647,8 @@ void Simulation::defrag_parts() {
         if (parts[front].type || !parts[end].type) break;
 
         std::swap(parts[front], parts[end]);
+        std::swap(p_temp[front], p_temp[end]);
+
         coord_t x = parts[front].rx;
         coord_t y = parts[front].ry;
         coord_t z = parts[front].rz;
@@ -751,4 +754,13 @@ void Simulation::_force_update_all_shadows() {
         if (part.id == ID(pmap[part.rz][part.ry][part.rx]) && _should_do_lighting(part))
             _update_shadow_map(part.rx, part.ry, part.rz);
     }
+}
+
+void Simulation::_set_default_properties(const part_id idx, const DefaultParticleProperties &def) {
+    p_temp[idx] = def.temp;
+    parts[idx].life = def.life;
+    parts[idx].ctype = def.ctype;
+    parts[idx].tmp1 = def.tmp1;
+    parts[idx].tmp2 = def.tmp2;
+    parts[idx].dcolor = def.dcolor;
 }

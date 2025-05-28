@@ -11,29 +11,28 @@ namespace PartFlags {
     constexpr uint8_t IS_ENERGY = 2;
 }
 
+struct DefaultParticleProperties {
+    float temp;
+    part_type ctype;
+    int16_t life = 0;
+    uint16_t tmp1, tmp2;
+    RGBA dcolor{0, 0, 0, 0};
+};
+
 struct Particle  {
     part_type type;
     part_id id;
     util::Bitset8 flag;
 
-    part_type ctype;
-    int16_t life = 0;
     float x, y, z, vx, vy, vz;
     coord_t rx, ry, rz; // Rounded coordinates
-    float temp;
+
+    int16_t life = 0;
+    part_type ctype;
     uint16_t tmp1, tmp2;
     RGBA dcolor{0, 0, 0, 0};
 
     Particle(): type(0), id(0) {}
-
-    void assign_with_defaults(const Particle &def) {
-        ctype = def.ctype;
-        life = def.life;
-        temp = def.temp;
-        tmp1 = def.tmp1;
-        tmp2 = def.tmp2;
-        dcolor = def.dcolor;
-    }
 };
 
 #endif // SIMULATION_PARTICLE_H_

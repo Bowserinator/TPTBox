@@ -49,7 +49,7 @@ public:
     void (*OnCreate)(ON_CREATE_FUNC_ARGS);
     void (*OnChangeType)(ON_CHANGE_TYPE_FUNC_ARGS);
 
-    Particle DefaultProperties;
+    DefaultParticleProperties DefaultProperties;
 
     // TODO ctype draw
 

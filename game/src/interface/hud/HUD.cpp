@@ -240,14 +240,14 @@ void HUD::draw(const HUDData &data) {
             switch (settings::data::ref()->ui->temperatureUnit) {
                 case settings::UI::TemperatureUnit::C:
                     tempUnit = 'C';
-                    formattedTemp = sim->parts[idx].temp - R_ZERO_C;
+                    formattedTemp = sim->p_temp[idx] - R_ZERO_C;
                     break;
                 case settings::UI::TemperatureUnit::F:
                     tempUnit = 'F';
-                    formattedTemp = (sim->parts[idx].temp - R_ZERO_C) * 1.8f + 32.0f;
+                    formattedTemp = (sim->p_temp[idx] - R_ZERO_C) * 1.8f + 32.0f;
                     break;
                 default:
-                    formattedTemp = sim->parts[idx].temp;
+                    formattedTemp = sim->p_temp[idx];
                     tempUnit = 'K';
                     break;
             }

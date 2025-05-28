@@ -34,7 +34,7 @@ static int graphics(GRAPHICS_FUNC_ARGS) {
 }
 
 static int update(UPDATE_FUNC_ARGS) {
-    parts[i].temp = std::max(0.0f, parts[i].temp - 50.0f);
+    sim.p_temp[i] = std::max(0.0f, sim.p_temp[i] - 50.0f);
     return 0;
 }
 

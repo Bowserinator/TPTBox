@@ -158,7 +158,7 @@ namespace commands {
                     break;
                 case PartProp::temp:
                     sim->heat_updates.push_back(PartHeatDelta{ i,
-                        static_cast<decltype(sim->parts[i].temp)>(val_float) });
+                        static_cast<decltype(sim->p_temp[i])>(val_float) });
                     break;
                 case PartProp::tmp1:
                     sim->parts[i].tmp1 = static_cast<decltype(sim->parts[i].tmp1)>(val_uint);

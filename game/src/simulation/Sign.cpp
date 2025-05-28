@@ -29,7 +29,7 @@ std::string Sign::get_display_text(const Simulation * const sim) const {
         if (!ptype) ptype = TYP(sim->pmap[z][y][x]);
 
         if (between_braces == "{t}" || between_braces == "{temp}")
-            replace_with = std::format("{:.2f}", sim->parts[id].temp);
+            replace_with = std::format("{:.2f}", sim->p_temp[id]);
         else if (between_braces == "{p}" || between_braces == "{pressure}")
             replace_with = "PRESSURE"; // TODO
         else if (between_braces == "{type}")

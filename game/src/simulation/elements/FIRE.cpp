@@ -22,6 +22,8 @@ void Element::Element_FIRE() {
     Graphics = &FIRE_graphics;
     Update = &update;
     OnCreate = &onCreate;
+
+    DefaultProperties.temp = R_TEMP + 300.0f;
 };
 
 static void onCreate(ON_CREATE_FUNC_ARGS) {

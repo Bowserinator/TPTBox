@@ -44,6 +44,8 @@ public:
     GravityMode gravity_mode;
 
     Particle parts[NPARTS];
+    float p_temp[NPARTS]; // ID -> temp
+
     pmap_id pmap[ZRES][YRES][XRES];
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
@@ -146,6 +148,7 @@ private:
     void _init_can_move();
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
     void _force_update_all_shadows();
+    void _set_default_properties(const part_id idx, const DefaultParticleProperties &def);
 };
 
 
