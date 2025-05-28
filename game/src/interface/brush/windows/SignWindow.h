@@ -5,7 +5,7 @@
 #include "../../gui/components/TextInput.h"
 #include "../../gui/components/TextButton.h"
 #include "../../gui/Style.h"
-#include "../../../util/vector_op.h"
+#include "util/vector_op.h"
 
 class Sign;
 class Simulation;

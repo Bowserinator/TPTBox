@@ -5,9 +5,9 @@
 #include "rlgl.h"
 #include <glad.h>
 
-#include "types/multitexture.h"
-#include "types/octree.h"
-#include "../util/types/persistent_buffer.h"
+#include "render/types/multitexture.h"
+#include "render/types/octree.h"
+#include "util/types/persistent_buffer.h"
 #include "constants.h"
 
 constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte

@@ -1,5 +1,5 @@
 #include "Air.h"
-#include "../util/types/gl_time_query.h"
+#include "util/types/gl_time_query.h"
 
 #include <algorithm>
 #include <memory>

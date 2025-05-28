@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
-#include "../../util/vector_op.h"
+#include "util/vector_op.h"
 
 #include <string>
 #include <functional>

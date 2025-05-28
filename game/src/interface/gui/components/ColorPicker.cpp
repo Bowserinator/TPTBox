@@ -6,8 +6,8 @@
 #include "../Scene.h"
 
 #include "../../EventConsumer.h"
-#include "../../../util/vector_op.h"
-#include "../../../util/graphics.h"
+#include "util/vector_op.h"
+#include "util/graphics.h"
 
 #include <format>
 #include <string>

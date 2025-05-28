@@ -8,8 +8,8 @@
 #include "../gui/components/Slider.h"
 #include "../gui/styles.h"
 
-#include "../../render/Renderer.h"
-#include "../../util/str_format.h"
+#include "render/Renderer.h"
+#include "util/str_format.h"
 #include "data/SettingsData.h"
 
 #include <string>

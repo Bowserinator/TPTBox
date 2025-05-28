@@ -2,7 +2,7 @@
 #define RENDER_TYPES_PLANE_H_
 
 #include "raymath.h"
-#include "../../util/vector_op.h"
+#include "util/vector_op.h"
 
 #include <iostream>
 

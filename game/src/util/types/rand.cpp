@@ -2,8 +2,8 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "../vector_op.h"
-#include "../math.h"
+#include "util/vector_op.h"
+#include "util/math.h"
 #include "raymath.h"
 
 uint64_t RNG::next() noexcept {

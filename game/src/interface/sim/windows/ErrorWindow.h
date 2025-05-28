@@ -5,7 +5,7 @@
 #include "../../gui/components/TextButton.h"
 #include "../../gui/components/Label.h"
 #include "../../gui/Style.h"
-#include "../../../util/vector_op.h"
+#include "util/vector_op.h"
 
 #include <string>
 

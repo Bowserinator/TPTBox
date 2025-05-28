@@ -6,7 +6,7 @@
 #include "../styles.h"
 #include "../Style.h"
 #include "../../FontCache.h"
-#include "../../../util/vector_op.h"
+#include "util/vector_op.h"
 
 #include <string>
 

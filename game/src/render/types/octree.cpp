@@ -1,5 +1,5 @@
 #include "octree.h"
-#include "../../util/morton.h"
+#include "util/morton.h"
 
 BitOctreeBlock::BitOctreeBlock() {
     data = new uint8_t[OctreeBlockMetadata::size]();

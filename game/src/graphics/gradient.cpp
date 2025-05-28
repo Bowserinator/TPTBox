@@ -1,5 +1,5 @@
 #include "gradient.h"
-#include "../util/math.h"
+#include "util/math.h"
 
 namespace graphics {
     bool GradientStop::operator <(const GradientStop &other) const {

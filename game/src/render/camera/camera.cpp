@@ -2,11 +2,11 @@
 #include <numeric>
 
 #include "camera.h"
-#include "../constants.h"
-#include "../../interface/EventConsumer.h"
-#include "../../interface/FrameTimeAvg.h"
-#include "../../util/math.h"
-#include "../../interface/settings/data/SettingsData.h"
+#include "render/constants.h"
+#include "interface/EventConsumer.h"
+#include "interface/FrameTimeAvg.h"
+#include "util/math.h"
+#include "interface/settings/data/SettingsData.h"
 
 constexpr bool moveInWorldPlane = true;
 constexpr bool rotateAroundTarget = true;

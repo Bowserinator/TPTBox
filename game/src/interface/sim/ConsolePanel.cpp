@@ -1,6 +1,6 @@
 #include "ConsolePanel.h"
 #include "./console/CommandExecutor.h"
-#include "../../util/colored_text.h"
+#include "util/colored_text.h"
 
 #include <format>
 #include <sstream>

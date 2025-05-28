@@ -5,7 +5,7 @@
 #include "./abstract/Button.h"
 #include "../styles.h"
 #include "../Style.h"
-#include "../../../util/vector_op.h"
+#include "util/vector_op.h"
 #include "../../IconManager.h"
 
 #include <algorithm>

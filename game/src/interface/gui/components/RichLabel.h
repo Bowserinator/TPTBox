@@ -2,7 +2,7 @@
 #define INTERFACE_GUI_COMPONENTS_RICHLABEL_H_
 
 #include "Label.h"
-#include "../../../util/colored_text.h"
+#include "util/colored_text.h"
 #include <string>
 
 namespace ui {

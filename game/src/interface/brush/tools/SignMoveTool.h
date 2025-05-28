@@ -2,9 +2,9 @@
 #define INTERFACE_BRUSH_TOOLS_SIGNMOVETOOL_H_
 
 #include "BrushShapeTool.h"
-#include "../../../globals.h"
-#include "../../../simulation/Sign.h"
-#include "../../../util/vector_op.h"
+#include "globals.h"
+#include "simulation/Sign.h"
+#include "util/vector_op.h"
 
 class SignMoveBrushTool : public BrushShapeTool {
 public:

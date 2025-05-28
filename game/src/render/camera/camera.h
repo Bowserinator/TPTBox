@@ -6,8 +6,8 @@
 #include "rcamera.h"
 #include "rlgl.h"
 
-#include "../types/plane.h"
-#include "../../util/vector_op.h"
+#include "render/types/plane.h"
+#include "util/vector_op.h"
 
 #include <climits>
 #include <vector>

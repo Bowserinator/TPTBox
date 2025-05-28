@@ -2,7 +2,7 @@
 #define INTERFACE_BRUSH_BRUSHMESHER_H_
 
 #include "raylib.h"
-#include "../../util/vector_op.h"
+#include "util/vector_op.h"
 #include "Brushes.h"
 #include "Preview.h"
 

@@ -2,15 +2,15 @@
 #include "ElementClasses.h"
 #include "ElementDefs.h"
 
-#include "../graphics/gradient.h"
-#include "../util/vector_op.h"
-#include "../util/math.h"
-#include "../util/profiler.h"
-#include "../util/simd.h"
-#include "../util/types/reversible_range.h"
+#include "graphics/gradient.h"
+#include "util/vector_op.h"
+#include "util/math.h"
+#include "util/profiler.h"
+#include "util/simd.h"
+#include "util/types/reversible_range.h"
 
-#include "../interface/settings/data/SimSettingsData.h"
-#include "../interface/settings/data/SettingsData.h"
+#include "interface/settings/data/SimSettingsData.h"
+#include "interface/settings/data/SettingsData.h"
 
 #include <omp.h>
 #include <algorithm>
@@ -495,7 +495,7 @@ void Simulation::download_heat_from_gpu() {
                 if (el.HighTemperatureTransition != Transition::NONE && p_temp[i] > el.HighTemperature) {
                     toType = el.HighTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.HighTemperatureTransition;
-                    if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
+                    if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
                         toType = 0;
 
                     transition = true;
@@ -504,7 +504,7 @@ void Simulation::download_heat_from_gpu() {
                 else if (el.LowTemperatureTransition != Transition::NONE && p_temp[i] < el.LowTemperature) {
                     toType = el.LowTemperatureTransition == Transition::TO_CTYPE ?
                         parts[i].ctype : el.LowTemperatureTransition;
-                    if (toType >= ELEMENT_COUNT) // Illegal transitions get deleted
+                    if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
                         toType = 0;
 
                     transition = true;

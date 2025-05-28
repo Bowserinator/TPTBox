@@ -1,7 +1,7 @@
 #ifndef INTERFACE_SETTINGS_DATA_SETTINGSDATA_H_
 #define INTERFACE_SETTINGS_DATA_SETTINGSDATA_H_
 
-#include "../../../util/json.hpp"
+#include "util/json.hpp"
 #include "GraphicsSettingsData.h"
 #include "SimSettingsData.h"
 #include "UISettingsData.h"

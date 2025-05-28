@@ -2,8 +2,8 @@
 #define INTERFACE_BRUSH_TOOLS_LINETOOL_H_
 
 #include "BrushShapeTool.h"
-#include "../../../util/line.h"
-#include "../../../simulation/SimulationDef.h"
+#include "util/line.h"
+#include "simulation/SimulationDef.h"
 #include <vector>
 
 class LineBrushTool : public BrushShapeTool {

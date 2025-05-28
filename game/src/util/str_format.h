@@ -1,7 +1,7 @@
 #ifndef UTIL_STR_FORMAT_H_
 #define UTIL_STR_FORMAT_H_
 
-#include "./types/bitset8.h"
+#include "util/types/bitset8.h"
 #include <string>
 #include <sstream>
 #include <locale>

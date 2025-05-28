@@ -2,8 +2,8 @@
 #define INTERFACE_BRUSH_BRUSH_H_
 
 #include "raylib.h"
-#include "../../util/vector_op.h"
-#include "../../simulation/Simulation.h"
+#include "util/vector_op.h"
+#include "simulation/Simulation.h"
 #include "../hud/abstract/IMiddleTooltip.h"
 
 #include "Brushes.h"

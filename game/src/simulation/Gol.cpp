@@ -2,10 +2,10 @@
 #include "raylib.h"
 #include "rlgl.h"
 
-#include "../util/graphics.h"
-#include "../util/vector_op.h"
-#include "../util/types/gl_time_query.h"
-#include "../render/constants.h"
+#include "util/graphics.h"
+#include "util/vector_op.h"
+#include "util/types/gl_time_query.h"
+#include "render/constants.h"
 
 #include <cstring>
 #include <glad.h>

@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "NavCube.h"
-#include "../../util/vector_op.h"
+#include "util/vector_op.h"
 
 #include <numeric>
 

@@ -1,5 +1,5 @@
 #include "str_format.h"
-#include "../simulation/ElementClasses.h"
+#include "simulation/ElementClasses.h"
 
 #include <algorithm>
 

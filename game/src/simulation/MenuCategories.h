@@ -1,7 +1,7 @@
 #ifndef SIMULATION_MENUCATEGORIES_H_
 #define SIMULATION_MENUCATEGORIES_H_
 
-#include "../interface/icons.h"
+#include "interface/icons.h"
 
 enum class MenuCategory {
     ELECTRONICS,

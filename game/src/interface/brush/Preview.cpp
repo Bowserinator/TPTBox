@@ -1,9 +1,9 @@
 #include "Preview.h"
-#include "../../render/constants.h"
-#include "../../render/Renderer.h"
-#include "../../render/camera/camera.h"
-#include "../../util/graphics.h"
-#include "../../simulation/SimulationDef.h"
+#include "render/constants.h"
+#include "render/Renderer.h"
+#include "render/camera/camera.h"
+#include "util/graphics.h"
+#include "simulation/SimulationDef.h"
 
 #include <vector>
 

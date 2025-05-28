@@ -1,7 +1,7 @@
 #include "TextInput.h"
 #include "../../EventConsumer.h"
-#include "../../../util/math.h"
-#include "../../../util/str_format.h"
+#include "util/math.h"
+#include "util/str_format.h"
 
 #include <algorithm>
 #include <utility>

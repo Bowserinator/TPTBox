@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "rlgl.h"
-#include "../util/types/persistent_buffer.h"
+#include "util/types/persistent_buffer.h"
 #include "SimulationDef.h"
 
 #include <array>
@@ -55,6 +55,7 @@ private:
     unsigned int heatShader;
     unsigned int heatProgram;
 
+    // Significantly faster than vector<bool>
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
     std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty;
 };

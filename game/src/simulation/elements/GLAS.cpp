@@ -1,4 +1,4 @@
-#include "../ElementClasses.h"
+#include "simulation/ElementClasses.h"
 
 void Element::Element_GLAS() {
     State = ElementState::TYPE_SOLID;
@@ -9,15 +9,15 @@ void Element::Element_GLAS() {
 
     MenuSection = MenuCategory::SOLIDS;
 
-	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
-    
-	HeatConduct = 160;
+    GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
+
+    HeatConduct = 160;
     Loss = 0.0f;
 
-	LowTemperature = 0.0f;
-	LowTemperatureTransition = Transition::NONE;
-	HighTemperature = 200.0_C;
-	HighTemperatureTransition = PT_LAVA;
+    LowTemperature = 0.0f;
+    LowTemperatureTransition = Transition::NONE;
+    HighTemperature = 200.0_C;
+    HighTemperatureTransition = PT_LAVA;
 
     Weight = 100;
 };

@@ -1,6 +1,6 @@
-#include "../ToolClasses.h"
-#include "../ToolDefs.h"
-#include "../ElementClasses.h"
+#include "simulation/ToolClasses.h"
+#include "simulation/ToolDefs.h"
+#include "simulation/ElementClasses.h"
 
 static void PerformFunc(PERFORM_FUNC_ARGS);
 

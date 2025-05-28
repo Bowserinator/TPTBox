@@ -2,8 +2,8 @@
 #define SIMULATION_ELEMENTDEFS_H_
 
 #include "stdint.h"
-#include "../graphics/color.h"
-#include "../util/types/bitset8.h"
+#include "graphics/color.h"
+#include "util/types/bitset8.h"
 #include "Simulation.h"
 
 enum class ElementState : uint8_t { TYPE_SOLID, TYPE_POWDER, TYPE_LIQUID, TYPE_GAS, TYPE_ENERGY };

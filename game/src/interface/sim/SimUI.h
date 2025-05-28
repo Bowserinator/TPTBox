@@ -1,7 +1,7 @@
 #ifndef INTERFACE_SIM_SIMUI_H_
 #define INTERFACE_SIM_SIMUI_H_
 
-#include "../../simulation/MenuCategories.h"
+#include "simulation/MenuCategories.h"
 #include "../gui/Scene.h"
 #include "../gui/components/Label.h"
 #include "../gui/components/TextButton.h"

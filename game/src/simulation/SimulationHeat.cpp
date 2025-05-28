@@ -1,7 +1,7 @@
 #include "SimulationHeat.h"
 #include "Simulation.h"
-#include "../util/types/gl_time_query.h"
-#include "../render/constants.h"
+#include "util/types/gl_time_query.h"
+#include "render/constants.h"
 
 #include <cstring>
 #include <glad.h>

@@ -1,5 +1,5 @@
-#include "../ToolClasses.h"
-#include "../ToolDefs.h"
+#include "simulation/ToolClasses.h"
+#include "simulation/ToolDefs.h"
 
 static void PerformFunc(PERFORM_FUNC_ARGS);
 

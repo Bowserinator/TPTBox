@@ -5,7 +5,7 @@
 #include "./abstract/InteractiveComponent.h"
 #include "../styles.h"
 #include "../Style.h"
-#include "../../../util/math.h"
+#include "util/math.h"
 
 #include <functional>
 

@@ -3,8 +3,8 @@
 
 #include "SimulationDef.h"
 #include "DisplayMode.h"
-#include "../util/types/heap_array.h"
-#include "../util/types/bitset8.h"
+#include "util/types/heap_array.h"
+#include "util/types/bitset8.h"
 
 #include <array>
 #include <cmath>

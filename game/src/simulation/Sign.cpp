@@ -1,9 +1,9 @@
 #include "Sign.h"
 #include "Simulation.h"
 #include "ElementClasses.h"
-#include "../render/Renderer.h"
-#include "../render/camera/camera.h"
-#include "../interface/FontCache.h"
+#include "render/Renderer.h"
+#include "render/camera/camera.h"
+#include "interface/FontCache.h"
 
 #include <format>
 

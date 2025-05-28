@@ -2,8 +2,8 @@
 #define INTERFACE_SETTINGS_DATA_GRAPHICSSETTINGSDATA_H_
 
 #include "AbstractSettingsData.h"
-#include "../../../render/Renderer.h"
-#include "../../../util/math.h"
+#include "render/Renderer.h"
+#include "util/math.h"
 
 namespace settings {
     class Graphics : public AbstractSettingsData {

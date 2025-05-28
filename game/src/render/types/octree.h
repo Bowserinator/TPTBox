@@ -2,7 +2,7 @@
 #define RENDER_TYPES_OCTREE_H_
 
 #include "stdint.h"
-#include "../../simulation/SimulationGraphics.h"
+#include "simulation/SimulationGraphics.h"
 
 #include <array>
 

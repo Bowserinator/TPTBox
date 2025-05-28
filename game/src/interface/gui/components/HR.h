@@ -3,7 +3,7 @@
 
 #include "raylib.h"
 #include "../Style.h"
-#include "../../../util/vector_op.h"
+#include "util/vector_op.h"
 #include "./abstract/Component.h"
 
 namespace ui {

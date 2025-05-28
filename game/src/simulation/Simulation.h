@@ -10,14 +10,14 @@
 #include "Air.h"
 #include "Sign.h"
 
-#include "../util/types/rand.h"
-#include "../util/types/heap_array.h"
-#include "../util/types/spinlock.h"
-#include "../util/types/concurrent_append_list.h"
+#include "util/types/rand.h"
+#include "util/types/heap_array.h"
+#include "util/types/spinlock.h"
+#include "util/types/concurrent_append_list.h"
 
-#include "../util/math.h"
-#include "../util/vector_op.h"
-#include "../render/types/octree.h"
+#include "util/math.h"
+#include "util/vector_op.h"
+#include "render/types/octree.h"
 
 #include <omp.h>
 #include <vector>

@@ -1,6 +1,6 @@
 #include "Scene.h"
 #include "../EventConsumer.h"
-#include "../../util/vector_op.h"
+#include "util/vector_op.h"
 #include "raylib.h"
 
 #include <ranges>

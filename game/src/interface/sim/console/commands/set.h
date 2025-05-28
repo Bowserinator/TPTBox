@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "../../../../simulation/Simulation.h"
-#include "../../../../util/str_format.h"
-#include "../../../../util/colored_text.h"
+#include "simulation/Simulation.h"
+#include "util/str_format.h"
+#include "util/colored_text.h"
 
 namespace commands {
     inline auto cmd_set = [](Simulation * sim, const std::vector<std::string> &tokens) -> std::string {

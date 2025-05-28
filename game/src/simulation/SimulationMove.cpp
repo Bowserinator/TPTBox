@@ -1,9 +1,9 @@
 #include "Simulation.h"
 #include "ElementClasses.h"
 #include "ElementDefs.h"
-#include "../util/vector_op.h"
-#include "../util/math.h"
-#include "../util/simd.h"
+#include "util/vector_op.h"
+#include "util/math.h"
+#include "util/simd.h"
 
 #include "raylib.h"
 #include "raymath.h"

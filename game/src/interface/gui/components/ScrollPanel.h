@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include "./Panel.h"
 #include "../Style.h"
-#include "../../../util/math.h"
+#include "util/math.h"
 
 namespace ui {
     class Scene;

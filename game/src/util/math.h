@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "raymath.h"
-#include "types/rand.h"
+#include "util/types/rand.h"
 #include "vector_op.h"
 
 template <class T>

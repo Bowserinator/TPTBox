@@ -3,8 +3,8 @@
 
 #include "stdint.h"
 #include "SimulationDef.h"
-#include "../graphics/color.h"
-#include "../util/types/persistent_buffer.h"
+#include "graphics/color.h"
+#include "util/types/persistent_buffer.h"
 
 #include <array>
 #include <atomic>

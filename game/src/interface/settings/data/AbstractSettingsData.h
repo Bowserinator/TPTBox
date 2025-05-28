@@ -1,7 +1,7 @@
 #ifndef INTERFACE_SETTINGS_DATA_ABSTRACTSETTINGSDATA_H_
 #define INTERFACE_SETTINGS_DATA_ABSTRACTSETTINGSDATA_H_
 
-#include "../../../util/json.hpp"
+#include "util/json.hpp"
 
 namespace settings {
     class AbstractSettingsData {

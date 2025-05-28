@@ -1,6 +1,6 @@
 #include "Command.h"
-#include "../../../simulation/Simulation.h"
-#include "../../../util/colored_text.h"
+#include "simulation/Simulation.h"
+#include "util/colored_text.h"
 #include "./commands/set.h"
 
 using namespace commands;

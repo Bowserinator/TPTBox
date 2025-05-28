@@ -2,14 +2,14 @@
 #define INTERFACE_BRUSH_TOOLS_BRUSHSHAPETOOL_H_
 
 #include "raylib.h"
-#include "../../../util/vector_op.h"
-#include "../../../simulation/Simulation.h"
+#include "util/vector_op.h"
+#include "simulation/Simulation.h"
 #include "../../hud/abstract/IMiddleTooltip.h"
 #include "../../settings/data/SettingsData.h"
 
-#include "../../../render/Renderer.h"
-#include "../../../render/camera/camera.h"
-#include "../../../util/graphics.h"
+#include "render/Renderer.h"
+#include "render/camera/camera.h"
+#include "util/graphics.h"
 
 #include "../Brushes.h"
 #include "../Preview.h"

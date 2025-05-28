@@ -2,8 +2,8 @@
 #define SIMULATION_PARTICLE_H_
 
 #include "SimulationDef.h"
-#include "../graphics/color.h"
-#include "../util/types/bitset8.h"
+#include "graphics/color.h"
+#include "util/types/bitset8.h"
 
 namespace PartFlags {
     constexpr uint8_t UPDATE_FRAME = 0;

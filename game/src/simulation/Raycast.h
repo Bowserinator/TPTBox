@@ -2,7 +2,7 @@
 #define SIMULATION_RAYCAST_H_
 
 #include "SimulationDef.h"
-#include "../util/types/bitset8.h"
+#include "util/types/bitset8.h"
 
 namespace RayCast {
     using RayHitFace = util::Bitset8;

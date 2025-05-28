@@ -1,8 +1,8 @@
 #include "ViewPanel.h"
-#include "../../../interface/settings/data/SettingsData.h"
-#include "../../../render/camera/camera.h"
-#include "../../../render/Renderer.h"
-#include "../../../util/math.h"
+#include "interface/settings/data/SettingsData.h"
+#include "render/camera/camera.h"
+#include "render/Renderer.h"
+#include "util/math.h"
 
 #include <string>
 #include <utility>

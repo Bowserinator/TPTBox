@@ -6,8 +6,8 @@
 
 #include "ToolDefs.h"
 #include "MenuCategories.h"
-#include "../graphics/color.h"
-#include "../util/types/bitset8.h"
+#include "graphics/color.h"
+#include "util/types/bitset8.h"
 
 class Tool {
 public:
