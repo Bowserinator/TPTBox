@@ -119,12 +119,12 @@ void main() {
         new_vz[idx_here] = sample_vz(rpos - dt * vel_here);
     }
 
-    if ((z >= 40 && z <= 50) && (y > 40 && y < 50) && x == 40) {
-        new_vx[idx(x,y,z)] = 0.0;
+    if ((z >= 40 / 2 && z <= 50  / 2) && (y > 40  / 2 && y < 50  / 2) && x == 40 / 2) {
+        new_vx[idx(x,y,z)] = -0.0;
         new_vy[idx(x,y,z)] = 10.0;
         new_vz[idx(x,y,z)] = 0.0;
     }
-    if ((z >= 40 && z <= 50) && (y > 30 && y < 40) && x == 40) {
+    if ((z >= 40 / 2  && z <= 50  / 2) && (y > 30 / 2 && y < 40  / 2) && x == 40 / 2) {
         new_vx[idx(x,y,z)] = 0.0;
         new_vy[idx(x,y,z)] = -10.0;
         new_vz[idx(x,y,z)] = 0.0;

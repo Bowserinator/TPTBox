@@ -89,7 +89,7 @@ void Air::solve_incompressibility() {
 
     // util::GlTimeQuery query;
 
-    for (int i = 0; i < 10; i++) // Number of divergence removing iterations
+    for (int i = 0; i < 4; i++) // Number of divergence removing iterations
         rlComputeShaderDispatch(
             std::ceil((AIR_XRES - 2.0f) / 10.0f),
             std::ceil((AIR_YRES - 2.0f) / 10.0f),

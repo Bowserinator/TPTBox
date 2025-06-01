@@ -9,7 +9,7 @@
 
 class Simulation;
 
-constexpr unsigned int AIR_CELL_SIZE = 2;
+constexpr unsigned int AIR_CELL_SIZE = 4;
 static_assert(XRES % AIR_CELL_SIZE == 0, "XRES must be divisible by AIR_CELL_SIZE");
 static_assert(YRES % AIR_CELL_SIZE == 0, "YRES must be divisible by AIR_CELL_SIZE");
 static_assert(ZRES % AIR_CELL_SIZE == 0, "ZRES must be divisible by AIR_CELL_SIZE");

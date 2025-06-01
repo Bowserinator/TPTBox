@@ -51,10 +51,10 @@ constexpr unsigned int MIN_PARTS_FOR_DEFRAG = 300000;
 constexpr float operator""_C(long double tempC) { return tempC + R_ZERO_C; }
 
 constexpr bool BOUNDS_CHECK(int x, int y, int z) {
-    return x > 0 && x < (int)(XRES - 1) && y > 0 && y < (int)(YRES - 1) && z > 0 && z < (int)(ZRES - 1);
+    return (x > 0) & (x < (int)(XRES - 1)) & (y > 0) & (y < (int)(YRES - 1)) & (z > 0) & (z < (int)(ZRES - 1));
 }
 constexpr bool REVERSE_BOUNDS_CHECK(int x, int y, int z) {
-    return x < 1 || x >= (int)(XRES - 1) || y < 1 || y >= (int)(YRES - 1) || z < 1 || z >= (int)(ZRES - 1);
+    return (x < 1) | (x >= (int)(XRES - 1)) | (y < 1) | (y >= (int)(YRES - 1)) | (z < 1) | (z >= (int)(ZRES - 1));
 }
 constexpr uint32_t FLAT_IDX(coord_t x, coord_t y, coord_t z) {
     return x + y * XRES + z * (XRES * YRES);

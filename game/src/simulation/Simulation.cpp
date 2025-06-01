@@ -699,7 +699,7 @@ void Simulation::dispatch_compute_shaders() {
     if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
     if (gol.golCount) gol.dispatch();
     if (enable_heat) heat.dispatch(frame_count);
-    // air.update(); // TODO
+    air.update(); // TODO
 }
 
 void Simulation::force_graphics_update() {

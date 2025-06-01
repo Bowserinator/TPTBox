@@ -47,17 +47,17 @@ void main() {
     if (s == 0) return;
 
     float divergence =
-        vx[idx(x + 1, y, z)] - vx[idx(x, y, z)] +
-        vy[idx(x, y + 1, z)] - vy[idx(x, y, z)] +
-        vz[idx(x, y, z + 1)] - vz[idx(x, y, z)];
+        vx[idx(x + 1, y, z)] - vx[idx(x - 1, y, z)] +
+        vy[idx(x, y + 1, z)] - vy[idx(x, y - 1, z)] +
+        vz[idx(x, y, z + 1)] - vz[idx(x, y, z - 1)];
     divergence /= CELL_SIZE;
     float p = -divergence / s * OVER_RELAXATION;
 
-    vx[idx(x, y, z)]     -= s1 * p;
+    vx[idx(x - 1, y, z)] -= s1 * p;
     vx[idx(x + 1, y, z)] += s2 * p;
-    vy[idx(x, y, z)]     -= s3 * p;
+    vy[idx(x, y - 1, z)] -= s3 * p;
     vy[idx(x, y + 1, z)] += s4 * p;
-    vz[idx(x, y, z)]     -= s5 * p;
+    vz[idx(x, y, z - 1)] -= s5 * p;
     vz[idx(x, y, z + 1)] += s6 * p;
 
     if (0 == s1) vx[idx(x, y, z)] = 0.0;

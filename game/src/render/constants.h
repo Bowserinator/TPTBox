@@ -1,7 +1,7 @@
 #ifndef RENDER_CONSTANTS_H_
 #define RENDER_CONSTANTS_H_
 
-#define EMBED_SHADERS
+// #define EMBED_SHADERS
 
 enum CUBE_FACES {
     FRONT = 0,
