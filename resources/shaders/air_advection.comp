@@ -17,7 +17,7 @@ layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
 layout(std430, binding = 7) restrict buffer Walls { uint walls[]; };
 
-const float dt = 1;
+const float dt = 5;
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -26,22 +26,22 @@ uint idx(uint x, uint y, uint z) {
 // Also modify in air_divergence
 uint is_empty(uint x, uint y, uint z) {
     uint id = idx(x, y, z);
-    return (walls[id >> 3] & (1 << (id & 7))) > 0 ? 0 : 1;
+    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
 }
 
 float sample_field_bilinear(vec3 pos, int field) {
     float h1 = 1.0 / float(CELL_SIZE);
     float h = float(CELL_SIZE);
 
-    vec3 delta = vec3(0.0);
-    delta[field] = h / 2.0;
+    vec3 delta = vec3(h / 2.0);
+    delta[field] = 0.0;
     pos = clamp(pos, vec3(h), vec3(h) * vec3(AIRRES.xyz));
 
     uvec3 MAX_COORD = uvec3(AIRRES.xyz) - uvec3(1);
     uvec3 top = min(uvec3((pos - delta) * h1), MAX_COORD); // top left upper corner
     uvec3 bot = min(top + uvec3(1), MAX_COORD);            // opposite corner
-    vec3 s = ((pos - delta) - (vec3(top) * h)) * h1;
-    vec3 t = vec3(1.0) - s;
+    vec3 t = ((pos - delta) - (vec3(top) * h)) * h1;
+    vec3 s = vec3(1.0) - t;
     float c00, c01, c10, c11;
 
     if (field == 0) { // vx
@@ -96,7 +96,7 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
             0.25 * (vz[idx_here] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
         );
-        new_vx[idx_here] = sample_vx(rpos - dt * vel_here);
+        new_vx[idx_here] = sample_vx(vec3(x, y + 0.5, z + 0.5) * CELL_SIZE - dt * vel_here);
     }
 
     // vy
@@ -106,7 +106,7 @@ void main() {
             vy[idx_here],
             0.25 * (vz[idx_here] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
         );
-        new_vy[idx_here] = sample_vy(rpos - dt * vel_here);
+        new_vy[idx_here] = sample_vy(vec3(x + 0.5, y, z + 0.5) * CELL_SIZE - dt * vel_here);
     }
 
     // vz
@@ -116,25 +116,27 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
             vz[idx_here]
         );
-        new_vz[idx_here] = sample_vz(rpos - dt * vel_here);
+        new_vz[idx_here] = sample_vz(vec3(x + 0.5, y + 0.5, z) * CELL_SIZE - dt * vel_here);
     }
 
-    if ((z >= 40 / 2 && z <= 50  / 2) && (y > 40  / 2 && y < 50  / 2) && x == 40 / 2) {
-        new_vx[idx(x,y,z)] = -0.0;
-        new_vy[idx(x,y,z)] = 10.0;
+    const uint SCALE = 2;
+
+    if ((z >= 40 / SCALE && z <= 40  / SCALE) && (y > 40  / SCALE && y < 50  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
+        new_vx[idx(x,y,z)] = 0.0;
+        new_vy[idx(x,y,z)] = 50.0;
         new_vz[idx(x,y,z)] = 0.0;
     }
-    if ((z >= 40 / 2  && z <= 50  / 2) && (y > 30 / 2 && y < 40  / 2) && x == 40 / 2) {
+    if ((z >= 40 / SCALE  && z <= 40  / SCALE) && (y > 30 / SCALE && y < 40  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
         new_vx[idx(x,y,z)] = 0.0;
-        new_vy[idx(x,y,z)] = -10.0;
+        new_vy[idx(x,y,z)] = -50.0;
         new_vz[idx(x,y,z)] = 0.0;
     }
 
     // Lower velocity on edges
-    if (x <= 1 || x >= AIRRES.x - 2)
-        new_vx[idx_here] = 0.0;
-    if (y <= 1 || y >= AIRRES.y - 2)
-        new_vy[idx_here] = 0.0;
-    if (z <= 1 || z >= AIRRES.z - 2)
-        new_vz[idx_here] = 0.0;
+    // if (x <= 1 || x >= AIRRES.x - 2)
+    //     new_vx[idx_here] = 0.0;
+    // if (y <= 1 || y >= AIRRES.y - 2)
+    //     new_vy[idx_here] = 0.0;
+    // if (z <= 1 || z >= AIRRES.z - 2)
+    //     new_vz[idx_here] = 0.0;
 }

@@ -30,7 +30,7 @@ public:
     void update();
 
     Simulation & sim;
-    Air(Simulation & sim);
+    explicit Air(Simulation & sim);
 
     float pressure_map[AIR_ZRES][AIR_YRES][AIR_XRES];
     uint8_t wall_map[AIR_ZRES * AIR_YRES * AIR_XRES / 8 + 1];
@@ -38,6 +38,11 @@ public:
     util::PersistentBuffer<2> ssbos_vx;
     util::PersistentBuffer<2> ssbos_vy;
     util::PersistentBuffer<2> ssbos_vz;
+
+    util::PersistentBuffer<2> ssbos_vx2;
+    util::PersistentBuffer<2> ssbos_vy2;
+    util::PersistentBuffer<2> ssbos_vz2;
+
     util::PersistentBuffer<1> ssbos_walls;
 
 private:

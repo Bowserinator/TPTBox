@@ -50,10 +50,6 @@ void Air::clear() {
     memset(pressure_map, 0.0f, sizeof(pressure_map));
     memset(wall_map, 0, sizeof(wall_map));
 
-    // for (int x = 0; x < AIR_XRES; x++)
-    // for (int z = 0; z < AIR_ZRES; z++)
-    //     wall_map[(x + z * AIR_XRES * AIR_YRES + 50 * AIR_XRES) / 8] = 0xFF;
-
     for (auto i = 0; i < ssbos_vx.getBufferCount(); i++) {
         ssbos_vx.wait(i);
         ssbos_vy.wait(i);
@@ -73,6 +69,10 @@ void Air::clear() {
 }
 
 void Air::update() {
+    for (int x = 0; x < AIR_XRES; x++)
+    for (int z = 0; z < AIR_ZRES; z++)
+        wall_map[(x + z * AIR_XRES * AIR_YRES + 10 * AIR_XRES) / 8] = 0xFF;
+
     memcpy(ssbos_walls.get<uint8_t>(0), wall_map, sizeof(wall_map)); // TODO diff
 
     solve_incompressibility();
@@ -89,7 +89,8 @@ void Air::solve_incompressibility() {
 
     // util::GlTimeQuery query;
 
-    for (int i = 0; i < 4; i++) // Number of divergence removing iterations
+    constexpr int DIVERGENCE_REMOVING_ITERATIONS = 30;
+    for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++)
         rlComputeShaderDispatch(
             std::ceil((AIR_XRES - 2.0f) / 10.0f),
             std::ceil((AIR_YRES - 2.0f) / 10.0f),

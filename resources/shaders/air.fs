@@ -26,6 +26,7 @@ layout (location = 0) out vec4 FragColor;
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const int MAX_RAY_STEPS = 180;
 const float MAX_VEL_SCALE = 0.05;
+const float STRENGTH_SCALE = 0.3; // 3.0
 
 // Functions
 // ---------
@@ -70,9 +71,24 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel) {
 		if (!isInSim(voxelPos * CELL_SIZE)) return color;
         if (isInView(voxelPos * CELL_SIZE)) {
             ivec3 airGridPos = voxelPos;
-            float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            float v_y = vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            float v_z = vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+
+            // float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+            // float v_y = 0.0; // vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+            // float v_z = 0.0; // vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+
+            // if (v_x  != 0 || v_y != 0 || v_z != 0) {
+
+            //     return vec4(clamp(vec3(v_x, v_y, v_z), vec3(0), vec3(255)) / 255.0, 1.0);
+            
+            // }
+
+            float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vx[1 + airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+            float v_y = vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vy[airGridPos.x + AIRRES.x * (airGridPos.y + 1) + AIRRES.x * AIRRES.y * airGridPos.z];
+            float v_z = vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * (airGridPos.z + 1)];
+
+            v_x /= 2.0;
+            v_y /= 2.0;
+            v_z /= 2.0;
 
             // float v_x = vx[airGridPos.x + 1 + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] -
             //             vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
@@ -85,7 +101,7 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel) {
             this_v = clamp(this_v, -vec3(MAX_VEL_SCALE), vec3(MAX_VEL_SCALE)) / (MAX_VEL_SCALE);
 
             float forwardAlphaInv = 1.0 - color.a;
-            float this_a = (abs(v_x) + abs(v_y) + abs(v_z)) / 3.0 * 0.3;
+            float this_a = (abs(v_x) + abs(v_y) + abs(v_z)) / STRENGTH_SCALE * 0.3;
             color.rgb += abs(this_v) * this_a * forwardAlphaInv;
             color.a = 1.0 - forwardAlphaInv * (1.0 - this_a);
         }
