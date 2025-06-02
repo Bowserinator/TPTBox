@@ -79,13 +79,6 @@ void main() {
         return;
 
     uint idx_here = idx(x, y, z);
-
-    // TODO: check walls
-    // TODO: explaination
-    // new_vx[idx_here] = 0.0;
-    // new_vy[idx_here] = 0.0;
-    // new_vz[idx_here] = 0.0;
-
     vec3 rpos = vec3(x, y, z) * CELL_SIZE;
     vec3 vel_here;
 

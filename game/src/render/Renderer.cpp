@@ -199,9 +199,9 @@ void Renderer::init() {
 
     // SSBOs for color & octree LOD data
     colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
-        XRES * YRES * ZRES * sizeof(uint32_t), util::PBFlags::WRITE);
+        XRES * YRES * ZRES * sizeof(uint32_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
     flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
-        XRES * YRES * ZRES * sizeof(uint8_t), util::PBFlags::WRITE);
+        XRES * YRES * ZRES * sizeof(uint8_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
     lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
                 sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
                 * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, util::PBFlags::WRITE);
@@ -393,12 +393,13 @@ void Renderer::update_colors_and_lod() {
 
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->graphics.color_data_modified[i] & ssbo_bit) {
+            std::size_t lastIdx = std::min((std::size_t)(XRES * YRES * ZRES), (i + 1) * COLOR_DATA_CHUNK_SIZE);
             std::copy(&sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
-                &sim->graphics.color_data[(i + 1) * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_data[lastIdx],
                 &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
             std::copy(&sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
-                &sim->graphics.color_flags[(i + 1) * COLOR_DATA_CHUNK_SIZE],
+                &sim->graphics.color_flags[lastIdx],
                 &flagBuf.get<uint8_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
             sim->graphics.color_data_modified[i] &= ~ssbo_bit;
