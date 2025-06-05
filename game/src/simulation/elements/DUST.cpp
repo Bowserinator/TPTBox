@@ -14,8 +14,9 @@ void Element::Element_DUST() {
     Enabled = true;
     Causality = 0;
 
-    Advection = 0.1f;
-    /*AirDrag;           // How much air particle produces in direction of travel
+    Advection = 0.5f;
+    AirDrag = -0.1f;
+    /*
     AirLoss;           // How much moving air is slowed down by the particle, 1 = no effect, 0 = instantly stops*/
     Loss = 1.0f;
     Collision = 0.0f;

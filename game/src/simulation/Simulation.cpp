@@ -389,6 +389,11 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
             part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
             part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
         }
+        if (el.AirDrag) {
+            part.vx += el.AirDrag * part.vx;
+            part.vy += el.AirDrag * part.vy;
+            part.vz += el.AirDrag * part.vz;
+        }
 
         if (el.Update) {
             const auto result = el.Update(*this, i, x, y, z, parts, pmap);

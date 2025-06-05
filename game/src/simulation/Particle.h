@@ -20,19 +20,19 @@ struct DefaultParticleProperties {
 };
 
 struct Particle  {
-    part_type type;
     part_id id;
-    util::Bitset8 flag;
-
     float x, y, z, vx, vy, vz;
     coord_t rx, ry, rz; // Rounded coordinates
+    RGBA dcolor{0, 0, 0, 0};
+
+    part_type type;
+    util::Bitset8 flag;
 
     int16_t life = 0;
     part_type ctype;
     uint16_t tmp1, tmp2;
-    RGBA dcolor{0, 0, 0, 0};
 
-    Particle(): type(0), id(0) {}
+    Particle(): id(0), type(0) {}
 };
 
 #endif // SIMULATION_PARTICLE_H_

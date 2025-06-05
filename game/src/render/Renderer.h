@@ -6,6 +6,7 @@
 #include <glad.h>
 
 #include "render/types/multitexture.h"
+#include "render/types/depthtexture.h"
 #include "render/types/octree.h"
 #include "util/types/persistent_buffer.h"
 #include "constants.h"
@@ -66,6 +67,9 @@ private:
         air_shader_uv2_loc,
         air_shader_camera_pos_loc,
         air_shader_camera_dir_loc;
+    int depth_shader_base_texture_loc,
+        depth_shader_depth_texture_loc,
+        depth_shader_res_loc;
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     util::PersistentBuffer<BUFFER_COUNT> colorBuf;
@@ -78,11 +82,13 @@ private:
     unsigned int air_ubo;
     uint8_t * ao_data;
 
+    // Not const, can be changed in settings
     float downscaleRatio = 1.5f;
     float blurDownscaleRatio = 1.5f;
+    float airDownscaleRatio = 7.5f;
 
     RenderTexture2D blur1_tex = {0}, blur2_tex = {0}, blur_tmp_tex = {0};
-    RenderTexture2D vel_tex = {0};
+    DepthTexture vel_tex;
     MultiTexture base_tex;
     unsigned int frame_count = 0;
     bool show_octree = false;
@@ -95,6 +101,7 @@ private:
     Color shadow_color;
 
     Shader grid_shader;
+    Shader depth_shader;
     unsigned int grid_shader_size_loc,
                  grid_shader_scale_loc;
     unsigned int grid_max_dim;

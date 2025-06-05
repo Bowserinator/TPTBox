@@ -93,7 +93,7 @@ void Air::solve_incompressibility() {
 
     // util::GlTimeQuery query;
 
-    constexpr int DIVERGENCE_REMOVING_ITERATIONS = 3;
+    constexpr int DIVERGENCE_REMOVING_ITERATIONS = 4;
     for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++) {
         glUniform1iv(iteration_uniform_loc, 1, &i);
 

@@ -124,5 +124,4 @@ void main() {
     vec4 vClipCoord = mvp * vec4(firstVoxelPos * CELL_SIZE, 1.0);
     float fNdcDepth = vClipCoord.z / vClipCoord.w;
     gl_FragDepth = (fNdcDepth + 1.0) * 0.5 + 0.000001; // Slightly offset depth to avoid clipping
-
 }
