@@ -25,8 +25,8 @@ layout (location = 0) out vec4 FragColor;
 
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const int MAX_RAY_STEPS = 180;
-const float MAX_VEL_SCALE = 0.05;
-const float STRENGTH_SCALE = 0.3; // 3.0
+const float MAX_VEL_SCALE = 0.1;
+const float STRENGTH_SCALE = 3.0;
 
 // Functions
 // ---------
@@ -61,6 +61,7 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
 vec4 raymarch(vec3 pos, vec3 dir, bool is_vel, inout ivec3 firstVoxelPos) {
     vec4 color = vec4(0.0);
     pos /= CELL_SIZE;
+
     ivec3 voxelPos = ivec3(pos);
 	vec3 deltaDist = abs(vec3(1.0) / dir);
 	ivec3 rayStep = ivec3(sign(dir));
@@ -72,21 +73,18 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel, inout ivec3 firstVoxelPos) {
 		if (!isInSim(voxelPos * CELL_SIZE)) return color;
         if (isInView(voxelPos * CELL_SIZE)) {
             ivec3 airGridPos = voxelPos;
-            float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vx[1 + airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            float v_y = vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vy[airGridPos.x + AIRRES.x * (airGridPos.y + 1) + AIRRES.x * AIRRES.y * airGridPos.z];
-            float v_z = vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * (airGridPos.z + 1)];
+            uint this_idx = airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z;
 
-            v_x /= 2.0;
-            v_y /= 2.0;
-            v_z /= 2.0;
+            vec3 this_v = vec3(
+                vx[this_idx] + vx[1 + this_idx],
+                vy[this_idx] + vy[this_idx + AIRRES.x],
+                vz[this_idx] + vz[this_idx + AIRRES.x * AIRRES.y]
+            ) / 2.0;
 
-            // TODO: can sample center of face or something idk
-
-            vec3 this_v = vec3(v_x, v_y, v_z);
             this_v = clamp(this_v, -vec3(MAX_VEL_SCALE), vec3(MAX_VEL_SCALE)) / (MAX_VEL_SCALE);
-
             float forwardAlphaInv = 1.0 - color.a;
-            float this_a = clamp((abs(v_x) + abs(v_y) + abs(v_z)) / STRENGTH_SCALE * 0.3, 0, 1);
+            float this_a = clamp(length(this_v) / STRENGTH_SCALE, 0, 1);
+
             color.rgb += abs(this_v) * this_a * forwardAlphaInv;
             color.a = 1.0 - forwardAlphaInv * (1.0 - this_a);
 

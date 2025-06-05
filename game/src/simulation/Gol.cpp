@@ -101,7 +101,8 @@ void SimulationGol::init() {
 void SimulationGol::reset() {
     for (std::size_t i = 0; i < ssbosData.getBufferCount(); i++) {
         ssbosData.wait(i);
-        std::fill(&ssbosData.get<uint8_t>(i)[0], &ssbosData.get<uint8_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
+        std::fill(&ssbosData.get<uint8_t>(i)[0],
+            &ssbosData.get<uint8_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
         ssbosData.lock(i);
     }
     memset(gol_map, 0, sizeof(gol_map));

@@ -2,7 +2,7 @@
 #define INTERFACE_SETTINGS_DATA_SIMSETTINGSDATA_H_
 
 #include "AbstractSettingsData.h"
-#include "../../../simulation/Simulation.h"
+#include "simulation/Simulation.h"
 
 namespace settings {
     class Sim : public AbstractSettingsData {

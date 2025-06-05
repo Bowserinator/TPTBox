@@ -18,6 +18,7 @@ void Element::Element_FIRE() {
 
     Gravity = -0.1f;
     Diffusion = 1.0f;
+    Advection = 1.0f;
 
     Graphics = &FIRE_graphics;
     Update = &update;

@@ -73,9 +73,9 @@ void Air::clear() {
 }
 
 void Air::update() {
-    for (int x = 0; x < AIR_XRES; x++)
-    for (int z = 0; z < AIR_ZRES; z++)
-        wall_map[(x + z * AIR_XRES * AIR_YRES + 2 * AIR_XRES) / 8] = 0xFF;
+    //for (int x = 0; x < AIR_XRES; x++)
+    //for (int z = 0; z < AIR_ZRES; z++)
+    //    wall_map[(x + z * AIR_XRES * AIR_YRES + 2 * AIR_XRES) / 8] = 0xFF;
 
     memcpy(ssbos_walls.get<uint8_t>(0), wall_map, sizeof(wall_map)); // TODO diff
 
@@ -98,9 +98,9 @@ void Air::solve_incompressibility() {
         glUniform1iv(iteration_uniform_loc, 1, &i);
 
         rlComputeShaderDispatch(
-            std::ceil((AIR_XRES - 2.0f) / 10.0f),
-            std::ceil((AIR_YRES - 2.0f) / 10.0f),
-            std::ceil((AIR_ZRES - 2.0f) / 10.0f));
+            std::ceil((AIR_XRES - 2.0f) / 8.0f),
+            std::ceil((AIR_YRES - 2.0f) / 8.0f),
+            std::ceil((AIR_ZRES - 2.0f) / 16.0f));
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
@@ -123,9 +123,9 @@ void Air::fill_edges_and_advect_velocities() {
     // util::GlTimeQuery query;
 
     rlComputeShaderDispatch(
-        std::ceil((AIR_XRES - 2.0f) / 10.0f),
-        std::ceil((AIR_YRES - 2.0f) / 10.0f),
-        std::ceil((AIR_ZRES - 2.0f) / 10.0f));
+        std::ceil((AIR_XRES - 2.0f) / 8.0f),
+        std::ceil((AIR_YRES - 2.0f) / 8.0f),
+        std::ceil((AIR_ZRES - 2.0f) / 16.0f));
     rlDisableShader();
 
     // std::cout << query.timeElapsedMs() << " ms (air sim - advection)" << "\n";
@@ -145,4 +145,3 @@ void Air::wait_and_get() {
     ssbos_vy.advance_cycle();
     ssbos_vz.advance_cycle();
 }
-

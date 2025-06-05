@@ -1,7 +1,7 @@
 #version 430
 
 // Multiplication of local sizes <= 1024
-layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 
 layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
@@ -98,15 +98,15 @@ void main() {
     vec3 vel_here;
 
     // Vorticity confinement
-    float Nx = length(curl(vec3(x + 1, y, z))) - length(curl(vec3(x - 1, y, z))) * 0.5;
-    float Ny = length(curl(vec3(x, y + 1, z))) - length(curl(vec3(x, y - 1, z))) * 0.5;
-    float Nz = length(curl(vec3(x, y, z + 1))) - length(curl(vec3(x, y, z - 1))) * 0.5;
-    float len = 1.0 / (sqrt(Nx * Nx + Ny * Ny + Nz * Nz) + 0.001);
-    Nx *= len;
-    Ny *= len;
-    Nz *= len;
+    // float Nx = length(curl(vec3(x + 1, y, z))) - length(curl(vec3(x - 1, y, z))) * 0.5;
+    // float Ny = length(curl(vec3(x, y + 1, z))) - length(curl(vec3(x, y - 1, z))) * 0.5;
+    // float Nz = length(curl(vec3(x, y, z + 1))) - length(curl(vec3(x, y, z - 1))) * 0.5;
+    // float len = 1.0 / (sqrt(Nx * Nx + Ny * Ny + Nz * Nz) + 0.001);
+    // Nx *= len;
+    // Ny *= len;
+    // Nz *= len;
 
-    vec3 curl_here = curl(vec3(x, y, z));
+    // vec3 curl_here = curl(vec3(x, y, z));
 
 
     // vx
@@ -116,8 +116,8 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
             0.25 * (vz[idx_here] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
         );
-        new_vx[idx_here] = sample_vx(vec3(x, y + 0.5, z + 0.5) * CELL_SIZE - dt * vel_here) +
-             (Ny * curl_here.z - Nz * curl_here.y) * 0.05;
+        new_vx[idx_here] = sample_vx(vec3(x, y + 0.5, z + 0.5) * CELL_SIZE - dt * vel_here);
+            // + (Ny * curl_here.z - Nz * curl_here.y) * 0.05;
     }
 
     // vy
@@ -127,8 +127,8 @@ void main() {
             vy[idx_here],
             0.25 * (vz[idx_here] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
         );
-        new_vy[idx_here] = sample_vy(vec3(x + 0.5, y, z + 0.5) * CELL_SIZE - dt * vel_here) +
-            (Nz * curl_here.x - Nx * curl_here.z) * 0.05;
+        new_vy[idx_here] = sample_vy(vec3(x + 0.5, y, z + 0.5) * CELL_SIZE - dt * vel_here);
+            // + (Nz * curl_here.x - Nx * curl_here.z) * 0.05;
     }
 
     // vz
@@ -138,8 +138,8 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
             vz[idx_here]
         );
-        new_vz[idx_here] = sample_vz(vec3(x + 0.5, y + 0.5, z) * CELL_SIZE - dt * vel_here) +
-            (Nx * curl_here.y - Ny * curl_here.x) * 0.05;
+        new_vz[idx_here] = sample_vz(vec3(x + 0.5, y + 0.5, z) * CELL_SIZE - dt * vel_here) ;
+            // + (Nx * curl_here.y - Ny * curl_here.x) * 0.05;
     }
 
     const uint SCALE = 2;

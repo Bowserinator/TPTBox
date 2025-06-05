@@ -384,12 +384,10 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         // Air acceleration
         simd_util::mul3f_ip(part.vx, part.vy, part.vz, el.Loss);
 
-        if (el.Advection) {
-            // TODO
-            // const auto &airCell = air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-            // part.vx += el.Advection * airCell.data[VX_IDX];
-            // part.vy += el.Advection * airCell.data[VY_IDX];
-            // part.vz += el.Advection * airCell.data[VZ_IDX];
+        if (enable_air && el.Advection) {
+            part.vx += el.Advection * air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
         }
 
         if (el.Update) {
@@ -432,7 +430,7 @@ void Simulation::update() {
     profiler::reset_and_start(1);
     if (gol.golCount) gol.wait_and_get();
     if (enable_heat) download_heat_from_gpu();
-    air.wait_and_get(); // TODO
+    if (enable_air) air.wait_and_get();
 
     profiler::end(1);
     profiler::reset_and_start(0);
@@ -700,7 +698,7 @@ void Simulation::dispatch_compute_shaders() {
     if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
     if (gol.golCount) gol.dispatch();
     if (enable_heat) heat.dispatch(frame_count);
-    air.update(); // TODO
+    if (enable_air) air.update();
 }
 
 void Simulation::force_graphics_update() {
