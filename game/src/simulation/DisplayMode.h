@@ -8,7 +8,7 @@
 // Also change in part.fs
 enum class DisplayMode {
     DISPLAY_MODE_VELOCITY = 0,
-    DISPLAY_MODE_PRESSURE,
+    DISPLAY_MODE_PRESSURE, // TODO: disable
     DISPLAY_MODE_PERSISTENT,
     DISPLAY_MODE_HEAT,
     DISPLAY_MODE_FANCY,

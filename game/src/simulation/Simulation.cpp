@@ -432,6 +432,7 @@ void Simulation::update() {
     profiler::reset_and_start(1);
     if (gol.golCount) gol.wait_and_get();
     if (enable_heat) download_heat_from_gpu();
+    air.wait_and_get(); // TODO
 
     profiler::end(1);
     profiler::reset_and_start(0);

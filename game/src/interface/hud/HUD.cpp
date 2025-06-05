@@ -192,14 +192,6 @@ void HUD::draw(const HUDData &data) {
             drawText(TextFormat("Sim: %.3f  Thrd: %d", avgSimFPS(), sim->actual_thread_count),
                 20, 20 + OFFSET, BLUE_TEXT);
 
-        // Top right corner
-        const int x = util::clamp(rx, 0, XRES);
-        const int y = util::clamp(ry, 0, YRES);
-        const int z = util::clamp(rz, 0, ZRES);
-
-        const char * air_data = TextFormat("Pressure: %.2f",
-            0.0f); // TODO // sim->air.cells[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE].data[PRESSURE_IDX]);
-
         // Ctype
         std::string ctype_data = "";
         if (sim->parts[idx].ctype) {
@@ -215,8 +207,8 @@ void HUD::draw(const HUDData &data) {
             name = golRules[util::clamp(sim->parts[idx].tmp2 - 1, 0, GOL_RULE_COUNT - 1)].name;
 
         const char * line11 = idx ?
-            TextFormat("%s%s,  %s", name.c_str(), ctype_data.c_str(), air_data) :
-            TextFormat("Empty,  %s", air_data);
+            TextFormat("%s%s", name.c_str(), ctype_data.c_str()) :
+            "Empty";
 
         const char * pos_data = TextFormat("X: %i Y: %i Z: %i", rx, ry, rz);
         const char * line12 = (idx && debug) ? TextFormat("#%i, %s", idx, pos_data) : pos_data;
@@ -262,7 +254,17 @@ void HUD::draw(const HUDData &data) {
                 GetScreenWidth() - RHUD_X_OFFSET, 20 + OFFSET, WHITE);
 
             if (debug) {
-                drawTextRAlign(TextFormat("VEL: %.2f, %.2f, %.2f, flag: %s",
+                // Top right corner
+                const int x = util::clamp(rx, 0, XRES);
+                const int y = util::clamp(ry, 0, YRES);
+                const int z = util::clamp(rz, 0, ZRES);
+                const char * air_data = TextFormat("%.2f, %.2f, %.2f",
+                    sim->air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
+                    sim->air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
+                    sim->air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE);
+
+                drawTextRAlign(TextFormat("AIR: %s, VEL: %.2f, %.2f, %.2f, flag: %s",
+                        air_data,
                         sim->parts[idx].vx,
                         sim->parts[idx].vy,
                         sim->parts[idx].vz,

@@ -57,31 +57,21 @@ vec3 rayCollideSim(vec3 rayPos, vec3 rayDir) {
 }
 
 // Return color from pressure data
-vec4 raymarch(vec3 pos, vec3 dir, bool is_vel) {
+// First voxel pos is location of first collision
+vec4 raymarch(vec3 pos, vec3 dir, bool is_vel, inout ivec3 firstVoxelPos) {
     vec4 color = vec4(0.0);
     pos /= CELL_SIZE;
     ivec3 voxelPos = ivec3(pos);
-
 	vec3 deltaDist = abs(vec3(1.0) / dir);
 	ivec3 rayStep = ivec3(sign(dir));
 	vec3 sideDist = (sign(dir) * (vec3(voxelPos) - pos) + (sign(dir) * 0.5) + 0.5) * deltaDist; 
 	bvec3 mask;
+    bool collided = false;
 
     for (int i = 0; i < MAX_RAY_STEPS; i++) {
 		if (!isInSim(voxelPos * CELL_SIZE)) return color;
         if (isInView(voxelPos * CELL_SIZE)) {
             ivec3 airGridPos = voxelPos;
-
-            // float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            // float v_y = 0.0; // vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            // float v_z = 0.0; // vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-
-            // if (v_x  != 0 || v_y != 0 || v_z != 0) {
-
-            //     return vec4(clamp(vec3(v_x, v_y, v_z), vec3(0), vec3(255)) / 255.0, 1.0);
-            
-            // }
-
             float v_x = vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vx[1 + airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
             float v_y = vy[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vy[airGridPos.x + AIRRES.x * (airGridPos.y + 1) + AIRRES.x * AIRRES.y * airGridPos.z];
             float v_z = vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] + vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * (airGridPos.z + 1)];
@@ -90,26 +80,27 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel) {
             v_y /= 2.0;
             v_z /= 2.0;
 
-            // float v_x = vx[airGridPos.x + 1 + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z] -
-            //             vx[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
-            // float v_y = vy[airGridPos.x + AIRRES.x * (airGridPos.y + 1) + AIRRES.x * AIRRES.y * airGridPos.z] -
-            //             vy[airGridPos.x + AIRRES.x * (airGridPos.y) + AIRRES.x * AIRRES.y * airGridPos.z];
-            // float v_z = vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * ( airGridPos.z + 1)] -
-            //             vz[airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z];
+            // TODO: can sample center of face or something idk
 
             vec3 this_v = vec3(v_x, v_y, v_z);
             this_v = clamp(this_v, -vec3(MAX_VEL_SCALE), vec3(MAX_VEL_SCALE)) / (MAX_VEL_SCALE);
 
             float forwardAlphaInv = 1.0 - color.a;
-            float this_a = (abs(v_x) + abs(v_y) + abs(v_z)) / STRENGTH_SCALE * 0.3;
+            float this_a = clamp((abs(v_x) + abs(v_y) + abs(v_z)) / STRENGTH_SCALE * 0.3, 0, 1);
             color.rgb += abs(this_v) * this_a * forwardAlphaInv;
             color.a = 1.0 - forwardAlphaInv * (1.0 - this_a);
+
+            if (!collided) {
+                collided = true;
+                firstVoxelPos = voxelPos;
+            }
         }
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         sideDist += vec3(mask) * deltaDist;
         voxelPos += ivec3(vec3(mask)) * rayStep;
 	}
+
     return color;
 }
 
@@ -124,9 +115,16 @@ void main() {
         rayPos = rayCollideSim(rayPos, rayDir);
     // Outside of box early termination
     if (rayPos.x < 0) {
+        gl_FragDepth = 10000.0;
         FragColor = vec4(0.0);
         return;
     }
 
-    FragColor = raymarch(rayPos, rayDir, true);
+    ivec3 firstVoxelPos = ivec3(-1.0);
+    FragColor = raymarch(rayPos, rayDir, true, firstVoxelPos);
+
+    vec4 vClipCoord = mvp * vec4(firstVoxelPos * CELL_SIZE, 1.0);
+    float fNdcDepth = vClipCoord.z / vClipCoord.w;
+    gl_FragDepth = (fNdcDepth + 1.0) * 0.5 + 0.000001; // Slightly offset depth to avoid clipping
+
 }

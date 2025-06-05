@@ -80,7 +80,6 @@ Mesh GenInvertedMeshCube(const float width, const float height, const float leng
     return mesh;
 }
 
-
 Renderer::~Renderer() {
     UnloadShader(part_shader);
     UnloadShader(post_shader);
@@ -491,8 +490,10 @@ void Renderer::draw() {
 
 #pragma region uniforms
     const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    const Vector2 virtual_resolution{ (float)GetScreenWidth() / downscaleRatio, (float)GetScreenHeight() / downscaleRatio };
-    const Vector2 blur_resolution{ (float)GetScreenWidth() / blurDownscaleRatio, (float)GetScreenHeight() / blurDownscaleRatio };
+    const Vector2 virtual_resolution{ (float)GetScreenWidth() / downscaleRatio,
+        (float)GetScreenHeight() / downscaleRatio };
+    const Vector2 blur_resolution{ (float)GetScreenWidth() / blurDownscaleRatio,
+        (float)GetScreenHeight() / blurDownscaleRatio };
 
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
@@ -591,8 +592,8 @@ void Renderer::draw() {
 
     // Draw other render textures
     if (sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY) { // TODO: also pressure
-        BeginTextureMode(vel_tex);
-            ClearBackground(BLANK);
+        //BeginTextureMode(vel_tex);
+            // ClearBackground(BLANK);
             rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
             rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
             rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
@@ -601,7 +602,7 @@ void Renderer::draw() {
             BeginMode3D(cam->camera);
             BeginShaderMode(air_shader);
 
-                util::set_shader_value(air_shader, air_shader_res_loc, virtual_resolution);
+                util::set_shader_value(air_shader, air_shader_res_loc, resolution); // virtual resolution
                 util::set_shader_value(air_shader, air_shader_camera_pos_loc, cam->camera.position);
                 util::set_shader_value(air_shader, air_shader_camera_dir_loc, look_ray);
                 util::set_shader_value(air_shader, air_shader_uv1_loc, uv1);
@@ -610,11 +611,11 @@ void Renderer::draw() {
 
             EndShaderMode();
             EndMode3D();
-        EndTextureMode();
+       // EndTextureMode();
 
-        util::draw_render_texture(vel_tex, Vector2{0.0f, 0.0f},
-            Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() },
-            Color { 255, 255, 255, 200 });
+        // util::draw_render_texture(vel_tex, Vector2{0.0f, 0.0f},
+        //     Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() },
+        //     Color { 255, 255, 255, 200 });
     }
 
     frame_count++;

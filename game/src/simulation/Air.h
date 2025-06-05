@@ -9,7 +9,7 @@
 
 class Simulation;
 
-constexpr unsigned int AIR_CELL_SIZE = 3;
+constexpr unsigned int AIR_CELL_SIZE = 4;
 static_assert(XRES % AIR_CELL_SIZE == 0, "XRES must be divisible by AIR_CELL_SIZE");
 static_assert(YRES % AIR_CELL_SIZE == 0, "YRES must be divisible by AIR_CELL_SIZE");
 static_assert(ZRES % AIR_CELL_SIZE == 0, "ZRES must be divisible by AIR_CELL_SIZE");
@@ -28,11 +28,15 @@ public:
     void init();
     void clear();
     void update();
+    void wait_and_get();
 
     Simulation & sim;
     explicit Air(Simulation & sim);
 
-    float pressure_map[AIR_ZRES][AIR_YRES][AIR_XRES];
+    float vx[AIR_ZRES][AIR_YRES][AIR_XRES];
+    float vy[AIR_ZRES][AIR_YRES][AIR_XRES];
+    float vz[AIR_ZRES][AIR_YRES][AIR_XRES];
+
     uint8_t wall_map[AIR_ZRES * AIR_YRES * AIR_XRES / 8 + 1];
 
     util::PersistentBuffer<2> ssbos_vx;
@@ -51,6 +55,7 @@ private:
 
     unsigned int divergence_program;
     unsigned int advection_program;
+    GLint iteration_uniform_loc;
 
     void solve_incompressibility();
     void fill_edges_and_advect_velocities();

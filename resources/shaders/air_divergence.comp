@@ -12,7 +12,10 @@ layout(std430, binding = 3) readonly restrict buffer Constants {
 };
 layout(std430, binding = 4) restrict buffer Walls { uint walls[]; };
 
-const float OVER_RELAXATION = 1.4;
+uniform int iteration;
+
+// omega < 2 to guarantee convergence
+const float OVER_RELAXATION = 1.97;
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -43,6 +46,7 @@ void main() {
 
     // Yes this can overwrite cells but *most* of the
     // time it seems fine? Significantly speeds up the code
+    // Red-black gauss seidel is like 2x slower so we ball
     float s = s1 + s2 + s3 + s4 + s5 + s6;
     if (s == 0) return;
 
@@ -51,7 +55,10 @@ void main() {
         vy[idx(x, y + 1, z)] - vy[idx(x, y, z)] +
         vz[idx(x, y, z + 1)] - vz[idx(x, y, z)];
     divergence /= CELL_SIZE;
-    float p = -divergence / s * OVER_RELAXATION;
+
+    // Assumes iteration is in [0, 3], probably unstable for some configurations
+    // But can fix later.
+    float p = -divergence / s * (OVER_RELAXATION + iteration * iteration);
 
     vx[idx(x, y, z)] -= s1 * p;
     vx[idx(x + 1, y, z)] += s2 * p;
