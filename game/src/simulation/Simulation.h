@@ -74,8 +74,8 @@ public:
     unsigned int sim_thread_count;
     unsigned int actual_thread_count;
     unsigned int max_ok_causality_range;
-    coord_t min_y_per_zslice[ZRES - 2];
-    coord_t max_y_per_zslice[ZRES - 2];
+    coord_t min_y_per_zslice[ZRES];
+    coord_t max_y_per_zslice[ZRES];
     std::vector<RNG> rngs;
 
     bool enable_air = true;

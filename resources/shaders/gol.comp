@@ -1,7 +1,7 @@
 #version 430
 
 // Multiplication of local sizes <= 1024
-layout (local_size_x = 10, local_size_y = 10, local_size_z = 10) in;
+layout (local_size_x = 16, local_size_y = 8, local_size_z = 8) in;
 
 layout(std430, binding = 0) readonly restrict buffer GolRules {
     ivec4 SIMRES;
@@ -17,10 +17,6 @@ layout(std430, binding = 2) writeonly restrict buffer GolOutput {
 
 // (x, y, z) -> array IDX (with wrapping on edges), note edges have 1 padding
 uint golIdx(uint x, uint y, uint z) {
-    // I have no idea why the line below breaks x wrapping
-    // x = (x == 0) ? (SIMRES.x - 2) : (x == SIMRES.x - 1 ? 1 : x);
-    y = (y == 0) ? (SIMRES.y - 2) : (y == SIMRES.y - 1 ? 1 : y);
-    z = (z == 0) ? (SIMRES.z - 2) : (z == SIMRES.z - 1 ? 1 : z);
     return x + y * SIMRES.x + z * SIMRES.y * SIMRES.x;
 }
 
@@ -52,41 +48,42 @@ void main() {
     uint z = gl_GlobalInvocationID.z;
     uint destVal = 0;
 
+    if (4 * gl_GlobalInvocationID.x >= SIMRES.x - 1 || y >= SIMRES.y - 1 || z >= SIMRES.z - 1)
+        return;
+
     for (int dx = 0; dx < 4; dx++) {
         x = 4 * gl_GlobalInvocationID.x + dx;
-
-        if (x >= SIMRES.x) continue;
+        if (x >= SIMRES.x - 1) break;
 
         neighborCount = 0;
         id = ruleId = getGol(x, y, z);
 
-        // TODO: faster
         if (ruleId == 0) {
             if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z - 1);
-            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 0);
-            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 1);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z - 1);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 0);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 1);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z - 1);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 0);
-            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 1);
             if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z - 1);
-            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 0);
-            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 1);
-            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z - 1);
-            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z + 1);
-            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z - 1);
-            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 0);
-            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 1);
             if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z - 1);
-            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 0);
-            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z - 1);
             if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z - 1);
-            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 0);
-            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z - 1);
             if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z - 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 0);
             if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z + 0);
+            if (ruleId == 0) ruleId = getGol(x - 1, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y - 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 1, y + 0, z + 1);
+            if (ruleId == 0) ruleId = getGol(x - 1, y + 1, z + 1);
+            if (ruleId == 0) ruleId = getGol(x + 0, y + 1, z + 1);
             if (ruleId == 0) ruleId = getGol(x + 1, y + 1, z + 1);
         }
 
@@ -96,38 +93,38 @@ void main() {
         // Moore neighborhood
         if ((rule.x & 2147483648) == 0) { // 1 << 31
             neighborCount += getGol01(x - 1, y - 1, z - 1);
-            neighborCount += getGol01(x - 1, y - 1, z + 0);
-            neighborCount += getGol01(x - 1, y - 1, z + 1);
-            neighborCount += getGol01(x - 1, y + 0, z - 1);
-            neighborCount += getGol01(x - 1, y + 0, z + 0);
-            neighborCount += getGol01(x - 1, y + 0, z + 1);
-            neighborCount += getGol01(x - 1, y + 1, z - 1);
-            neighborCount += getGol01(x - 1, y + 1, z + 0);
-            neighborCount += getGol01(x - 1, y + 1, z + 1);
             neighborCount += getGol01(x + 0, y - 1, z - 1);
-            neighborCount += getGol01(x + 0, y - 1, z + 0);
-            neighborCount += getGol01(x + 0, y - 1, z + 1);
-            neighborCount += getGol01(x + 0, y + 0, z - 1);
-            neighborCount += getGol01(x + 0, y + 0, z + 1);
-            neighborCount += getGol01(x + 0, y + 1, z - 1);
-            neighborCount += getGol01(x + 0, y + 1, z + 0);
-            neighborCount += getGol01(x + 0, y + 1, z + 1);
             neighborCount += getGol01(x + 1, y - 1, z - 1);
-            neighborCount += getGol01(x + 1, y - 1, z + 0);
-            neighborCount += getGol01(x + 1, y - 1, z + 1);
+            neighborCount += getGol01(x - 1, y + 0, z - 1);
+            neighborCount += getGol01(x + 0, y + 0, z - 1);
             neighborCount += getGol01(x + 1, y + 0, z - 1);
-            neighborCount += getGol01(x + 1, y + 0, z + 0);
-            neighborCount += getGol01(x + 1, y + 0, z + 1);
+            neighborCount += getGol01(x - 1, y + 1, z - 1);
+            neighborCount += getGol01(x + 0, y + 1, z - 1);
             neighborCount += getGol01(x + 1, y + 1, z - 1);
+            neighborCount += getGol01(x - 1, y - 1, z + 0);
+            neighborCount += getGol01(x + 0, y - 1, z + 0);
+            neighborCount += getGol01(x + 1, y - 1, z + 0);
+            neighborCount += getGol01(x - 1, y + 0, z + 0);
+            neighborCount += getGol01(x + 1, y + 0, z + 0);
+            neighborCount += getGol01(x - 1, y + 1, z + 0);
+            neighborCount += getGol01(x + 0, y + 1, z + 0);
             neighborCount += getGol01(x + 1, y + 1, z + 0);
+            neighborCount += getGol01(x - 1, y - 1, z + 1);
+            neighborCount += getGol01(x + 0, y - 1, z + 1);
+            neighborCount += getGol01(x + 1, y - 1, z + 1);
+            neighborCount += getGol01(x - 1, y + 0, z + 1);
+            neighborCount += getGol01(x + 0, y + 0, z + 1);
+            neighborCount += getGol01(x + 1, y + 0, z + 1);
+            neighborCount += getGol01(x - 1, y + 1, z + 1);
+            neighborCount += getGol01(x + 0, y + 1, z + 1);
             neighborCount += getGol01(x + 1, y + 1, z + 1);
         } else { // Neumann neighborhood
             neighborCount += getGol01(x - 1, y + 0, z + 0);
+            neighborCount += getGol01(x + 1, y + 0, z + 0);
             neighborCount += getGol01(x + 0, y - 1, z + 0);
+            neighborCount += getGol01(x + 0, y + 1, z + 0);
             neighborCount += getGol01(x + 0, y + 0, z - 1);
             neighborCount += getGol01(x + 0, y + 0, z + 1);
-            neighborCount += getGol01(x + 0, y + 1, z + 0);
-            neighborCount += getGol01(x + 1, y + 0, z + 0);
         }
 
         uint neighborMask = uint(1 << neighborCount);
@@ -138,7 +135,7 @@ void main() {
             // Survive
             destVal = setGol(x, y, z, id, destVal);
         // else
-            // Death
+            // Death, unnecessary since we init destVal to 0
             // destVal = setGol(x, y, z, 0, destVal);
     }
 

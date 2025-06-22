@@ -30,8 +30,8 @@ Simulation::Simulation():
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
-    std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
-    std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
+    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
+    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
     pfree = 1;
@@ -75,8 +75,8 @@ void Simulation::reset() {
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
-    std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], YRES - 1);
-    std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], 1);
+    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
+    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
     memset(reinterpret_cast<void*>(&parts), 0, sizeof(parts));
 
     pfree = 1;
@@ -293,13 +293,13 @@ void Simulation::update_zslice(const coord_t pz) {
     // Dirty rect does not have any impact on performance
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     coord_t y1, y2;
-    coord_t golz2 = (pz - 1) == 0 ? ZRES - 2 : pz - 1; // Check neighbors for gol as well, needs to wrap
-    coord_t golz3 = (pz + 1) == ZRES - 1 ? 1 : pz + 1;
+    coord_t golz2 = (pz - 1) == 1 ? 0 : pz - 1;
+    coord_t golz3 = (pz + 1) == ZRES - 1 ? 0 : pz + 1; // TODO
 
     // No GOL, can use smaller dirty rect
     if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[golz2] && !gol.zsliceHasGol[golz3]) {
-        y1 = min_y_per_zslice[pz - 1];
-        y2 = max_y_per_zslice[pz - 1];
+        y1 = min_y_per_zslice[pz];
+        y2 = max_y_per_zslice[pz] + 1;
     } else {
         // Dirty rect is ignored to allow GOL to propagate
         // As GOL can wrap around this is the easiest way to prevent
@@ -330,7 +330,7 @@ void Simulation::update_zslice(const coord_t pz) {
             }
         }
         else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
-            const int org_gol_type = gol.gol_map[pz][py][px]; // create_part may change GOL map
+            const auto org_gol_type = gol.gol_map[pz][py][px]; // create_part may change GOL map
             part_id i = create_part(px, py, pz, PT_GOL);
             if (i >= 0) {
                 gol.gol_map[pz][py][px] = org_gol_type;
@@ -570,8 +570,8 @@ void Simulation::recalc_free_particles() {
     parts_count = 0;
     part_id newMaxId = 0;
 
-    std::fill(&max_y_per_zslice[0], &max_y_per_zslice[ZRES - 2], 0);
-    std::fill(&min_y_per_zslice[0], &min_y_per_zslice[ZRES - 2], YRES - 1);
+    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
+    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.ao_blocks.fill(0);
     gol.zsliceHasGol.fill(false);
@@ -630,8 +630,8 @@ void Simulation::recalc_free_particles() {
             gol.zsliceHasGol[z] = true;
 
         // Pmap / other cache
-        min_y_per_zslice[z - 1] = std::min(y, min_y_per_zslice[z - 1]);
-        max_y_per_zslice[z - 1] = std::max(y, max_y_per_zslice[z - 1]) + 1;
+        min_y_per_zslice[z] = std::min(y, min_y_per_zslice[z]);
+        max_y_per_zslice[z] = std::max(y, max_y_per_zslice[z]);
 
         // Everything below this line may not necessarily be thread safe but
         // race conditions shouldn't cause any *major* crashes / issues

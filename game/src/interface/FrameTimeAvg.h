@@ -41,7 +41,7 @@ private:
     inline static FrameTime * single = nullptr;
 
     FrameTime(): _deltaSampleIdx(0), _lastTime(0) {
-        std::fill(&_deltaSamples[0], &_deltaSamples[DELTA_SAMPLES_FOR_AVG], 0.0f);
+        std::fill(std::begin(_deltaSamples), std::end(_deltaSamples), 0.0f);
     }
 };
 

@@ -37,11 +37,16 @@ public:
 extern const std::size_t GOL_RULE_COUNT;
 extern const GOLRule golRules[];
 
+// TODO: future fix by rounding up
+static_assert(XRES % 4 == 0, "GOL is passed as 4-byte group, XRES must be multiple of 4");
+
 class SimulationGol {
 public:
     ~SimulationGol();
 
-    uint8_t gol_map[ZRES][YRES][XRES]; // Map of GOL Ids (max 255)
+    using gol_map_t = uint8_t;
+
+    gol_map_t gol_map[ZRES][YRES][XRES] = {0}; // Map of GOL Ids (max 255)
     std::atomic<unsigned int> golCount = 0;
     std::array<bool, ZRES> zsliceHasGol;
 

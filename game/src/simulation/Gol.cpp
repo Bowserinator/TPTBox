@@ -101,8 +101,8 @@ void SimulationGol::init() {
 void SimulationGol::reset() {
     for (std::size_t i = 0; i < ssbosData.getBufferCount(); i++) {
         ssbosData.wait(i);
-        std::fill(&ssbosData.get<uint8_t>(i)[0],
-            &ssbosData.get<uint8_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
+        std::fill(&ssbosData.get<gol_map_t>(i)[0],
+            &ssbosData.get<gol_map_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
         ssbosData.lock(i);
     }
     memset(gol_map, 0, sizeof(gol_map));
@@ -113,7 +113,7 @@ void SimulationGol::dispatch() {
     std::copy(
         &gol_map[0][0][0],
         &gol_map[0][0][0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])),
-        &ssbosData.get<uint8_t>(0)[0]);
+        &ssbosData.get<gol_map_t>(0)[0]);
     ssbosData.lock(0);
 
     // Uncomment the two lines for timing the shader dispatch
@@ -124,7 +124,7 @@ void SimulationGol::dispatch() {
     rlBindShaderBuffer(ssbosData.getId(0), 1);
     rlBindShaderBuffer(ssbosData.getId(1), 2);
     // X is 4x as much since each invocation iterates 4 x values
-    rlComputeShaderDispatch(std::ceil(XRES / 40.0), std::ceil(YRES / 10.0), std::ceil(ZRES / 10.0));
+    rlComputeShaderDispatch(std::ceil(XRES / 64.0), std::ceil(YRES / 8.0), std::ceil(ZRES / 8.0));
     rlDisableShader();
 
     // std::cout << query.timeElapsedMs() << " ms (gol)" << "\n";
@@ -137,8 +137,8 @@ void SimulationGol::wait_and_get() {
     ssbosData.wait(1);
 
     std::copy(
-        &ssbosData.get<uint8_t>(1)[0],
-        &ssbosData.get<uint8_t>(1)[0] + sizeof(gol_map) / sizeof(gol_map[0][0][0]),
+        &ssbosData.get<gol_map_t>(1)[0],
+        &ssbosData.get<gol_map_t>(1)[0] + sizeof(gol_map) / sizeof(gol_map[0][0][0]),
         &gol_map[0][0][0]);
 
     gol_map[0][0][0] = 0; // Placeholder spot for edge padding
