@@ -561,6 +561,7 @@ void Simulation::download_heat_from_gpu() {
                 p_temp[update.id] = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
                 heat.update_temperature(part.rx, part.ry, part.rz,
                     p_temp[update.id], GetElements()[part.type].HeatConduct);
+                do_heat_conduct(part.rx, part.ry, part.rz, update.id);
             }
         heat_updates.clear();
     }

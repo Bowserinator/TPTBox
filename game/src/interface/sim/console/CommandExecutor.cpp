@@ -6,7 +6,7 @@
 #include <vector>
 
 std::string executeCommand(Simulation * sim, const std::string &command) {
-    if (!command.length())
+    if (command.empty())
         return "Error: empty command";
     if (command[0] != '!')
         return "Error: expected ! for command"; // TODO: future scripting commands won't need this

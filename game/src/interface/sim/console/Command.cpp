@@ -21,7 +21,7 @@ void commands::setup_commands() {
         commands::cmd_set);
 
     // Generate help text
-    for (auto i = 0; i < cmd_list.size(); i++) {
+    for (std::size_t i = 0; i < cmd_list.size(); i++) {
         help_text += cmd_list[i].help;
         if (i != cmd_list.size() - 1)
             help_text += '\n';
