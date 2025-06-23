@@ -69,6 +69,7 @@ void ConsolePanel::tick(float dt) {
     if (EventConsumer::ref()->isKeyPressed(KEY_UP) && cmd_history.size()) {
         history_cursor = history_cursor == 0 ? 0 : history_cursor - 1;
         input->setValue(cmd_history[history_cursor]);
+        input->setCursor(999999);
     } else if (EventConsumer::ref()->isKeyPressed(KEY_DOWN) && cmd_history.size()) {
         history_cursor = history_cursor >= cmd_history.size() - 1 ? history_cursor : history_cursor + 1;
         input->setValue(cmd_history[std::min(history_cursor, cmd_history.size() - 1)]);

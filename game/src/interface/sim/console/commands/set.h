@@ -15,7 +15,8 @@ namespace commands {
 
         enum class PartProp { type, flag, ctype, life, x, y, z, vx, vy, vz, temp, tmp1, tmp2, dcolor, invalid };
         enum class ValueType { t_float, t_uint, t_int, t_temperature, t_part_type };
-        ValueType prop_types[] = { ValueType::t_part_type, ValueType::t_uint, ValueType::t_uint, // type, flag, ctype
+        ValueType prop_types[] = {
+            ValueType::t_part_type, ValueType::t_uint, ValueType::t_part_type, // type, flag, ctype
             ValueType::t_int, ValueType::t_uint, ValueType::t_uint, ValueType::t_uint, // life, x, y, z
             ValueType::t_float, ValueType::t_float, ValueType::t_float, // vx, vy, vz
             ValueType::t_temperature, ValueType::t_uint, ValueType::t_uint, // temp, tmp1, tmp2

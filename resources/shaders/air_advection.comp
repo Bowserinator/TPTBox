@@ -144,16 +144,16 @@ void main() {
 
     const uint SCALE = 2;
 
-    if ((z >= 40 / SCALE && z <= 40  / SCALE) && (y > 40  / SCALE && y < 50  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
-        new_vx[idx(x,y,z)] = 0.0;
-        new_vy[idx(x,y,z)] = 50.0;
-        new_vz[idx(x,y,z)] = 0.0;
-    }
-    if ((z >= 40 / SCALE  && z <= 40  / SCALE) && (y > 30 / SCALE && y < 40  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
-        new_vx[idx(x,y,z)] = 0.0;
-        new_vy[idx(x,y,z)] = -50.0;
-        new_vz[idx(x,y,z)] = 0.0;
-    }
+    // if ((z >= 40 / SCALE && z <= 40  / SCALE) && (y > 40  / SCALE && y < 50  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
+    //     new_vx[idx(x,y,z)] = 0.0;
+    //     new_vy[idx(x,y,z)] = 50.0;
+    //     new_vz[idx(x,y,z)] = 0.0;
+    // }
+    // if ((z >= 40 / SCALE  && z <= 40  / SCALE) && (y > 30 / SCALE && y < 40  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
+    //     new_vx[idx(x,y,z)] = 0.0;
+    //     new_vy[idx(x,y,z)] = -50.0;
+    //     new_vz[idx(x,y,z)] = 0.0;
+    // }
 
     // Lower velocity on edges
     // if (x <= 1 || x >= AIRRES.x - 2)

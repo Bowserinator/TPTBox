@@ -83,6 +83,32 @@ void Air::update() {
     fill_edges_and_advect_velocities();
 }
 
+void Air::upload() {
+    // TODO
+    ssbos_vx.advance_cycle();
+    ssbos_vy.advance_cycle();
+    ssbos_vz.advance_cycle();
+
+    ssbos_vx.wait(0);
+    ssbos_vy.wait(0);
+    ssbos_vz.wait(0);
+    memcpy(&ssbos_vx.get<float>(0)[0], &vx[0], sizeof(vx));
+    memcpy(&ssbos_vy.get<float>(0)[0], &vy[0], sizeof(vy));
+    memcpy(&ssbos_vz.get<float>(0)[0], &vz[0], sizeof(vz));
+    ssbos_vx.lock(0);
+    ssbos_vy.lock(0);
+    ssbos_vz.lock(0);
+}
+
+void Air::explode(const coord_t x, const coord_t y, const coord_t z, float diff) {
+    vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
+    vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE + 1] += diff;
+    vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
+    vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE + 1][x / AIR_CELL_SIZE] += diff;
+    vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
+    vz[z / AIR_CELL_SIZE + 1][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] += diff;
+}
+
 void Air::solve_incompressibility() {
     rlEnableShader(divergence_program);
     rlBindShaderBuffer(ssbos_vx.getId(0), 0);

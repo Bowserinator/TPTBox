@@ -43,6 +43,8 @@ namespace ui {
             this->m_input_allowed = inputAllowed; return this; }
         TextInput * setOnSubmit(std::function<void(const std::string&)> onSubmit) {
             this->m_on_submit = onSubmit; return this; }
+        TextInput * setCursor(const std::size_t pos) {
+            _updateCursor(pos, m_cursor); return this; }
 
         void draw(const Vector2 &screenPos) override;
         void tick(float dt) override;

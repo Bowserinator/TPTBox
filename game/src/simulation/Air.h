@@ -29,6 +29,8 @@ public:
     void clear();
     void update();
     void wait_and_get();
+    void upload();
+    void explode(const coord_t x, const coord_t y, const coord_t z, float diff);
 
     Simulation & sim;
     explicit Air(Simulation & sim);
