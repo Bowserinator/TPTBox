@@ -9,13 +9,13 @@ void Element::Element_ICE() {
 
     MenuSection = MenuCategory::SOLIDS;
 
-	GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
-    
-	HeatConduct = 160;
+    GraphicsFlags = GraphicsFlags::REFRACT | GraphicsFlags::NO_LIGHTING;
+
+    HeatConduct = 160;
     Loss = 0.0f;
 
-	HighTemperature = 0.0_C;
-	HighTemperatureTransition = Transition::TO_CTYPE;
+    HighTemperature = 0.0_C;
+    HighTemperatureTransition = Transition::TO_CTYPE;
 
     DefaultProperties.temp = -4.0 + R_ZERO_C;
     DefaultProperties.ctype = PT_WATR;

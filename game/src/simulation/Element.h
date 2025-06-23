@@ -29,6 +29,7 @@ public:
     float HotAir;            // How much particle increases pressure by
 
     int Hardness;            // How much its affected by ACID, 0 = no effect, higher = more effect
+    int Flammable;           // How fast fire burns through, out of 1024, higher = faster
 
     int Weight;
     unsigned char HeatConduct;

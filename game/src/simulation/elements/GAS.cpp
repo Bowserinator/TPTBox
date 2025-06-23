@@ -12,4 +12,6 @@ void Element::Element_GAS() {
 
     Gravity = 0.005f;
     Diffusion = 1.0f;
+
+    Flammable = 1000;
 };

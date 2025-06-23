@@ -5,6 +5,8 @@ static int FIRE_graphics(GRAPHICS_FUNC_ARGS);
 static int update(UPDATE_FUNC_ARGS);
 static void onCreate(ON_CREATE_FUNC_ARGS);
 
+constexpr float DEFAULT_FIRE_TEMP = R_TEMP + 300.0f;
+
 void Element::Element_FIRE() {
     Name = "FIRE";
     Identifier = "FIRE";
@@ -20,11 +22,13 @@ void Element::Element_FIRE() {
     Diffusion = 1.0f;
     Advection = 1.0f;
 
+    HeatConduct = 255;
+
     Graphics = &FIRE_graphics;
     Update = &update;
     OnCreate = &onCreate;
 
-    DefaultProperties.temp = R_TEMP + 300.0f;
+    DefaultProperties.temp = DEFAULT_FIRE_TEMP;
 };
 
 static void onCreate(ON_CREATE_FUNC_ARGS) {
@@ -46,9 +50,13 @@ static int update(UPDATE_FUNC_ARGS) {
             if (!dx && !dy && !dz) continue;
             r = sim.pmap[z + dz][y + dy][x + dx];
             if (r && TYP(r) != PT_FIRE) {
-                sim.parts[ID(r)].life = sim.rng().between(120, 169);
-                sim.part_change_type(ID(r), PT_FIRE);
-                goto end;
+                const auto &el = GetElements()[TYP(r)];
+                if (el.Flammable && sim.rng().chance(el.Flammable, 1024)) {
+                    sim.parts[ID(r)].life = sim.rng().between(120, 169);
+                    sim.p_temp[ID(r)] = std::max(sim.p_temp[ID(r)], DEFAULT_FIRE_TEMP + el.Flammable / 2);
+                    sim.part_change_type(ID(r), PT_FIRE);
+                    goto end;
+                }
             }
         }
     }

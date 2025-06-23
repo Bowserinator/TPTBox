@@ -469,8 +469,8 @@ void Simulation::update() {
     profiler::end(0);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        air.explode(80, 80, 80, 50.0); // TODO
-        air.upload(); // TODO
+        //air.explode(80, 80, 80, 50.0); // TODO
+        //air.upload(); // TODO
     }
 
     frame_count++;

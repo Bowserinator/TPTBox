@@ -33,7 +33,9 @@ Element::Element() {
 
 	Weight;*/
     HeatConduct = 0;
+    Flammable = 0;
 	/*LatentHeat;
+    
 
 	LowPressure;
 	LowPressureTransition;

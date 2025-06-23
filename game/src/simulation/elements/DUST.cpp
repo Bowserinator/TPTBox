@@ -25,6 +25,7 @@ void Element::Element_DUST() {
     Diffusion = 1.0f;
 
     Weight = 20;
+    Flammable = 200;
 
     HeatConduct = 255;
 
