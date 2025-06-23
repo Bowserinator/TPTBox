@@ -645,6 +645,7 @@ void Simulation::recalc_free_particles() {
 
         // Ambient occlusion and shadow rules
         if (part.id == ID(pmap[z][y][x]) && _should_do_lighting(part)) {
+            util::unique_spinlock l(ao_zyslice_lock[z][y]);
             graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]++;
             _update_shadow_map(x, y, z);
         }

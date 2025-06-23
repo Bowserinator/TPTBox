@@ -50,6 +50,7 @@ public:
     pmap_id photons[ZRES][YRES][XRES];
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
     util::Spinlock parts_add_remove_lock;
+    util::Spinlock ao_zyslice_lock[ZRES][YRES];
     util::Spinlock colordata_lock
         [ZRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
         [YRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
