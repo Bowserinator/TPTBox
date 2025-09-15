@@ -46,4 +46,7 @@ void main() {
     vx[idx_here] += (pv[idx_here - 1] - pressure_here) * dt * 0.5;
     vy[idx_here] += (pv[idx(x, y - 1, z)] - pressure_here) * dt * 0.5;
     vz[idx_here] += (pv[idx(x, y, z - 1)] - pressure_here) * dt * 0.5;
+
+    // Negate velocities near walls
+    // TODO
 }

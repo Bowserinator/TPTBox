@@ -8,6 +8,12 @@
 #include <cstring>
 #include <glad.h>
 
+/// Air compute shaders in 8 8 16 = 1024
+void dispatch_air_compute_shaders() {
+    rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
+                        std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+}
+
 Air::Air(Simulation &sim) : sim(sim) {}
 
 void Air::init() {
@@ -32,11 +38,11 @@ void Air::init() {
             .add_const_arr<int32_t, 4>("AIRRES", {AIR_XRES, AIR_YRES, AIR_ZRES, 0})
             .update();
 
-    advection_shader         = util::TPBShader{air_advection_comp_source, util::ShaderType::COMPUTE};
-    divergence_shader        = util::TPBShader{air_divergence_comp_source, util::ShaderType::COMPUTE};
-    pressure_from_vel_shader = util::TPBShader{air_pressure_from_vel_comp_source, util::ShaderType::COMPUTE};
-    vel_from_pressure_shader = util::TPBShader{air_vel_from_pressure_comp_source, util::ShaderType::COMPUTE};
-    pressure_blur_shader     = util::TPBShader{air_blur_comp_source, util::ShaderType::COMPUTE};
+    advection_shader         = util::TPBComputeShader{air_advection_comp_source};
+    divergence_shader        = util::TPBComputeShader{air_divergence_comp_source};
+    pressure_from_vel_shader = util::TPBComputeShader{air_pressure_from_vel_comp_source};
+    vel_from_pressure_shader = util::TPBComputeShader{air_vel_from_pressure_comp_source};
+    pressure_blur_shader     = util::TPBComputeShader{air_blur_comp_source};
 
     ssbos_vx    = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(vx), util::PBFlags::READ_AND_WRITE);
     ssbos_vy    = util::PersistentBuffer<2>(GL_SHADER_STORAGE_BUFFER, sizeof(vy), util::PBFlags::READ_AND_WRITE);
@@ -85,10 +91,9 @@ void Air::update() {
     rlBindShaderBuffer(ssbos_vx.getId(0), 0);
     rlBindShaderBuffer(ssbos_vy.getId(0), 1);
     rlBindShaderBuffer(ssbos_vz.getId(0), 2);
-    rlBindShaderBuffer(ssbos_walls.getId(0), 3);
-    rlBindShaderBuffer(ssbos_pv.getId(0), 4);
-    rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                            std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+    rlBindShaderBuffer(ssbos_pv.getId(0), 3);
+    dispatch_air_compute_shaders();
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     rlDisableShader();
 
     // Blur velocity and pressure fields
@@ -98,10 +103,10 @@ void Air::update() {
     for (const auto &ssbo : {std::ref(ssbos_pv), std::ref(ssbos_vx), std::ref(ssbos_vy), std::ref(ssbos_vz)}) {
         rlBindShaderBuffer(ssbo.get().getId(0), 0);
         rlBindShaderBuffer(ssbo.get().getId(1), 1);
-        rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                                std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+        dispatch_air_compute_shaders();
         ssbo.get().advance_cycle();
     }
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     rlDisableShader();
 
     // Vel update
@@ -111,8 +116,8 @@ void Air::update() {
     rlBindShaderBuffer(ssbos_vz.getId(0), 2);
     rlBindShaderBuffer(ssbos_walls.getId(0), 3);
     rlBindShaderBuffer(ssbos_pv.getId(0), 4);
-    rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                            std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+    dispatch_air_compute_shaders();
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     rlDisableShader();
 
     // The rest
@@ -163,9 +168,7 @@ void Air::solve_incompressibility() {
     constexpr int DIVERGENCE_REMOVING_ITERATIONS = 4;
     for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++) {
         glUniform1iv(iteration_uniform_loc, 1, &i);
-
-        rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                                std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+        dispatch_air_compute_shaders();
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
     rlDisableShader();
@@ -184,8 +187,7 @@ void Air::fill_edges_and_advect_velocities() {
     rlBindShaderBuffer(ssbos_pv.getId(0), 8);
 
     // util::GlTimeQuery query;
-    rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                            std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+    dispatch_air_compute_shaders();
     rlDisableShader();
     // std::cout << query.timeElapsedMs() << " ms (air sim - advection)" << "\n";
 }

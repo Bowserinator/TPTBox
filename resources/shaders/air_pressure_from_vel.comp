@@ -8,17 +8,10 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
-layout(std430, binding = 3) readonly restrict buffer Walls { uint walls[]; };
-layout(std430, binding = 4) restrict buffer Pressure { float pv[]; };
+layout(std430, binding =3) restrict buffer Pressure { float pv[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
-}
-
-// Also modify in air_divergence
-uint is_empty(uint x, uint y, uint z) {
-    uint id = idx(x, y, z);
-    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
 }
 
 void main() {
@@ -34,11 +27,4 @@ void main() {
     dp += vy[idx_here] - vy[idx(x, y - 1, z)];
     dp += vz[idx_here] - vz[idx(x, y, z - 1)];
     pv[idx_here] = pv[idx_here] * AIR_PRESSURE_LOSS + dt * dp * 0.5;
-
-    // TODO
-    float P = 15;
-    pv[idx(10, 10, 10)] = P;
-    pv[idx(11, 10, 10)] = P;
-    pv[idx(11, 11, 10)] = P;
-    pv[idx(10, 11, 10)] = P;
 }

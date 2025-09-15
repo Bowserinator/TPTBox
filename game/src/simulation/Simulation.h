@@ -1,40 +1,37 @@
 #pragma once
 
+#include "Air.h"
+#include "Gol.h"
 #include "Particle.h"
+#include "Raycast.h"
+#include "Sign.h"
 #include "SimulationDef.h"
 #include "SimulationGraphics.h"
 #include "SimulationHeat.h"
-#include "Gol.h"
-#include "Raycast.h"
-#include "Air.h"
-#include "Sign.h"
 
-#include "util/types/rand.h"
-#include "util/types/heap_array.h"
-#include "util/types/spinlock.h"
 #include "util/types/concurrent_append_list.h"
+#include "util/types/heap_array.h"
+#include "util/types/rand.h"
+#include "util/types/spinlock.h"
 
+#include "render/types/octree.h"
 #include "util/math.h"
 #include "util/vector_op.h"
-#include "render/types/octree.h"
 
+#include <limits>
 #include <omp.h>
 #include <vector>
-#include <limits>
 
-enum class GravityMode {
-    VERTICAL = 0,
-    ZERO_G = 1,
-    RADIAL = 2,
-    LAST
-};
+enum class GravityMode { VERTICAL = 0, ZERO_G = 1, RADIAL = 2, LAST };
 
 struct PartHeatDelta {
     part_id id;
     float newTemp;
 };
 
-namespace settings { class Sim; }
+namespace settings {
+class Sim;
+}
 
 class Simulation {
 public:
@@ -50,10 +47,8 @@ public:
     PartSwapBehavior can_move[ELEMENT_COUNT + 1][ELEMENT_COUNT + 1];
     util::Spinlock parts_add_remove_lock;
     util::Spinlock ao_zyslice_lock[ZRES][YRES];
-    util::Spinlock colordata_lock
-        [ZRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
-        [YRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
-        [XRES / GRAPHICS_LOCK_BLOCK_SIZE + 1];
+    util::Spinlock colordata_lock[ZRES / GRAPHICS_LOCK_BLOCK_SIZE + 1][YRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
+                                 [XRES / GRAPHICS_LOCK_BLOCK_SIZE + 1];
 
     std::vector<PartHeatDelta> heat_updates;
 
@@ -66,7 +61,8 @@ public:
     part_id maxId;
 
     uint32_t parts_count;
-    uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open for this long
+    uint32_t frame_count; // Monotomic frame counter, will overflow in ~824 days @ 60 FPS. Do not keep the program open
+                          // for this long
 
     // Graphics bookkeeping
     SimulationGraphics graphics;
@@ -77,9 +73,6 @@ public:
     coord_t min_y_per_zslice[ZRES];
     coord_t max_y_per_zslice[ZRES];
     std::vector<RNG> rngs;
-
-    bool enable_air = true;
-    bool enable_heat = true;
 
     uint32_t last_defrag_frame = 0;
 
@@ -92,10 +85,10 @@ public:
     void reset();
     void cycle_gravity_mode();
     void set_paused(const bool paused) { this->paused = paused; };
-    void update_settings(settings::Sim * settings);
+    void update_settings(settings::Sim *settings);
 
     part_id create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type,
-        const PartCreateMode mode = PartCreateMode::NORMAL);
+                        const PartCreateMode mode = PartCreateMode::NORMAL);
     void kill_part(const part_id id);
     bool part_change_type(const part_id i, const part_type new_type);
 
@@ -111,38 +104,37 @@ public:
 
     void move_behavior(const part_id idx);
     void try_move(const part_id idx, const float x, const float y, const float z,
-        PartSwapBehavior behavior = PartSwapBehavior::NOT_EVALED_YET);
-    void swap_part(const coord_t x1, const coord_t y1, const coord_t z1,
-        const coord_t x2, const coord_t y2, const coord_t z2,
-        const part_id id1, const part_id id2);
+                  PartSwapBehavior behavior = PartSwapBehavior::NOT_EVALED_YET);
+    void swap_part(const coord_t x1, const coord_t y1, const coord_t z1, const coord_t x2, const coord_t y2,
+                   const coord_t z2, const part_id id1, const part_id id2);
     void move_part(const coord_t x1, const coord_t y1, const coord_t z1, const part_id id);
 
-    inline RNG& rng() { return rngs[omp_get_thread_num()]; }
+    [[nodiscard]] bool air_enabled() const { return air.enable; }
+    [[nodiscard]] bool heat_enabled() const { return heat.enable; }
+
+    [[nodiscard]] inline RNG &rng() { return rngs[omp_get_thread_num()]; }
 
     // Whether to figure out which faces collided with (true)
     // whether to return space before collision (false) or the position of the particle ray collided with (true)
     template <bool compute_faces, bool take_intersect>
     bool raycast(const RaycastInput &in, RaycastOutput &out, const auto pmapOccupied) const;
 
-    PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny, const coord_t nz) const;
+    [[nodiscard]] PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny,
+                                             const coord_t nz) const;
 
-    static const char * getGravityModeName(const GravityMode mode) {
+    [[nodiscard]] static const char *getGravityModeName(const GravityMode mode) {
         switch (mode) {
-            case GravityMode::VERTICAL:
-                return "Vertical";
-            case GravityMode::ZERO_G:
-                return "Off";
-            case GravityMode::RADIAL:
-                return "Radial";
-            case GravityMode::LAST:
-                break;
+        case GravityMode::VERTICAL: return "Vertical";
+        case GravityMode::ZERO_G:   return "Off";
+        case GravityMode::RADIAL:   return "Radial";
+        case GravityMode::LAST:     break;
         }
         return "Unknown";
     }
 
-    void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part);
+    void _set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle *part);
     void _update_shadow_map(const coord_t x, const coord_t y, const coord_t z);
-    bool _should_do_lighting(const Particle &part);
+    [[nodiscard]] bool _should_do_lighting(const Particle &part);
 
 private:
     void _init_can_move();
@@ -151,13 +143,11 @@ private:
     void _set_default_properties(const part_id idx, const DefaultParticleProperties &def);
 };
 
-
-
 /**
  * @brief Perform a raycast starting at (x,y,z) with max displacement
  *        and direction indicated by (vx, vy, vz). The last empty voxel
  *        before colliding is written to (ox, oy, oz)
- * 
+ *
  *        Pmap occupied is function that takes in Vector3T<coord_t> and returns
  *        PartSwapBehavior
  * @see https://github.com/francisengelmann/fast_voxel_traversal/tree/master
@@ -175,43 +165,40 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     // When the grid is that full, statistically most particles will not be able to move
     // hence the "optimization"
     int largest_axis = util::argmax3(in.vx, in.vy, in.vz);
-    bool early_stop = false;
+    bool early_stop  = false;
 
-    if (largest_axis == 0 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{
-            (signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)), (signed_coord_t)in.y, (signed_coord_t)in.z })) {
+    if (largest_axis == 0 &&
+        PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{(signed_coord_t)(in.x + (in.vx < 0 ? -1 : 1)),
+                                                                        (signed_coord_t)in.y, (signed_coord_t)in.z})) {
         early_stop = true;
-        if (compute_faces)
-            out.faces = RayCast::FACE_X;
-    }
-    else if (largest_axis == 1 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x,
-            (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z })) {
+        if (compute_faces) out.faces = RayCast::FACE_X;
+    } else if (largest_axis == 1 &&
+               PartSwapBehavior::NOOP ==
+                   pmapOccupied(Vector3T<signed_coord_t>{
+                       (signed_coord_t)in.x, (signed_coord_t)(in.y + (in.vy < 0 ? -1 : 1)), (signed_coord_t)in.z})) {
         early_stop = true;
-        if (compute_faces)
-            out.faces = RayCast::FACE_Y;
-    }
-    else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ (signed_coord_t)in.x,
-            (signed_coord_t)in.y, (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1)) })) {
+        if (compute_faces) out.faces = RayCast::FACE_Y;
+    } else if (largest_axis == 2 && PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{
+                                                                  (signed_coord_t)in.x, (signed_coord_t)in.y,
+                                                                  (signed_coord_t)(in.z + (in.vz < 0 ? -1 : 1))})) {
         early_stop = true;
-        if (compute_faces)
-            out.faces = RayCast::FACE_Z;
+        if (compute_faces) out.faces = RayCast::FACE_Z;
     }
     if (early_stop) {
-        out.x = in.x;
-        out.y = in.y;
-        out.z = in.z;
+        out.x    = in.x;
+        out.y    = in.y;
+        out.z    = in.z;
         out.move = PartSwapBehavior::NOOP;
         return true;
     }
 
     // Actual raycast --------------
-    Vector3T<signed_coord_t> current_voxel{ (signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z };
-    const Vector3T<signed_coord_t> last_voxel{
-        (signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
-        (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
-        (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))
-    };
+    Vector3T<signed_coord_t> current_voxel{(signed_coord_t)in.x, (signed_coord_t)in.y, (signed_coord_t)in.z};
+    const Vector3T<signed_coord_t> last_voxel{(signed_coord_t)((signed_coord_t)in.x + util::ceil_proper(in.vx)),
+                                              (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
+                                              (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))};
     Vector3T<signed_coord_t> previous_voxel = current_voxel;
-    const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
+    const Vector3T<signed_coord_t> ray      = last_voxel - current_voxel;
 
     // Step to take per direction (+-1)
     const float dx = (ray.x >= 0) ? 1 : -1;
@@ -237,22 +224,19 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     // down our current trajectory
     // Precondition: prev_loc != final_loc
     auto getFaces = [this, &pmapOccupied](const Vector3T<signed_coord_t> &prev_loc,
-            const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
+                                          const Vector3T<signed_coord_t> &final_loc) -> RayCast::RayHitFace {
         RayCast::RayHitFace faces = 0;
 
         if ((prev_loc.x != final_loc.x) + (prev_loc.y != final_loc.y) + (prev_loc.z != final_loc.z) == 1) {
-            if (prev_loc.x != final_loc.x)
-                faces |= RayCast::FACE_X;
-            if (prev_loc.y != final_loc.y)
-                faces |= RayCast::FACE_Y;
-            if (prev_loc.z != final_loc.z)
-                faces |= RayCast::FACE_Z;
+            if (prev_loc.x != final_loc.x) faces |= RayCast::FACE_X;
+            if (prev_loc.y != final_loc.y) faces |= RayCast::FACE_Y;
+            if (prev_loc.z != final_loc.z) faces |= RayCast::FACE_Z;
         } else {
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ final_loc.x, prev_loc.y, prev_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{final_loc.x, prev_loc.y, prev_loc.z}))
                 faces |= RayCast::FACE_X;
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, final_loc.y, prev_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{prev_loc.x, final_loc.y, prev_loc.z}))
                 faces |= RayCast::FACE_Y;
-            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{ prev_loc.x, prev_loc.y, final_loc.z }))
+            if (PartSwapBehavior::NOOP == pmapOccupied(Vector3T<signed_coord_t>{prev_loc.x, prev_loc.y, final_loc.z}))
                 faces |= RayCast::FACE_Z;
         }
         return faces;
@@ -281,13 +265,12 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
 
         if (PartSwapBehavior::NOOP == pmapOccupied(current_voxel)) {
             auto voxel = take_intersect ? current_voxel : previous_voxel;
-            out.x = voxel.x;
-            out.y = voxel.y;
-            out.z = voxel.z;
-            out.move = PartSwapBehavior::SWAP;
+            out.x      = voxel.x;
+            out.y      = voxel.y;
+            out.z      = voxel.z;
+            out.move   = PartSwapBehavior::SWAP;
 
-            if (compute_faces)
-                out.faces = getFaces(previous_voxel, current_voxel);
+            if (compute_faces) out.faces = getFaces(previous_voxel, current_voxel);
             return true;
         }
     }
@@ -295,8 +278,7 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     out.x = current_voxel.x;
     out.y = current_voxel.y;
     out.z = current_voxel.z;
-    if (compute_faces)
-        out.faces = 0; // No faces to bounce off
+    if (compute_faces) out.faces = 0; // No faces to bounce off
     out.move = PartSwapBehavior::SWAP;
     return false;
 }

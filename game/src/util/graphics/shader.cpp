@@ -45,7 +45,20 @@ auto util::TPBShaderSourceCode::add_const(const std::string &name, const glsl_ba
     return *this;
 }
 
-util::TPBShader::TPBShader(const std::string &program, util::ShaderType type) {
-    unsigned int shader = rlCompileShader(program.c_str(), (int)type);
+util::TPBComputeShader::TPBComputeShader(const std::string &program) {
+    unsigned int shader = rlCompileShader(program.c_str(), (int)ShaderType::COMPUTE);
     m_id                = rlLoadComputeShaderProgram(shader);
+}
+
+int util::UniformManager::get(const std::string &name) {
+    auto itr = m_uniform_locs.find(name);
+    if (itr != m_uniform_locs.end())
+        return itr->second;
+    int res = GetShaderLocation(*m_shader, name.c_str());
+    #ifdef DEBUG
+    if (res < 0)
+        throw std::out_of_range(std::format("Uniform = '{}' does not exist for shader id= '{}'", name, m_shader->get().id));
+    #endif
+    m_uniform_locs[name] = res;
+    return res;
 }

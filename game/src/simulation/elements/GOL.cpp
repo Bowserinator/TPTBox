@@ -40,10 +40,10 @@ static int update(UPDATE_FUNC_ARGS) {
 
 static void onChangeType(ON_CHANGE_TYPE_FUNC_ARGS) {
     if (newType == PT_GOL) {
-        sim.gol.golCount++;
-        sim.gol.zsliceHasGol[z] = true;
+        sim.gol.gol_count++;
+        sim.gol.z_slice_has_gol[z] = true;
     } else {
         sim.gol.gol_map[z][y][x] = 0;
-        sim.gol.golCount--;
+        sim.gol.gol_count--;
     }
 }

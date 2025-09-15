@@ -3,30 +3,24 @@
 #include "ElementDefs.h"
 
 #include "graphics/gradient.h"
-#include "util/vector_op.h"
 #include "util/math.h"
 #include "util/profiler.h"
 #include "util/simd.h"
 #include "util/types/reversible_range.h"
+#include "util/vector_op.h"
 
-#include "interface/settings/data/SimSettingsData.h"
 #include "interface/settings/data/SettingsData.h"
+#include "interface/settings/data/SimSettingsData.h"
 
-#include <omp.h>
 #include <algorithm>
-#include <iostream>
-#include <tuple>
-#include <vector>
 #include <cmath>
-#include <limits>
-#include <cstring>
 #include <cstdint>
+#include <cstring>
+#include <omp.h>
 #include <utility>
+#include <vector>
 
-Simulation::Simulation():
-    paused(false),
-    air(*this)
-{
+Simulation::Simulation() : paused(false), air(*this) {
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
@@ -34,20 +28,19 @@ Simulation::Simulation():
     std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
-    pfree = 1;
-    maxId = 0;
-    frame_count = 0;
-    parts_count = 0;
-    gravity_mode = GravityMode::VERTICAL;
+    pfree              = 1;
+    maxId              = 0;
+    frame_count        = 0;
+    parts_count        = 0;
+    gravity_mode       = GravityMode::VERTICAL;
     heat.uploaded_once = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
 
-
     // ---- Threads ------
-    sim_thread_count = std::min(omp_get_max_threads(), MAX_SIM_THREADS);
+    sim_thread_count       = std::min(omp_get_max_threads(), MAX_SIM_THREADS);
     max_ok_causality_range = ZRES / (sim_thread_count * 4);
-    actual_thread_count = 0;
+    actual_thread_count    = 0;
 
     for (std::size_t _ = 0; _ < sim_thread_count; _++)
         rngs.push_back(RNG());
@@ -77,12 +70,12 @@ void Simulation::reset() {
 
     std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
     std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
-    memset(reinterpret_cast<void*>(&parts), 0, sizeof(parts));
+    memset(reinterpret_cast<void *>(&parts), 0, sizeof(parts));
 
-    pfree = 1;
-    maxId = 0;
-    frame_count = 0;
-    parts_count = 0;
+    pfree        = 1;
+    maxId        = 0;
+    frame_count  = 0;
+    parts_count  = 0;
     gravity_mode = GravityMode::VERTICAL;
 
     graphics.reset();
@@ -92,13 +85,12 @@ void Simulation::reset() {
     signs.clear();
 }
 
-void Simulation::update_settings(settings::Sim * settings) {
-    enable_air = settings->enableAir;
-    enable_heat = settings->enableHeat;
+void Simulation::update_settings(settings::Sim *settings) {
+    air.enable   = settings->enableAir;
+    heat.enable  = settings->enableHeat;
     gravity_mode = settings->gravityMode;
     sim_thread_count =
-        settings->threadCount > 0 ? settings->threadCount :
-        std::min(omp_get_max_threads(), MAX_SIM_THREADS);
+        settings->threadCount > 0 ? settings->threadCount : std::min(omp_get_max_threads(), MAX_SIM_THREADS);
 }
 
 void Simulation::_init_can_move() {
@@ -120,28 +112,28 @@ void Simulation::_init_can_move() {
 
             // All energy particles can occupy same space
             if (elements[movingType].State == ElementState::TYPE_ENERGY &&
-                    elements[destinationType].State == ElementState::TYPE_ENERGY)
+                elements[destinationType].State == ElementState::TYPE_ENERGY)
                 can_move[movingType][destinationType] = PartSwapBehavior::OCCUPY_SAME;
         }
     }
 }
 
 void Simulation::cycle_gravity_mode() {
-    gravity_mode = static_cast<GravityMode>( ((int)gravity_mode + 1) % static_cast<int>(GravityMode::LAST));
+    gravity_mode = static_cast<GravityMode>(((int)gravity_mode + 1) % static_cast<int>(GravityMode::LAST));
     settings::data::ref()->sim->gravityMode = gravity_mode;
 }
 
-part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z,
-        const ElementType type, const PartCreateMode mode) {
-    #ifdef DEBUG
+part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type,
+                                const PartCreateMode mode) {
+#ifdef DEBUG
     if (REVERSE_BOUNDS_CHECK(x, y, z))
-        throw std::invalid_argument("Input to sim.create_part must be in bounds, got " +
-            std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z));
-    #endif
+        throw std::invalid_argument("Input to sim.create_part must be in bounds, got " + std::to_string(x) + ", " +
+                                    std::to_string(y) + ", " + std::to_string(z));
+#endif
 
-    const auto &el = GetElements()[type];
+    const auto &el       = GetElements()[type];
     const auto is_energy = el.State == ElementState::TYPE_ENERGY;
-    const auto part_map = is_energy ? photons : pmap;
+    const auto part_map  = is_energy ? photons : pmap;
 
     if (mode != PartCreateMode::FORCE && part_map[z][y][x]) return PartErr::ALREADY_OCCUPIED;
 
@@ -149,10 +141,9 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     util::unique_spinlock _lock(parts_add_remove_lock);
 
     if ((unsigned int)pfree >= NPARTS) return PartErr::PARTS_FULL;
-    if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type))
-        return PartErr::NOT_ALLOWED;
+    if (el.CreateAllowed && !el.CreateAllowed(*this, pfree, x, y, z, type)) return PartErr::NOT_ALLOWED;
 
-    const part_id old_pfree = pfree;
+    const part_id old_pfree  = pfree;
     const part_id next_pfree = parts[old_pfree].id < 0 ? -parts[old_pfree].id : old_pfree + 1;
 
     maxId = std::max(maxId, old_pfree + 1);
@@ -164,25 +155,23 @@ part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t 
     parts[old_pfree].flag[PartFlags::MOVE_FRAME]   = 1 - (frame_count & 1);
     parts[old_pfree].flag[PartFlags::IS_ENERGY]    = is_energy;
 
-    parts[old_pfree].id = old_pfree;
+    parts[old_pfree].id   = old_pfree;
     parts[old_pfree].type = type;
-    parts[old_pfree].x = x;
-    parts[old_pfree].y = y;
-    parts[old_pfree].z = z;
-    parts[old_pfree].rx = x;
-    parts[old_pfree].ry = y;
-    parts[old_pfree].rz = z;
-    parts[old_pfree].vx = 0.0f;
-    parts[old_pfree].vy = 0.0f;
-    parts[old_pfree].vz = 0.0f;
+    parts[old_pfree].x    = x;
+    parts[old_pfree].y    = y;
+    parts[old_pfree].z    = z;
+    parts[old_pfree].rx   = x;
+    parts[old_pfree].ry   = y;
+    parts[old_pfree].rz   = z;
+    parts[old_pfree].vx   = 0.0f;
+    parts[old_pfree].vy   = 0.0f;
+    parts[old_pfree].vz   = 0.0f;
 
     _set_default_properties(old_pfree, el.DefaultProperties);
     heat.update_temperature(x, y, z, p_temp[old_pfree], el.HeatConduct);
 
-    if (el.OnChangeType)
-        el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
-    if (el.OnCreate)
-        el.OnCreate(*this, old_pfree, x, y, z, type, mode);
+    if (el.OnChangeType) el.OnChangeType(*this, old_pfree, x, y, z, PT_NONE, type);
+    if (el.OnCreate) el.OnCreate(*this, old_pfree, x, y, z, type, mode);
 
     if (paused) {
         if (_should_do_lighting(parts[old_pfree])) {
@@ -219,13 +208,12 @@ void Simulation::kill_part(const part_id i) {
         GetElements()[part.type].OnChangeType(*this, i, x, y, z, parts[i].type, PT_NONE);
 
     if (paused) {
-        if (_should_do_lighting(part))
-            graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
+        if (_should_do_lighting(part)) graphics.ao_blocks[AO_FLAT_IDX(x, y, z)]--;
         graphics.shadows_force_update = true;
         parts_count--;
     }
 
-    part.type = PT_NONE;
+    part.type                       = PT_NONE;
     part.flag[PartFlags::IS_ENERGY] = 0;
     heat.update_temperature(x, y, z, -1.0f, 255);
 
@@ -235,7 +223,7 @@ void Simulation::kill_part(const part_id i) {
     util::unique_spinlock _lock(parts_add_remove_lock);
     if (i == maxId && i > 0) maxId--;
     part.id = -pfree;
-    pfree = i;
+    pfree   = i;
 }
 
 bool Simulation::part_change_type(const part_id i, const part_type new_type) {
@@ -246,32 +234,26 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
     }
 
     const part_type prev_part_type = parts[i].type;
-    const coord_t x = parts[i].rx;
-    const coord_t y = parts[i].ry;
-    const coord_t z = parts[i].rz;
-    const bool is_energy = el.State == ElementState::TYPE_ENERGY;
+    const coord_t x                = parts[i].rx;
+    const coord_t y                = parts[i].ry;
+    const coord_t z                = parts[i].rz;
+    const bool is_energy           = el.State == ElementState::TYPE_ENERGY;
 
-    if (el.CreateAllowed && !el.CreateAllowed(*this, i, x, y, z, new_type))
-        return false;
+    if (el.CreateAllowed && !el.CreateAllowed(*this, i, x, y, z, new_type)) return false;
     if (GetElements()[parts[i].type].OnChangeType)
         GetElements()[parts[i].type].OnChangeType(*this, i, x, y, z, prev_part_type, new_type);
-    if (el.OnChangeType)
-        el.OnChangeType(*this, i, x, y, z, prev_part_type, new_type);
+    if (el.OnChangeType) el.OnChangeType(*this, i, x, y, z, prev_part_type, new_type);
 
-    if (paused && _should_do_lighting(parts[i]))
-        graphics.shadows_force_update = true;
+    if (paused && _should_do_lighting(parts[i])) graphics.shadows_force_update = true;
 
     parts[i].type = new_type;
 
     if (is_energy) {
         photons[z][y][x] = PMAP(new_type, i);
-        if (pmap[z][y][x] && ID(pmap[z][y][x]) == i)
-            pmap[z][y][x] = 0;
-    }
-    else {
+        if (pmap[z][y][x] && ID(pmap[z][y][x]) == i) pmap[z][y][x] = 0;
+    } else {
         pmap[z][y][x] = PMAP(new_type, i);
-        if (photons[z][y][x] && ID(photons[z][y][x]) == i)
-            photons[z][y][x] = 0;
+        if (photons[z][y][x] && ID(photons[z][y][x]) == i) photons[z][y][x] = 0;
     }
 
     parts[i].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
@@ -287,8 +269,7 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
 }
 
 void Simulation::update_zslice(const coord_t pz) {
-    if (pz < 1 || pz >= ZRES - 1)
-        return;
+    if (pz < 1 || pz >= ZRES - 1) return;
 
     // Dirty rect does not have any impact on performance
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
@@ -297,7 +278,7 @@ void Simulation::update_zslice(const coord_t pz) {
     coord_t golz3 = (pz + 1) == ZRES - 1 ? 0 : pz + 1; // TODO
 
     // No GOL, can use smaller dirty rect
-    if (!gol.zsliceHasGol[pz] && !gol.zsliceHasGol[golz2] && !gol.zsliceHasGol[golz3]) {
+    if (!gol.z_slice_has_gol[pz] && !gol.z_slice_has_gol[golz2] && !gol.z_slice_has_gol[golz3]) {
         y1 = min_y_per_zslice[pz];
         y2 = max_y_per_zslice[pz] + 1;
     } else {
@@ -310,49 +291,46 @@ void Simulation::update_zslice(const coord_t pz) {
 
     coord_t px, py;
     for (ReversibleRange r1(y1, y2, py, (frame_count >> 1) & 1); r1.has_next(); py = r1.next())
-    for (ReversibleRange r2(1, XRES - 1, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
-        if (pmap[pz][py][px]) {
-            if (TYP(pmap[pz][py][px]) == PT_GOL) {
-                auto id = ID(pmap[pz][py][px]);
+        for (ReversibleRange r2(1, XRES - 1, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
+            if (pmap[pz][py][px]) {
+                if (TYP(pmap[pz][py][px]) == PT_GOL) {
+                    auto id = ID(pmap[pz][py][px]);
 
-                // Kill GOL that should die, dying GOL are considered dead
-                if (!gol.gol_map[pz][py][px] || parts[id].tmp1) {
-                    parts[id].life--;
-                    parts[id].tmp1 = 1;
+                    // Kill GOL that should die, dying GOL are considered dead
+                    if (!gol.gol_map[pz][py][px] || parts[id].tmp1) {
+                        parts[id].life--;
+                        parts[id].tmp1          = 1;
+                        gol.gol_map[pz][py][px] = 0;
+                        if (parts[id].life <= 0) kill_part(id);
+                    }
+                } else {
+                    // Not a GOL part, update as normal
                     gol.gol_map[pz][py][px] = 0;
-                    if (parts[id].life <= 0)
-                        kill_part(id);
+                    update_part(ID(pmap[pz][py][px]));
                 }
-            } else {
-                // Not a GOL part, update as normal
-                gol.gol_map[pz][py][px] = 0;
-                update_part(ID(pmap[pz][py][px]));
+            } else if (gol.gol_map[pz][py][px]) {                  // Place gol if empty and should have a gol
+                const auto org_gol_type = gol.gol_map[pz][py][px]; // create_part may change GOL map
+                part_id i               = create_part(px, py, pz, PT_GOL);
+                if (i >= 0) {
+                    gol.gol_map[pz][py][px]                = org_gol_type;
+                    parts[i].tmp2                          = org_gol_type;
+                    parts[i].tmp1                          = 0;
+                    parts[i].life                          = golRules[org_gol_type - 1].decayTime;
+                    parts[i].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
+                }
             }
-        }
-        else if (gol.gol_map[pz][py][px]) { // Place gol if empty and should have a gol
-            const auto org_gol_type = gol.gol_map[pz][py][px]; // create_part may change GOL map
-            part_id i = create_part(px, py, pz, PT_GOL);
-            if (i >= 0) {
-                gol.gol_map[pz][py][px] = org_gol_type;
-                parts[i].tmp2 = org_gol_type;
-                parts[i].tmp1 = 0;
-                parts[i].life = golRules[org_gol_type - 1].decayTime;
-                parts[i].flag[PartFlags::UPDATE_FRAME] = 1 - (frame_count & 1);
-            }
-        }
 
-        if (photons[pz][py][px])
-            update_part(ID(photons[pz][py][px]));
-    }
+            if (photons[pz][py][px]) update_part(ID(photons[pz][py][px]));
+        }
 }
 
 void Simulation::update_part(const part_id i, const bool consider_causality) {
     auto &part = parts[i];
 
-    #ifdef DEBUG
-    if (!part.type) throw std::runtime_error("update_part() called on NONE type particle, id = " +
-        std::to_string((int)i));
-    #endif
+#ifdef DEBUG
+    if (!part.type)
+        throw std::runtime_error("update_part() called on NONE type particle, id = " + std::to_string((int)i));
+#endif
 
     // Since a particle might move we might update it again
     // if it moves in the direction of scanning the pmap array
@@ -360,22 +338,20 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
     // and only updates the particle if the last frame it was updated
     // has the same parity
     const auto frame_count_parity = frame_count & 1;
-    const coord_t x = part.rx;
-    const coord_t y = part.ry;
-    const coord_t z = part.rz;
+    const coord_t x               = part.rx;
+    const coord_t y               = part.ry;
+    const coord_t z               = part.rz;
 
     // Update causality constraint: depends on move_behavior and update step
     // Velocity can be set but the particle cannot move beyond its causality radius
     if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity) { // Need to update
         const auto &el = GetElements()[part.type];
-        if (consider_causality && el.Causality > max_ok_causality_range)
-            return;
+        if (consider_causality && el.Causality > max_ok_causality_range) return;
 
         part.flag[PartFlags::UPDATE_FRAME] = frame_count_parity > 0;
 
         // Life decrement and kill
-        if ((el.Properties & ElementProperties::LIFE_DEC) && part.life > 0)
-            part.life--;
+        if ((el.Properties & ElementProperties::LIFE_DEC) && part.life > 0) part.life--;
         if ((el.Properties & ElementProperties::LIFE_KILL) && part.life <= 0) {
             kill_part(part.id);
             return;
@@ -384,7 +360,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         // Air acceleration
         simd_util::mul3f_ip(part.vx, part.vy, part.vz, el.Loss);
 
-        if (enable_air && el.Advection) {
+        if (air_enabled() && el.Advection) {
             part.vx += el.Advection * air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
             part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
             part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
@@ -407,19 +383,16 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         // Causality check only needs to consider Z direction
         // since threads operate on XY slices, so only z velocity will
         // move a part into another thread domain
-        if (consider_causality && fabs(part.vz) > max_ok_causality_range)
-            return;
+        if (consider_causality && fabs(part.vz) > max_ok_causality_range) return;
         part.flag[PartFlags::MOVE_FRAME] = frame_count_parity > 0;
 
-        if (part.vx || part.vy || part.vz)
-            _raycast_movement(i, x, y, z); // Apply velocity to displacement
+        if (part.vx || part.vy || part.vz) _raycast_movement(i, x, y, z); // Apply velocity to displacement
     }
 }
 
 void Simulation::update() {
     if (paused) {
-        if (graphics.shadows_force_update)
-            _force_update_all_shadows();
+        if (graphics.shadows_force_update) _force_update_all_shadows();
         if (graphics.display_mode_force_update) {
             force_graphics_update();
             graphics.display_mode_force_update = false;
@@ -433,51 +406,49 @@ void Simulation::update() {
     }
 
     profiler::reset_and_start(1);
-    if (gol.golCount) gol.wait_and_get();
-    if (enable_heat) download_heat_from_gpu();
-    if (enable_air) air.wait_and_get();
+    if (gol.gol_count) gol.wait_and_get();
+    if (heat_enabled()) download_heat_from_gpu();
+    if (air_enabled()) air.wait_and_get();
 
     profiler::end(1);
     profiler::reset_and_start(0);
 
-    #pragma omp parallel num_threads(sim_thread_count)
+#pragma omp parallel num_threads(sim_thread_count)
     {
         const int thread_count = omp_get_num_threads();
         const int z_chunk_size = (ZRES - 2) / (2 * thread_count) + 1;
-        const int tid = omp_get_thread_num();
-        coord_t z_start = z_chunk_size * (2 * tid);
+        const int tid          = omp_get_thread_num();
+        coord_t z_start        = z_chunk_size * (2 * tid);
 
-        if (tid == 0)
-            actual_thread_count = thread_count;
+        if (tid == 0) actual_thread_count = thread_count;
 
         coord_t z;
         for (ReversibleRange r1(z_start, z_start + z_chunk_size, z, frame_count & 1); r1.has_next(); z = r1.next())
             update_zslice(z);
 
-        #pragma omp barrier // Synchronize threads before processing 2nd chunk
+#pragma omp barrier // Synchronize threads before processing 2nd chunk
 
         z_start = z_chunk_size * (2 * tid + 1);
         for (ReversibleRange r1(z_start, z_start + z_chunk_size, z, frame_count & 1); r1.has_next(); z = r1.next())
             update_zslice(z);
     }
 
-    if (frame_count - last_defrag_frame > MIN_FRAMES_BETWEEN_DEFRAG &&
-            parts_count > MIN_PARTS_FOR_DEFRAG &&
-            (float)parts_count / (maxId + 1) < 1.0f - DEFRAG_EMPTY_THRESHOLD)
+    if (frame_count - last_defrag_frame > MIN_FRAMES_BETWEEN_DEFRAG && parts_count > MIN_PARTS_FOR_DEFRAG &&
+        (float)parts_count / (maxId + 1) < 1.0f - DEFRAG_EMPTY_THRESHOLD)
         defrag_parts();
     recalc_free_particles();
     profiler::end(0);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        //air.explode(80, 80, 80, 50.0); // TODO
-        // air.upload(); // TODO
+        // air.explode(80, 80, 80, 50.0); // TODO
+        //  air.upload(); // TODO
     }
 
     frame_count++;
 
     graphics.display_mode_force_update = false;
-    heat.changed_while_paused = false;
-    paused_last_frame = paused;
+    heat.changed_while_paused          = false;
+    paused_last_frame                  = paused;
 }
 
 void Simulation::download_heat_from_gpu() {
@@ -491,23 +462,22 @@ void Simulation::download_heat_from_gpu() {
                 p_temp[i] = util::clampf(heat.heat_map[z][y][x], MIN_TEMP, MAX_TEMP);
 
                 // Heat transition
-                const auto &el = GetElements()[parts[i].type];
+                const auto &el           = GetElements()[parts[i].type];
                 const part_type prevType = parts[i].type;
-                part_type toType = PT_NONE;
-                bool transition = false;
+                part_type toType         = PT_NONE;
+                bool transition          = false;
 
                 if (el.HighTemperatureTransition != Transition::NONE && p_temp[i] > el.HighTemperature) {
-                    toType = el.HighTemperatureTransition == Transition::TO_CTYPE ?
-                        parts[i].ctype : el.HighTemperatureTransition;
+                    toType = el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype
+                                                                                  : el.HighTemperatureTransition;
                     if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
                         toType = 0;
 
                     transition = true;
                     part_change_type(i, toType);
-                }
-                else if (el.LowTemperatureTransition != Transition::NONE && p_temp[i] < el.LowTemperature) {
-                    toType = el.LowTemperatureTransition == Transition::TO_CTYPE ?
-                        parts[i].ctype : el.LowTemperatureTransition;
+                } else if (el.LowTemperatureTransition != Transition::NONE && p_temp[i] < el.LowTemperature) {
+                    toType = el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype
+                                                                                 : el.LowTemperatureTransition;
                     if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
                         toType = 0;
 
@@ -517,8 +487,7 @@ void Simulation::download_heat_from_gpu() {
 
                 if (transition) {
                     // If transitioning to these types, set ctype to original type
-                    if (toType == PT_ICE || toType == PT_LAVA)
-                        parts[i].ctype = prevType;
+                    if (toType == PT_ICE || toType == PT_LAVA) parts[i].ctype = prevType;
                     // And clear ctype if transitioning from these types
                     else if (prevType == PT_ICE || prevType == PT_LAVA)
                         parts[i].ctype = PT_NONE;
@@ -527,24 +496,21 @@ void Simulation::download_heat_from_gpu() {
         };
 
         if (heat.get_download_dirty_ratio() < 0.02) {
-            #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
             for (auto z = 1; z < ZRES - 1; z++)
-            for (auto by = 0; by < SIM_HEAT_YBLOCKS; by++) {
-                if (!heat.upload_download_dirty[z * SIM_HEAT_YBLOCKS + by]) continue;
+                for (auto by = 0; by < SIM_HEAT_YBLOCKS; by++) {
+                    if (!heat.upload_download_dirty[z * SIM_HEAT_YBLOCKS + by]) continue;
 
-                int y_ = by * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
-                for (auto y = std::max(y_, 1); y < std::min(y_ + SIM_HEAT_DIRTY_BLOCK_SIZE, (int)(YRES - 1)); y++)
-                for (auto x = 1; x < XRES - 1; x++) {
-                    if (heat.heat_map[z][y][x] < 0)
-                        continue;
-                    if (pmap[z][y][x])
-                        do_heat_conduct(x, y, z, ID(pmap[z][y][x]));
-                    if (photons[z][y][x])
-                        do_heat_conduct(x, y, z, ID(photons[z][y][x]));
+                    int y_ = by * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
+                    for (auto y = std::max(y_, 1); y < std::min(y_ + SIM_HEAT_DIRTY_BLOCK_SIZE, (int)(YRES - 1)); y++)
+                        for (auto x = 1; x < XRES - 1; x++) {
+                            if (heat.heat_map[z][y][x] < 0) continue;
+                            if (pmap[z][y][x]) do_heat_conduct(x, y, z, ID(pmap[z][y][x]));
+                            if (photons[z][y][x]) do_heat_conduct(x, y, z, ID(photons[z][y][x]));
+                        }
                 }
-            }
         } else {
-            #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
             for (int i = 0; i <= maxId; i++) {
                 coord_t x = parts[i].rx;
                 coord_t y = parts[i].ry;
@@ -562,10 +528,10 @@ void Simulation::download_heat_from_gpu() {
         // Apply out-of-GPU heat updates
         for (const auto &update : heat_updates)
             if (parts[update.id].type) {
-                auto &part = parts[update.id];
+                auto &part        = parts[update.id];
                 p_temp[update.id] = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
-                heat.update_temperature(part.rx, part.ry, part.rz,
-                    p_temp[update.id], GetElements()[part.type].HeatConduct);
+                heat.update_temperature(part.rx, part.ry, part.rz, p_temp[update.id],
+                                        GetElements()[part.type].HeatConduct);
                 do_heat_conduct(part.rx, part.ry, part.rz, update.id);
             }
         heat_updates.clear();
@@ -573,14 +539,14 @@ void Simulation::download_heat_from_gpu() {
 }
 
 void Simulation::recalc_free_particles() {
-    parts_count = 0;
+    parts_count      = 0;
     part_id newMaxId = 0;
 
     std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
     std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.ao_blocks.fill(0);
-    gol.zsliceHasGol.fill(false);
+    gol.z_slice_has_gol.fill(false);
 
     // First do all movement updates, which can create new holes in the pmap
     // Then we fix the holes afterwards
@@ -590,12 +556,12 @@ void Simulation::recalc_free_particles() {
     const uint32_t frame_count_parity = frame_count & 1;
     causality_violating_parts.reset();
 
-    #pragma omp parallel for num_threads(sim_thread_count) schedule(static)
+#pragma omp parallel for num_threads(sim_thread_count) schedule(static)
     for (part_id i = 1; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
         if (part.flag[PartFlags::UPDATE_FRAME] != frame_count_parity ||
-                part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) {
+            part.flag[PartFlags::MOVE_FRAME] != frame_count_parity) {
             causality_violating_parts.append(omp_get_thread_num(), i);
         }
     }
@@ -609,13 +575,11 @@ void Simulation::recalc_free_particles() {
             update_part(i, false);
     }
 
-    // --------------------
+// --------------------
 
-    // Update values based on new particles
-    #pragma omp parallel for \
-        reduction(max : newMaxId) reduction(+ : parts_count) \
-        reduction(min : min_y_per_zslice[:ZRES]) \
-        reduction(max : max_y_per_zslice[:ZRES])
+// Update values based on new particles
+#pragma omp parallel for reduction(max : newMaxId) reduction(+ : parts_count)                                          \
+    reduction(min : min_y_per_zslice[ : ZRES]) reduction(max : max_y_per_zslice[ : ZRES])
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
@@ -632,8 +596,7 @@ void Simulation::recalc_free_particles() {
         heat.update_temperature(x, y, z, util::clampf(p_temp[i], MIN_TEMP, MAX_TEMP), heatConduct);
 
         // GOL check
-        if (TYP(pmap[z][y][x]) == PT_GOL)
-            gol.zsliceHasGol[z] = true;
+        if (TYP(pmap[z][y][x]) == PT_GOL) gol.z_slice_has_gol[z] = true;
 
         // Pmap / other cache
         min_y_per_zslice[z] = std::min(y, min_y_per_zslice[z]);
@@ -660,8 +623,8 @@ void Simulation::recalc_free_particles() {
             graphics.color_force_update[FLAT_IDX(x, y, z)] = false;
             _set_color_data_at(x, y, z, &part);
         } else if (GetElements()[part.type].Graphics ||
-                displayModeProperties[(std::size_t)graphics.display_mode].alwaysUpdate ||
-                graphics.display_mode_force_update)
+                   displayModeProperties[(std::size_t)graphics.display_mode].alwaysUpdate ||
+                   graphics.display_mode_force_update)
             _set_color_data_at(part.rx, part.ry, part.rz, &part);
     }
 
@@ -671,16 +634,18 @@ void Simulation::recalc_free_particles() {
 /** Note: must be done before heat updates are added */
 void Simulation::defrag_parts() {
     last_defrag_frame = frame_count;
-    part_id front = 1;
-    part_id end = maxId;
+    part_id front     = 1;
+    part_id end       = maxId;
 
     while (front < end) {
         // Find first free spot in the front
-        while (parts[front].type && front < NPARTS && front < end) front++;
+        while (parts[front].type && front < NPARTS && front < end)
+            front++;
         if (front >= end) break;
 
         // Find first occupied spot in the back
-        while (!parts[end].type && end > 1 && end >= front) end--;
+        while (!parts[end].type && end > 1 && end >= front)
+            end--;
         if (front >= end) break;
         if (parts[front].type || !parts[end].type) break;
 
@@ -697,10 +662,10 @@ void Simulation::defrag_parts() {
             photons[z][y][x] = PMAP(parts[front].type, front);
 
         parts[front].id = front;
-        parts[end].id = 0;
+        parts[end].id   = 0;
     }
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (end = front + 1; end < NPARTS; end++)
         parts[end].id = 0;
     pfree = end + 1;
@@ -708,9 +673,9 @@ void Simulation::defrag_parts() {
 
 void Simulation::dispatch_compute_shaders() {
     if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
-    if (gol.golCount) gol.dispatch();
-    if (enable_heat) heat.dispatch(frame_count);
-    if (enable_air) air.update();
+    if (gol.gol_count) gol.dispatch();
+    if (heat_enabled()) heat.dispatch(frame_count);
+    if (air_enabled()) air.update();
 }
 
 void Simulation::force_graphics_update() {
@@ -721,29 +686,27 @@ void Simulation::force_graphics_update() {
     }
 }
 
-
 // Octree & color data updates
 // ------------------------
-void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle * part) {
-    uint32_t new_color = 0;
+void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coord_t z, const Particle *part) {
+    uint32_t new_color      = 0;
     util::Bitset8 new_flags = 0;
 
     if (part != nullptr) {
         const auto &el = GetElements()[part->type];
-        new_color = el.Color.as_ABGR();
-        new_flags = util::Bitset8(el.GraphicsFlags);
+        new_color      = el.Color.as_ABGR();
+        new_flags      = util::Bitset8(el.GraphicsFlags);
 
         // Color display mode
         switch (graphics.display_mode) {
-            case DisplayMode::DISPLAY_MODE_HEAT:
-                break; // Do nothing, overriden with heat color anyways
-            default:
-                if (el.Graphics) {
-                    RGBA color_out;
-                    el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
-                    new_color = color_out.as_ABGR();
-                }
-                break;
+        case DisplayMode::DISPLAY_MODE_HEAT: break; // Do nothing, overriden with heat color anyways
+        default:
+            if (el.Graphics) {
+                RGBA color_out;
+                el.Graphics(*this, *part, part->rx, part->ry, part->rz, color_out, new_flags);
+                new_color = color_out.as_ABGR();
+            }
+            break;
         }
     }
 
@@ -751,19 +714,16 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
     if (graphics.color_data[idx] == new_color && graphics.color_flags[idx] == new_flags)
         return; // Color did not actually change
 
-    util::unique_spinlock l(colordata_lock
-        [z / GRAPHICS_LOCK_BLOCK_SIZE]
-        [y / GRAPHICS_LOCK_BLOCK_SIZE]
-        [x / GRAPHICS_LOCK_BLOCK_SIZE]);
+    util::unique_spinlock l(
+        colordata_lock[z / GRAPHICS_LOCK_BLOCK_SIZE][y / GRAPHICS_LOCK_BLOCK_SIZE][x / GRAPHICS_LOCK_BLOCK_SIZE]);
 
-    auto &tree = graphics.octree_blocks[
-        (x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
-        (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
+    auto &tree = graphics.octree_blocks[(x / OCTREE_BLOCK_DIM) + (y / OCTREE_BLOCK_DIM) * X_BLOCKS +
+                                        (z / OCTREE_BLOCK_DIM) * X_BLOCKS * Y_BLOCKS];
 
     graphics.color_data_modified[idx / COLOR_DATA_CHUNK_SIZE] = 0xFF;
-    graphics.color_data[idx] = new_color;
-    graphics.color_flags[idx] = new_flags;
-    tree.modified = 0xFF;
+    graphics.color_data[idx]                                  = new_color;
+    graphics.color_flags[idx]                                 = new_flags;
+    tree.modified                                             = 0xFF;
 
     if (new_color)
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
@@ -772,8 +732,8 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
 }
 
 void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coord_t z) {
-    unsigned int proj_x = (static_cast<unsigned int>(x) + (ZRES - z)) / SHADOW_MAP_SCALE;
-    unsigned int proj_y = (static_cast<unsigned int>(y) + (ZRES - z)) / SHADOW_MAP_SCALE;
+    unsigned int proj_x                 = (static_cast<unsigned int>(x) + (ZRES - z)) / SHADOW_MAP_SCALE;
+    unsigned int proj_y                 = (static_cast<unsigned int>(y) + (ZRES - z)) / SHADOW_MAP_SCALE;
     graphics.shadow_map[proj_y][proj_x] = std::max(graphics.shadow_map[proj_y][proj_x], static_cast<uint8_t>(z));
 }
 
@@ -785,7 +745,7 @@ void Simulation::_force_update_all_shadows() {
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.shadows_force_update = false;
 
-    #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
     for (part_id i = 0; i <= maxId; i++) {
         auto &part = parts[i];
         if (!part.type) continue;
@@ -795,10 +755,10 @@ void Simulation::_force_update_all_shadows() {
 }
 
 void Simulation::_set_default_properties(const part_id idx, const DefaultParticleProperties &def) {
-    p_temp[idx] = def.temp;
-    parts[idx].life = def.life;
-    parts[idx].ctype = def.ctype;
-    parts[idx].tmp1 = def.tmp1;
-    parts[idx].tmp2 = def.tmp2;
+    p_temp[idx]       = def.temp;
+    parts[idx].life   = def.life;
+    parts[idx].ctype  = def.ctype;
+    parts[idx].tmp1   = def.tmp1;
+    parts[idx].tmp2   = def.tmp2;
     parts[idx].dcolor = def.dcolor;
 }

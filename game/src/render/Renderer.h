@@ -9,6 +9,7 @@
 #include "render/types/depthtexture.h"
 #include "render/types/octree.h"
 #include "util/types/persistent_buffer.h"
+#include "util/graphics/shader.h"
 #include "constants.h"
 
 constexpr unsigned int BUFFER_COUNT = 3; // Must be < 8 because modified bitset is 1 byte
@@ -49,28 +50,13 @@ private:
     Vector2 preFullscreenWindowRes;
 
     Shader part_shader, post_shader, blur_shader, air_shader;
-    int part_shader_res_loc,
-        part_shader_uv1_loc,
-        part_shader_uv2_loc,
-        part_shader_camera_pos_loc,
-        part_shader_camera_dir_loc,
-        part_shader_heat_loc;
-    int post_shader_base_texture_loc,
-        post_shader_glow_texture_loc,
-        post_shader_blur_texture_loc,
-        post_shader_depth_texture_loc,
-        post_shader_res_loc;
-    int blur_shader_base_texture_loc,
-        blur_shader_res_loc,
-        blur_shader_dir_loc;
-    int air_shader_res_loc,
-        air_shader_uv1_loc,
-        air_shader_uv2_loc,
-        air_shader_camera_pos_loc,
-        air_shader_camera_dir_loc;
-    int depth_shader_base_texture_loc,
-        depth_shader_depth_texture_loc,
-        depth_shader_res_loc;
+
+    util::UniformManager part_shader_locs;
+    util::UniformManager post_shader_locs;
+    util::UniformManager blur_shader_locs;
+    util::UniformManager depth_shader_locs;
+    util::UniformManager air_shader_locs;
+    util::UniformManager grid_shader_locs;
 
     GLuint ao_tex[BUFFER_COUNT], shadow_tex[BUFFER_COUNT];
     util::PersistentBuffer<BUFFER_COUNT> colorBuf;
@@ -103,8 +89,6 @@ private:
 
     Shader grid_shader;
     Shader depth_shader;
-    unsigned int grid_shader_size_loc,
-                 grid_shader_scale_loc;
     unsigned int grid_max_dim;
     Model grid_model;
     float grid_scale = 0.0;

@@ -1,14 +1,18 @@
 #pragma once
 
+#include "raylib.h"
 #include "rlgl.h"
 #include "util/common.h"
 
 #include <cstdint>
 #include <format>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <variant>
 #include <vector>
+#include <map>
 
 namespace util {
 
@@ -69,15 +73,30 @@ private:
     std::vector<std::string> m_more_lines;
 };
 
-/// @brief Single shader with given program code
-class TPBShader {
+
+/// @brief Uniform manager for a given shader
+class UniformManager {
 public:
-    TPBShader(){};
+    UniformManager() = default;
+    UniformManager(Shader &shader): m_shader(std::ref(shader)) {}
+
+    /// Get uniform by location, throws std::out_of_range if name is not a valid uniform
+    /// for the given shader (DEBUG mode only)
+    [[nodiscard]] int get(const std::string &name);
+private:
+    std::optional<std::reference_wrapper<Shader>> m_shader;
+    std::map<std::string, int> m_uniform_locs;
+};
+
+/// @brief Single shader with given program code
+class TPBComputeShader {
+public:
+    TPBComputeShader() = default;
 
     /// @brief Construct shader
     /// @param program Shader source code
     /// @param type Shader type
-    TPBShader(const std::string &program, ShaderType type);
+    TPBComputeShader(const std::string &program);
 
     [[nodiscard]] unsigned int id() const noexcept { return m_id; }
 

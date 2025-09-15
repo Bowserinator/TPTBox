@@ -159,8 +159,7 @@ void Renderer::init() {
     grid_max_dim = std::max({ XRES, YRES, ZRES });
     Mesh mesh = GenInvertedMeshCube((float)XRES, (float)YRES, (float)ZRES);
     grid_model = LoadModelFromMesh(mesh);
-    grid_shader_size_loc = GetShaderLocation(grid_shader, "size");
-    grid_shader_scale_loc = GetShaderLocation(grid_shader, "scale");
+    grid_shader_locs = util::UniformManager{grid_shader};
     grid_model.materials[0].shader = grid_shader;
     set_grid_size(0.0);
 
@@ -171,32 +170,11 @@ void Renderer::init() {
     rlDisableShader();
 
     // Uniform values that may change per frame
-    part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
-    part_shader_heat_loc = GetShaderLocation(part_shader, "heatEnabled");
-    part_shader_camera_pos_loc = GetShaderLocation(part_shader, "cameraPos");
-    part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
-    part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
-    part_shader_uv2_loc = GetShaderLocation(part_shader, "uv2");
-
-    post_shader_base_texture_loc = GetShaderLocation(post_shader, "baseTexture");
-    post_shader_glow_texture_loc = GetShaderLocation(post_shader, "glowTexture");
-    post_shader_blur_texture_loc = GetShaderLocation(post_shader, "blurTexture");
-    post_shader_depth_texture_loc = GetShaderLocation(post_shader, "depthTexture");
-    post_shader_res_loc = GetShaderLocation(post_shader, "resolution");
-
-    depth_shader_base_texture_loc = GetShaderLocation(depth_shader, "baseTexture");
-    depth_shader_depth_texture_loc = GetShaderLocation(depth_shader, "depthTexture");
-    depth_shader_res_loc = GetShaderLocation(depth_shader, "resolution");
-
-    blur_shader_base_texture_loc = GetShaderLocation(blur_shader, "baseTexture");
-    blur_shader_res_loc = GetShaderLocation(blur_shader, "resolution");
-    blur_shader_dir_loc = GetShaderLocation(blur_shader, "direction");
-
-    air_shader_res_loc = GetShaderLocation(air_shader, "resolution");
-    air_shader_camera_pos_loc = GetShaderLocation(air_shader, "cameraPos");
-    air_shader_camera_dir_loc = GetShaderLocation(air_shader, "cameraDir");
-    air_shader_uv1_loc = GetShaderLocation(air_shader, "uv1");
-    air_shader_uv2_loc = GetShaderLocation(air_shader, "uv2");
+    part_shader_locs = util::UniformManager{part_shader};
+    post_shader_locs = util::UniformManager{post_shader};
+    blur_shader_locs = util::UniformManager{blur_shader};
+    depth_shader_locs = util::UniformManager{depth_shader};
+    air_shader_locs = util::UniformManager{air_shader};
 
     // SSBOs for color & octree LOD data
     colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
@@ -327,8 +305,8 @@ void Renderer::init() {
 
 void Renderer::set_grid_size(float size) {
     grid_scale = size;
-    util::set_shader_value(grid_shader, grid_shader_size_loc, (float)grid_max_dim);
-    util::set_shader_value(grid_shader, grid_shader_scale_loc, size);
+    util::set_shader_value(grid_shader, grid_shader_locs.get("size"), (float)grid_max_dim);
+    util::set_shader_value(grid_shader, grid_shader_locs.get("scale"), size);
 }
 
 void Renderer::update_settings(settings::Graphics * settings) {
@@ -548,12 +526,12 @@ void Renderer::draw() {
 
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
-        util::set_shader_value(part_shader, part_shader_heat_loc, sim->enable_heat ? 1 : 0);
-        util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
-        util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
-        util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
-        util::set_shader_value(part_shader, part_shader_uv1_loc, uv1);
-        util::set_shader_value(part_shader, part_shader_uv2_loc, uv2);
+        util::set_shader_value(part_shader, part_shader_locs.get("heatEnabled"), sim->heat_enabled() ? 1 : 0);
+        util::set_shader_value(part_shader, part_shader_locs.get("resolution"), virtual_resolution);
+        util::set_shader_value(part_shader, part_shader_locs.get("cameraPos"), cam->camera.position);
+        util::set_shader_value(part_shader, part_shader_locs.get("cameraDir"), look_ray);
+        util::set_shader_value(part_shader, part_shader_locs.get("uv1"), uv1);
+        util::set_shader_value(part_shader, part_shader_locs.get("uv2"), uv2);
         util::draw_dummy_triangle();
 
     EndShaderMode();
@@ -574,7 +552,7 @@ void Renderer::draw() {
     }
 
     // Draw other render textures
-    const bool render_air = sim->enable_air && sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY;
+    const bool render_air = sim->air_enabled() && sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY;
     if (render_air) { // TODO: also pressure
         BeginTextureMode(vel_tex.target);
             ClearBackground(BLANK);
@@ -586,11 +564,11 @@ void Renderer::draw() {
             BeginMode3D(cam->camera);
             BeginShaderMode(air_shader);
 
-                util::set_shader_value(air_shader, air_shader_res_loc, air_resolution);
-                util::set_shader_value(air_shader, air_shader_camera_pos_loc, cam->camera.position);
-                util::set_shader_value(air_shader, air_shader_camera_dir_loc, look_ray);
-                util::set_shader_value(air_shader, air_shader_uv1_loc, uv1);
-                util::set_shader_value(air_shader, air_shader_uv2_loc, uv2);
+                util::set_shader_value(air_shader, air_shader_locs.get("resolution"), air_resolution);
+                util::set_shader_value(air_shader, air_shader_locs.get("cameraPos"), cam->camera.position);
+                util::set_shader_value(air_shader, air_shader_locs.get("cameraDir"), look_ray);
+                util::set_shader_value(air_shader, air_shader_locs.get("uv1"), uv1);
+                util::set_shader_value(air_shader, air_shader_locs.get("uv2"), uv2);
                 util::draw_dummy_triangle();
 
             EndShaderMode();
@@ -604,11 +582,11 @@ void Renderer::draw() {
         BeginShaderMode(post_shader);
 
             rlEnableShader(post_shader.id);
-            rlSetUniformSampler(post_shader_base_texture_loc, base_tex.colorTexture);
-            rlSetUniformSampler(post_shader_glow_texture_loc, glow_tex_id);
-            rlSetUniformSampler(post_shader_blur_texture_loc, blur_tex_id);
-            rlSetUniformSampler(post_shader_depth_texture_loc, base_tex.depthTexture);
-            util::set_shader_value(post_shader, post_shader_res_loc, resolution);
+            rlSetUniformSampler(post_shader_locs.get("baseTexture"), base_tex.colorTexture);
+            rlSetUniformSampler(post_shader_locs.get("glowTexture"), glow_tex_id);
+            rlSetUniformSampler(post_shader_locs.get("blurTexture"), blur_tex_id);
+            rlSetUniformSampler(post_shader_locs.get("depthTexture"), base_tex.depthTexture);
+            util::set_shader_value(post_shader, post_shader_locs.get("resolution"), resolution);
 
             util::draw_dummy_triangle();
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -621,9 +599,9 @@ void Renderer::draw() {
         if (render_air) {
             BeginShaderMode(depth_shader);
                 rlEnableShader(depth_shader.id);
-                rlSetUniformSampler(depth_shader_base_texture_loc, vel_tex.colorTexture);
-                rlSetUniformSampler(depth_shader_depth_texture_loc, vel_tex.depthTexture);
-                util::set_shader_value(depth_shader, depth_shader_res_loc, resolution);
+                rlSetUniformSampler(depth_shader_locs.get("baseTexture"), vel_tex.colorTexture);
+                rlSetUniformSampler(depth_shader_locs.get("depthTexture"), vel_tex.depthTexture);
+                util::set_shader_value(depth_shader, depth_shader_locs.get("resolution"), resolution);
 
                 util::draw_dummy_triangle();
                 glBindTexture(GL_TEXTURE_2D, 0);
@@ -645,7 +623,7 @@ void Renderer::draw() {
  */
 void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 resolution, RenderTexture2D &blur_tex) {
     BeginShaderMode(blur_shader);
-    util::set_shader_value(blur_shader, blur_shader_res_loc, resolution);
+    util::set_shader_value(blur_shader, blur_shader_locs.get("resolution"), resolution);
 
     for (int pass = 0; pass < 4; pass++) {
         // First pass: use textureInId, rest use output of previous pass
@@ -655,8 +633,8 @@ void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 reso
         for (int i = 0; i < 2; i++) {
             BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
                 ClearBackground(BLANK);
-                util::set_shader_value(blur_shader, blur_shader_dir_loc, Vector2{ float(i), float(1 - i) });
-                rlSetUniformSampler(blur_shader_base_texture_loc, i == 0 ? textureInId : blur_tmp_tex.texture.id);
+                util::set_shader_value(blur_shader, blur_shader_locs.get("direction"), Vector2{ float(i), float(1 - i) });
+                rlSetUniformSampler(blur_shader_locs.get("baseTexture"), i == 0 ? textureInId : blur_tmp_tex.texture.id);
                 util::draw_dummy_triangle();
             EndTextureMode();
         }

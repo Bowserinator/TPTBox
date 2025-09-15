@@ -1,13 +1,13 @@
-#ifndef SIMULATION_GOL_H_
-#define SIMULATION_GOL_H_
+#pragma once
 
-#include "stdint.h"
 #include "SimulationDef.h"
 #include "graphics/color.h"
+#include "util/graphics/shader.h"
 #include "util/types/persistent_buffer.h"
 
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <string>
 
 class GOLRule {
@@ -22,10 +22,10 @@ public:
     // @param color        - Color of GOL
     // @param neighborhood - MOORE = 26 neighbors, NEUMANN = 6 direct neighbors
     // @param decayTime    - States to decay before dying, 1 = default ALIVE/DEAD state configuration
-    GOLRule(const std::string &name, const std::string &description, uint32_t survive, uint32_t birth,
-            RGBA color, Neighborhood neighborhood, unsigned int decayTime):
-        name(name), description(description), survive(survive), birth(birth),
-        neighborhood(neighborhood), decayTime(decayTime), color(color) {}
+    GOLRule(const std::string &name, const std::string &description, uint32_t survive, uint32_t birth, RGBA color,
+            Neighborhood neighborhood, unsigned int decayTime)
+        : name(name), description(description), survive(survive), birth(birth), neighborhood(neighborhood),
+          decayTime(decayTime), color(color) {}
 
     const std::string name, description;
     const uint32_t survive, birth;
@@ -47,19 +47,16 @@ public:
     using gol_map_t = uint8_t;
 
     gol_map_t gol_map[ZRES][YRES][XRES] = {0}; // Map of GOL Ids (max 255)
-    std::atomic<unsigned int> golCount = 0;
-    std::array<bool, ZRES> zsliceHasGol;
+    std::atomic<unsigned int> gol_count = 0;
+    std::array<bool, ZRES> z_slice_has_gol;
 
     void init();
     void reset();
     void dispatch();
     void wait_and_get();
+
 private:
-    unsigned int ssboRules;
-    util::PersistentBuffer<2> ssbosData;
-
-    unsigned int golShader;
-    unsigned int golProgram;
+    unsigned int ssbos_rules;
+    util::PersistentBuffer<2> ssbos_data;
+    util::TPBComputeShader gol_shader;
 };
-
-#endif // SIMULATION_GOL_H_

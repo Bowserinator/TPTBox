@@ -31,7 +31,13 @@ std::string Sign::get_display_text(const Simulation * const sim) const {
         if (between_braces == "{t}" || between_braces == "{temp}")
             replace_with = std::format("{:.2f}", sim->p_temp[id]);
         else if (between_braces == "{p}" || between_braces == "{pressure}")
-            replace_with = "PRESSURE"; // TODO
+            replace_with = std::format("{:.4f}", sim->air.pv[z][y][x]);
+        else if (between_braces == "{avx}")
+            replace_with = std::format("{:.4f}", sim->air.vx[z][y][x]);
+        else if (between_braces == "{avy}")
+            replace_with = std::format("{:.4f}", sim->air.vy[z][y][x]);
+        else if (between_braces == "{avz}")
+            replace_with = std::format("{:.4f}", sim->air.vz[z][y][x]);
         else if (between_braces == "{type}")
             replace_with = GetElements()[ptype].Name;
         else if (between_braces == "{tmp}" || between_braces == "{tmp1}")

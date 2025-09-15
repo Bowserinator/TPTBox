@@ -23,7 +23,7 @@ local function generateEmbeddedShader(fpath)
     local newhash = "// " .. string.hash(shader_code)
 
     -- Regenerate shader header if changed
-    if oldhash ~= newhash then -- TODO
+    if oldhash ~= newhash then
         print("Regenerating shader", fpath)
         shader_code = shader_code
             :gsub("\r\n", "\n")

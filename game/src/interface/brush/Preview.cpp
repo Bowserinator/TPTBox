@@ -12,18 +12,15 @@
 void brush_preview::init() {
     #include "../../resources/shaders/generated/brush_clip.fs.h"
     model_shader = LoadShaderFromMemory(nullptr, brush_clip_fs_source);
-
-    model_shader_depth_tex_loc = GetShaderLocation(model_shader, "depth");
-    model_shader_res_loc = GetShaderLocation(model_shader, "resolution");
-
+    model_shader_locs = util::UniformManager{model_shader};
     brush_tool_render_tex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
 }
 
 void brush_preview::setup_shader(const Vector3 centerOfModel, Renderer * renderer) {
-    util::set_shader_value(model_shader, model_shader_res_loc,
+    util::set_shader_value(model_shader, model_shader_locs.get("resolution"),
         Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() });
     rlEnableShader(model_shader.id);
-    rlSetUniformSampler(model_shader_depth_tex_loc, renderer->get_base_tex().depthTexture);
+    rlSetUniformSampler(model_shader_locs.get("depth"), renderer->get_base_tex().depthTexture);
     rlDisableShader();
 }
 

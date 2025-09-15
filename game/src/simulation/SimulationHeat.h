@@ -49,6 +49,7 @@ public:
     // Significantly faster than vector<bool>
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
     std::array<uint32_t, ZRES * SIM_HEAT_YBLOCKS> upload_download_dirty; // z is per voxel, y is divided into y strips
+    bool enable = true;
 
 private:
     util::PersistentBuffer<2> ssbosData;
@@ -57,6 +58,6 @@ private:
     unsigned int ssboConstants;
     HeatConstants constants;
 
-    util::TPBShader heatShader;
+    util::TPBComputeShader heatShader;
     double downloadDirtyRatio;
 };

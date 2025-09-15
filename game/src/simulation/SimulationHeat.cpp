@@ -12,7 +12,7 @@
 
 void SimulationHeat::init() {
     #include "../../resources/shaders/generated/heat.comp.h"
-    heatShader = util::TPBShader(heat_comp_source, util::ShaderType::COMPUTE);
+    heatShader = util::TPBComputeShader(heat_comp_source);
 
     ssboConstants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);

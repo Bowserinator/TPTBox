@@ -35,6 +35,7 @@ public:
     Simulation &sim;
     explicit Air(Simulation &sim);
 
+    bool enable = true;
     float vx[AIR_ZRES][AIR_YRES][AIR_XRES];
     float vy[AIR_ZRES][AIR_YRES][AIR_XRES];
     float vz[AIR_ZRES][AIR_YRES][AIR_XRES];
@@ -54,11 +55,11 @@ public:
     util::PersistentBuffer<1> ssbos_walls;
 
 private:
-    util::TPBShader divergence_shader;
-    util::TPBShader advection_shader;
-    util::TPBShader pressure_from_vel_shader;
-    util::TPBShader pressure_blur_shader;
-    util::TPBShader vel_from_pressure_shader;
+    util::TPBComputeShader divergence_shader;
+    util::TPBComputeShader advection_shader;
+    util::TPBComputeShader pressure_from_vel_shader;
+    util::TPBComputeShader pressure_blur_shader;
+    util::TPBComputeShader vel_from_pressure_shader;
     GLint iteration_uniform_loc;
 
     void solve_incompressibility();
