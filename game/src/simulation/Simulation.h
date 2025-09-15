@@ -1,5 +1,4 @@
-#ifndef SIMULATION_SIMULATION_H_
-#define SIMULATION_SIMULATION_H_
+#pragma once
 
 #include "Particle.h"
 #include "SimulationDef.h"
@@ -211,9 +210,7 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
         (signed_coord_t)((signed_coord_t)in.y + util::ceil_proper(in.vy)),
         (signed_coord_t)((signed_coord_t)in.z + util::ceil_proper(in.vz))
     };
-    Vector3T<signed_coord_t> diff{ 0, 0, 0 };
     Vector3T<signed_coord_t> previous_voxel = current_voxel;
-
     const Vector3T<signed_coord_t> ray = last_voxel - current_voxel;
 
     // Step to take per direction (+-1)
@@ -234,10 +231,6 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     const float tDeltaX = (ray.x != 0) ? 1.0f / ray.x * dx : std::numeric_limits<float>::max();
     const float tDeltaY = (ray.y != 0) ? 1.0f / ray.y * dy : std::numeric_limits<float>::max();
     const float tDeltaZ = (ray.z != 0) ? 1.0f / ray.z * dz : std::numeric_limits<float>::max();
-
-    if (ray.x < 0 && current_voxel.x != last_voxel.x) { diff.x--; }
-    if (ray.y < 0 && current_voxel.y != last_voxel.y) { diff.y--; }
-    if (ray.z < 0 && current_voxel.z != last_voxel.z) { diff.z--; }
 
     // Get which "faces" to bounce off of
     // prev is now, final is the voxel we will collide with if we continue
@@ -307,5 +300,3 @@ bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto 
     out.move = PartSwapBehavior::SWAP;
     return false;
 }
-
-#endif // SIMULATION_SIMULATION_H_
