@@ -68,6 +68,7 @@ uniform vec3 cameraDir;   // Camera look dir (normalized)
 
 uniform vec3 uv1;         // "Up" direction on screen vector mapped to world space
 uniform vec3 uv2;         // "Right" direction on screen vector mapped to world space
+uniform int heatEnabled;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 FragGlowOnly;
@@ -299,7 +300,6 @@ ivec4 raymarch(vec3 pos, vec3 dir, inout RayCastData data) {
                     int normalIdx = prevIdx + int(dirSignBits[prevIdx]) * 3;
                     vec3 normal = vec3(0.0);
                     normal[prevIdx] = rayStep[prevIdx];
-
                     data.shouldContinue = true;
 
                     // Refraction
@@ -409,15 +409,21 @@ void main() {
         if (DISPLAY_MODE == D_MODE_HEAT_GRADIENT)
             mul *= 0.75 + 0.25 * sin(mod(getHeat(data.lastVoxel), 3.14159265));
         else if (DISPLAY_MODE == D_MODE_HEAT) {
-            uint gradColor = HEAT_GRADIENT[uint( 1023 * clamp((getHeat(data.lastVoxel) - HEAT_VIEW_MIN) / HEAT_VIEW_MAX, 0.0, 1.0) )];
-            data.color.b = ((gradColor & 0xFF0000) >> 16) / 255.0;
-            data.color.g = ((gradColor & 0xFF00) >> 8) / 255.0;
-            data.color.r = ((gradColor & 0xFF)) / 255.0;
+            if (heatEnabled != 0) {
+                uint gradColor = HEAT_GRADIENT[uint( 1023 * clamp((getHeat(data.lastVoxel) - HEAT_VIEW_MIN) / HEAT_VIEW_MAX, 0.0, 1.0) )];
+                data.color.b = ((gradColor & 0xFF0000) >> 16) / 255.0;
+                data.color.g = ((gradColor & 0xFF00) >> 8) / 255.0;
+                data.color.r = ((gradColor & 0xFF)) / 255.0;
+            } else {
+                data.color.rgb = vec3(0.8); // Heat disabled
+            }
         }
 
         FragColor.rgb = data.color.rgb * mul * shadowMul
             + SHADOW_COLOR * mul * (1 - shadowMul);
-        FragColor.a = pow(data.color.a, 0.5); // This alpha is for blending with the grid / bg, not the voxels!
+        // This alpha is for blending with the grid / bg, not the voxels!
+        // Lower exponent when no refractions cuz refractions makes glass brighter
+        FragColor.a = pow(data.color.a, ENABLE_REFRACTION ? 0.5 : 0.25);
 
         bool isFancyDisplay = DISPLAY_MODE == D_MODE_FANCY; // Check also in Renderer.cpp
         if (isFancyDisplay && ENABLE_GLOW && (flags & G_GLOW) != 0)

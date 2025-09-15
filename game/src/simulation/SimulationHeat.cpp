@@ -9,14 +9,10 @@
 #include <glad.h>
 #include <iostream>
 
-SimulationHeat::~SimulationHeat() {
-    rlUnloadShaderProgram(heatProgram);
-}
 
 void SimulationHeat::init() {
     #include "../../resources/shaders/generated/heat.comp.h"
-    heatShader = rlCompileShader(heat_comp_source, RL_COMPUTE_SHADER);
-    heatProgram = rlLoadComputeShaderProgram(heatShader);
+    heatShader = util::TPBShader(heat_comp_source, util::ShaderType::COMPUTE);
 
     ssboConstants = rlLoadShaderBuffer(sizeof(constants), NULL, RL_STATIC_READ);
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
@@ -86,6 +82,7 @@ void SimulationHeat::upload(const uint32_t frame_count) {
     }
     constants.DIRTY_INDEX_COUNT = i;
     constants.FRAME_COUNT = frame_count;
+    constants.IS_ENABLED = 1;
     rlUpdateShaderBuffer(ssboConstants, &constants, sizeof(constants), 0);
 }
 
@@ -95,7 +92,7 @@ void SimulationHeat::dispatch(const uint32_t frame_count) {
     // Uncomment the two lines for timing the shader dispatch
     // util::GlTimeQuery query;
 
-    rlEnableShader(heatProgram);
+    rlEnableShader(heatShader.id());
     rlBindShaderBuffer(ssbosData.getId(0), 0);
     rlBindShaderBuffer(ssbosData.getId(1), 1);
     rlBindShaderBuffer(ssboConstants, 2);

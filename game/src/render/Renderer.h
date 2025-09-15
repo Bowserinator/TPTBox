@@ -53,7 +53,8 @@ private:
         part_shader_uv1_loc,
         part_shader_uv2_loc,
         part_shader_camera_pos_loc,
-        part_shader_camera_dir_loc;
+        part_shader_camera_dir_loc,
+        part_shader_heat_loc;
     int post_shader_base_texture_loc,
         post_shader_glow_texture_loc,
         post_shader_blur_texture_loc,

@@ -1,9 +1,9 @@
-#ifndef SIMULATION_SIMULATIONHEAT_H_
-#define SIMULATION_SIMULATIONHEAT_H_
+#pragma once
 
 #include "raylib.h"
 #include "rlgl.h"
 #include "util/types/persistent_buffer.h"
+#include "util/graphics/shader.h"
 #include "SimulationDef.h"
 
 #include <array>
@@ -21,13 +21,12 @@ struct HeatConstants {
     uint32_t HEAT_BLOCK_SIZE = SIM_HEAT_DIRTY_BLOCK_SIZE;
     uint32_t FRAME_COUNT = 0;
     uint32_t DIRTY_INDEX_COUNT = 0;
+    bool IS_ENABLED = true;
     uint32_t DIRTY_INDICES[SIM_HEAT_ZBLOCKS * SIM_HEAT_YBLOCKS * SIM_HEAT_XBLOCKS];
 };
 
 class SimulationHeat {
 public:
-    ~SimulationHeat();
-
     float heat_map[ZRES][YRES][XRES];   // -1 indicates empty space
     unsigned char heat_conduct[ZRES][YRES][XRES];
     bool uploaded_once = false;         // Prevent download on first invocation
@@ -58,9 +57,6 @@ private:
     unsigned int ssboConstants;
     HeatConstants constants;
 
-    unsigned int heatShader;
-    unsigned int heatProgram;
+    util::TPBShader heatShader;
     double downloadDirtyRatio;
 };
-
-#endif // SIMULATION_SIMULATIONHEAT_H_

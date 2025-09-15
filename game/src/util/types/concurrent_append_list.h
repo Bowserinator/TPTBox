@@ -1,5 +1,4 @@
-#ifndef UTIL_TYPES_CONCURRENT_APPEND_LIST_H_
-#define UTIL_TYPES_CONCCURENT_APPEND_LIST_H_
+#pragma once
 
 #include <cstring>
 #include <atomic>
@@ -67,5 +66,3 @@ namespace util {
         std::atomic<std::size_t> m_next_free = 0;
     };
 }
-
-#endif // UTIL_TYPES_CONCURRENT_APPEND_LIST_H_

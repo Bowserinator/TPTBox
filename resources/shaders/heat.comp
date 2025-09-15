@@ -15,6 +15,7 @@ layout(std430, binding = 2) readonly restrict buffer Constants {
     uint HEAT_BLOCK_SIZE;
     uint FRAME_COUNT;
     uint DIRTY_INDEX_COUNT;
+    bool IS_ENABLED;
     uint DIRTY_INDICES[];
 };
 layout(std430, binding = 3) writeonly restrict buffer DirtyOut {

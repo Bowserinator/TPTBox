@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "raylib.h"
 #include "simulation/Simulation.h"
 #include "simulation/ElementClasses.h"
 #include "camera/camera.h"
@@ -171,6 +172,7 @@ void Renderer::init() {
 
     // Uniform values that may change per frame
     part_shader_res_loc = GetShaderLocation(part_shader, "resolution");
+    part_shader_heat_loc = GetShaderLocation(part_shader, "heatEnabled");
     part_shader_camera_pos_loc = GetShaderLocation(part_shader, "cameraPos");
     part_shader_camera_dir_loc = GetShaderLocation(part_shader, "cameraDir");
     part_shader_uv1_loc = GetShaderLocation(part_shader, "uv1");
@@ -546,6 +548,7 @@ void Renderer::draw() {
 
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
+        util::set_shader_value(part_shader, part_shader_heat_loc, sim->enable_heat ? 1 : 0);
         util::set_shader_value(part_shader, part_shader_res_loc, virtual_resolution);
         util::set_shader_value(part_shader, part_shader_camera_pos_loc, cam->camera.position);
         util::set_shader_value(part_shader, part_shader_camera_dir_loc, look_ray);
