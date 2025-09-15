@@ -43,20 +43,18 @@ static int FIRE_graphics(GRAPHICS_FUNC_ARGS) {
 
 static int update(UPDATE_FUNC_ARGS) {
     int r;
-    if (sim.rng().chance(1, 10)) {
-        for (int dz = -1; dz <= 1; dz++)
-        for (int dy = -1; dy <= 1; dy++)
-        for (int dx = -1; dx <= 1; dx++) {
-            if (!dx && !dy && !dz) continue;
-            r = sim.pmap[z + dz][y + dy][x + dx];
-            if (r && TYP(r) != PT_FIRE) {
-                const auto &el = GetElements()[TYP(r)];
-                if (el.Flammable && sim.rng().chance(el.Flammable, 1024)) {
-                    sim.parts[ID(r)].life = sim.rng().between(120, 169);
-                    sim.p_temp[ID(r)] = std::max(sim.p_temp[ID(r)], DEFAULT_FIRE_TEMP + el.Flammable / 2);
-                    sim.part_change_type(ID(r), PT_FIRE);
-                    goto end;
-                }
+    for (int dz = -1; dz <= 1; dz++)
+    for (int dy = -1; dy <= 1; dy++)
+    for (int dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy && !dz) continue;
+        r = sim.pmap[z + dz][y + dy][x + dx];
+        if (r && TYP(r) != PT_FIRE) {
+            const auto &el = GetElements()[TYP(r)];
+            if (el.Flammable && sim.rng().chance(el.Flammable, 1024)) {
+                sim.parts[ID(r)].life = sim.rng().between(120, 169);
+                sim.p_temp[ID(r)] = std::max(sim.p_temp[ID(r)], DEFAULT_FIRE_TEMP + el.Flammable / 2);
+                sim.part_change_type(ID(r), PT_FIRE);
+                goto end;
             }
         }
     }

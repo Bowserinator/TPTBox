@@ -23,14 +23,15 @@ local function generateEmbeddedShader(fpath)
     local newhash = "// " .. string.hash(shader_code)
 
     -- Regenerate shader header if changed
-    if oldhash ~= newhash then
+    if oldhash ~= newhash then -- TODO
         print("Regenerating shader", fpath)
         shader_code = shader_code
-            :gsub("//[^\n\r]*", "")
-            :gsub("[\n\r]", "")
+            :gsub("\r\n", "\n")
+            :gsub("//[^\n\r]*", "") -- Remove comments
+            -- :gsub("[\n\r]", "") -- Condense all code to 1 line, removed for easier shader macro support
+            :gsub("\n%s*\n", "\n")
             :gsub("  ", " ")
-            :gsub("  ", " ")
-            :gsub("%;[ ]+", ";") -- naive comment sub + minification
+            :gsub("%;[ ]+", ";") -- naive minification
 
         symbols = { "{", "}", "(", ")", ",", "=", "<", ">", "<=", ">=", "!=", "==", "*", "/", "+", "-", "&", "<<", ">>", ">>=", "<<=", "^", "?" }
         for _, symbol in ipairs(symbols) do
@@ -43,9 +44,13 @@ local function generateEmbeddedShader(fpath)
 
         shader_code = newhash .. "\n" ..
             "// This file is auto-generated! Your edits will not be saved\n" ..
-            "const char * " .. var_name .. " = R\"(\n" ..
+            "#ifdef EMBED_SHADERS\n" ..
+            "util::TPBShaderSourceCode " .. var_name .. " = R\"(\n" ..
             shader_code ..
-            ")\";"
+            ")\";\n" ..
+            "#else\n" ..
+            "util::TPBShaderSourceCode " .. var_name .. " = util::load_text_file(\"resources/" .. fpath .. "\");\n" ..
+            "#endif\n"
 
         local f = io.open(outpath, "w")
         f:write(shader_code)

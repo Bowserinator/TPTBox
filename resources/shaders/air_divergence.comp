@@ -3,13 +3,12 @@
 // Multiplication of local sizes <= 1024
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 
+// CELL_SIZE, AIRRES, dt injected by shader loader
+
 layout(std430, binding = 0) restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) restrict buffer VZ { float vz[]; };
-layout(std430, binding = 3) readonly restrict buffer Constants {
-    ivec4 AIRRES;
-    uint CELL_SIZE;
-};
+
 layout(std430, binding = 4) restrict buffer Walls { uint walls[]; };
 
 uniform int iteration;
@@ -32,7 +31,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y + 1;
     uint z = gl_GlobalInvocationID.z + 1;
 
-    if (x >= AIRRES.x - 2 || y >= AIRRES.y - 2 || z >= AIRRES.z - 2)
+    if (x >= AIRRES.x - 2 || y >= AIRRES.y - 2 || z >= AIRRES.z - 2 || x < 2 || y < 2 || z < 2)
         return;
     if (1 != is_empty(x, y, z))
         return;

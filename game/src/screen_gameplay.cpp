@@ -114,12 +114,6 @@ void ScreenGameplay::init() {
 }
 
 void ScreenGameplay::update() {
-    // sim.air.cells[AIR_XRES / 2][2][AIR_ZRES / 2].data[PRESSURE_IDX] = 512.0f;
-    // for (int x = 10; x < 100; x += 10)
-    //      for (int z = 10; z < 100; z += 10)
-    //      if (sim.pmap[z][90][x] == 0)
-    //          sim.create_part(x, 90, z, 1);
-
     auto t = GetTime();
     sim.update();
     simTime = GetTime() - t;

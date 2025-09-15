@@ -258,7 +258,8 @@ void HUD::draw(const HUDData &data) {
                 const int x = util::clamp(rx, 0, XRES);
                 const int y = util::clamp(ry, 0, YRES);
                 const int z = util::clamp(rz, 0, ZRES);
-                const char * air_data = TextFormat("%.2f, %.2f, %.2f",
+                const char * air_data = TextFormat("%.2f / %.2f, %.2f, %.2f",
+                    sim->air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE],
                     sim->air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
                     sim->air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
                     sim->air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE);

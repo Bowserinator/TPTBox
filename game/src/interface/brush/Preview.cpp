@@ -3,17 +3,15 @@
 #include "render/Renderer.h"
 #include "render/camera/camera.h"
 #include "util/graphics.h"
+#include "util/string.h"
+#include "util/graphics/shader.h"
 #include "simulation/SimulationDef.h"
 
 #include <vector>
 
 void brush_preview::init() {
-    #ifdef EMBED_SHADERS
     #include "../../resources/shaders/generated/brush_clip.fs.h"
     model_shader = LoadShaderFromMemory(nullptr, brush_clip_fs_source);
-    #else
-    model_shader = LoadShader(nullptr, "resources/shaders/brush_clip.fs");
-    #endif
 
     model_shader_depth_tex_loc = GetShaderLocation(model_shader, "depth");
     model_shader_res_loc = GetShaderLocation(model_shader, "resolution");

@@ -5,6 +5,8 @@
 #include "util/graphics.h"
 #include "util/vector_op.h"
 #include "util/types/gl_time_query.h"
+#include "util/string.h"
+#include "util/graphics/shader.h"
 #include "render/constants.h"
 
 #include <cstring>
@@ -70,16 +72,9 @@ SimulationGol::~SimulationGol() {
 }
 
 void SimulationGol::init() {
-#ifdef EMBED_SHADERS
-    #include "../../resources/shaders/generated/gol.comp.h"
+    #include "../../resources/shaders/generated/gol.comp.h" // TODO
     golShader = rlCompileShader(gol_comp_source, RL_COMPUTE_SHADER);
     golProgram = rlLoadComputeShaderProgram(golShader);
-#else
-    char * gol_comp_source = LoadFileText("resources/shaders/gol.comp");
-    golShader = rlCompileShader(gol_comp_source, RL_COMPUTE_SHADER);
-    golProgram = rlLoadComputeShaderProgram(golShader);
-    UnloadFileText(gol_comp_source);
-#endif
 
     struct {
         int32_t SIMRES[4] = { (int)XRES, (int)YRES, (int)ZRES };

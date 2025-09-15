@@ -11,6 +11,8 @@
 #include "util/graphics.h"
 #include "util/morton.h"
 #include "util/types/ubo.h"
+#include "util/string.h"
+#include "util/graphics/shader.h"
 
 #include "rlgl.h"
 #include "stdint.h"
@@ -135,7 +137,6 @@ void Renderer::_generate_render_textures() {
 }
 
 void Renderer::init() {
-#ifdef EMBED_SHADERS
     #include "../../resources/shaders/generated/fullscreen.vs.h"
     #include "../../resources/shaders/generated/part.fs.h"
     #include "../../resources/shaders/generated/post.fs.h"
@@ -150,14 +151,6 @@ void Renderer::init() {
     grid_shader = LoadShaderFromMemory(nullptr, grid_fs_source);
     depth_shader = LoadShaderFromMemory(fullscreen_vs_source, depth_fs_source);
     air_shader  = LoadShaderFromMemory(fullscreen_vs_source, air_fs_source);
-#else
-    part_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/part.fs");
-    post_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/post.fs");
-    blur_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/blur.fs");
-    grid_shader = LoadShader(nullptr, "resources/shaders/grid.fs");
-    depth_shader = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/depth.fs");
-    air_shader  = LoadShader("resources/shaders/fullscreen.vs", "resources/shaders/air.fs");
-#endif
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     _generate_render_textures();

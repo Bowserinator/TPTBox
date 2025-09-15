@@ -3,21 +3,17 @@
 // Multiplication of local sizes <= 1024
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 
+// CELL_SIZE, AIRRES, dt injected by shader loader
+
 layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
-
-layout(std430, binding = 3) readonly restrict buffer Constants {
-    ivec4 AIRRES;
-    uint CELL_SIZE;
-};
 
 layout(std430, binding = 4) writeonly restrict buffer NVX { float new_vx[]; };
 layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
 layout(std430, binding = 7) readonly restrict buffer Walls { uint walls[]; };
-
-const float dt = 5;
+layout(std430, binding = 8) writeonly restrict buffer Pressure { float pv[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -70,14 +66,14 @@ float sample_vx(vec3 pos) { return sample_field_bilinear(pos, 0); }
 float sample_vy(vec3 pos) { return sample_field_bilinear(pos, 1); }
 float sample_vz(vec3 pos) { return sample_field_bilinear(pos, 2); }
 
-vec3 curl(vec3 pos) {
-    pos *=  CELL_SIZE;
-    float dz_y = sample_vz(pos + vec3(0, 1, 0)) - sample_vz(pos - vec3(0, 1, 0));
-    float dy_z = sample_vy(pos + vec3(0, 0, 1)) - sample_vy(pos - vec3(0, 0, 1));
-    float dx_z = sample_vx(pos + vec3(0, 0, 1)) - sample_vx(pos - vec3(0, 0, 1));
-    float dz_x = sample_vz(pos + vec3(1, 0, 0)) - sample_vz(pos - vec3(1, 0, 0));
-    float dy_x = sample_vy(pos + vec3(1, 0, 0)) - sample_vy(pos - vec3(1, 0, 0));
-    float dx_y = sample_vx(pos + vec3(0, 1, 0)) - sample_vx(pos - vec3(0, 1, 0));
+vec3 curl(vec3 pos2) {
+    uvec3 pos = uvec3(pos2);
+    float dz_y = vz[idx(pos.x, pos.y + 1, pos.z)] - vz[idx(pos.x, pos.y - 1, pos.z)]; // sample_vz(pos + vec3(0, 1, 0)) - sample_vz(pos - vec3(0, 1, 0));
+    float dy_z = vy[idx(pos.x, pos.y, pos.z + 1)] - vy[idx(pos.x, pos.y, pos.z - 1)]; // sample_vy(pos + vec3(0, 0, 1)) - sample_vy(pos - vec3(0, 0, 1));
+    float dx_z = vx[idx(pos.x, pos.y, pos.z + 1)] - vx[idx(pos.x, pos.y, pos.z - 1)]; // sample_vx(pos + vec3(0, 0, 1)) - sample_vx(pos - vec3(0, 0, 1));
+    float dz_x = vz[idx(pos.x + 1, pos.y, pos.z)] - vz[idx(pos.x - 1, pos.y, pos.z)]; // sample_vz(pos + vec3(1, 0, 0)) - sample_vz(pos - vec3(1, 0, 0));
+    float dy_x = vy[idx(pos.x + 1, pos.y, pos.z)] - vy[idx(pos.x - 1, pos.y, pos.z)]; // sample_vy(pos + vec3(1, 0, 0)) - sample_vy(pos - vec3(1, 0, 0));
+    float dx_y = vx[idx(pos.x, pos.y + 1, pos.z)] - vx[idx(pos.x, pos.y - 1, pos.z)]; // sample_vx(pos + vec3(0, 1, 0)) - sample_vx(pos - vec3(0, 1, 0));
     return vec3(
         dz_y - dy_z,
         dx_z - dz_x,

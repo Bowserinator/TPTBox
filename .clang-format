@@ -1,0 +1,26 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+Language: Cpp
+ColumnLimit: 120
+
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments:
+    Enabled: true
+AlignConsecutiveMacros:
+    Enabled: true
+AlignConsecutiveShortCaseStatements:
+    Enabled: true
+AlignTrailingComments:
+    Kind: Always
+    OverEmptyLines: 1
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLambdasOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
+
+IndentCaseBlocks: true

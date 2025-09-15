@@ -3,6 +3,8 @@
 #include "render/Renderer.h"
 #include "render/camera/camera.h"
 #include "util/graphics.h"
+#include "util/string.h"
+#include "util/graphics/shader.h"
 #include "simulation/SimulationDef.h"
 #include "Preview.h"
 
@@ -11,13 +13,9 @@
 
 BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int> size) {
     if (!IsShaderReady(brush_model_shader)) {
-        #ifdef EMBED_SHADERS
-        #include "../../resources/shaders/generated/brush_clip.vs.h"
-        #include "../../resources/shaders/generated/brush_clip.fs.h"
+        #include "../resources/shaders/generated/brush_clip.vs.h"
+        #include "../resources/shaders/generated/brush_clip.fs.h"
         brush_model_shader = LoadShaderFromMemory(brush_clip_vs_source, brush_clip_fs_source);
-        #else
-        brush_model_shader = LoadShader("resources/shaders/brush_clip.vs", "resources/shaders/brush_clip.fs");
-        #endif
 
         brush_model_shader_mv_loc = GetShaderLocation(brush_model_shader, "mv");
         brush_model_shader_depth_tex_loc = GetShaderLocation(brush_model_shader, "depth");

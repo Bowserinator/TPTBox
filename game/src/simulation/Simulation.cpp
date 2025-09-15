@@ -470,7 +470,7 @@ void Simulation::update() {
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         //air.explode(80, 80, 80, 50.0); // TODO
-        //air.upload(); // TODO
+        // air.upload(); // TODO
     }
 
     frame_count++;

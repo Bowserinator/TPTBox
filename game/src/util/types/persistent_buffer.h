@@ -1,7 +1,7 @@
 #ifndef UTIL_TYPES_PERSISTENT_BUFFER_H_
 #define UTIL_TYPES_PERSISTENT_BUFFER_H_
 
-#include <glad.h>
+#include "glad.h"
 #include "rlgl.h"
 #include <cstddef>
 #include <algorithm>
