@@ -11,7 +11,7 @@
 /// Air compute shaders in 8 8 16 = 1024
 void dispatch_air_compute_shaders() {
     rlComputeShaderDispatch(std::ceil((AIR_XRES - 2.0f) / 8.0f), std::ceil((AIR_YRES - 2.0f) / 8.0f),
-                        std::ceil((AIR_ZRES - 2.0f) / 16.0f));
+                            std::ceil((AIR_ZRES - 2.0f) / 16.0f));
 }
 
 Air::Air(Simulation &sim) : sim(sim) {}
@@ -36,6 +36,8 @@ void Air::init() {
         src.get()
             .add_const("CELL_SIZE", AIR_CELL_SIZE | as<uint32_t>)
             .add_const_arr<int32_t, 4>("AIRRES", {AIR_XRES, AIR_YRES, AIR_ZRES, 0})
+            .add_const("MAX_AIR_VELOCITY", MAX_AIR_VELOCITY)
+            .add_const("MAX_AIR_PRESSURE", MAX_AIR_PRESSURE)
             .update();
 
     advection_shader         = util::TPBComputeShader{air_advection_comp_source};
@@ -80,9 +82,9 @@ void Air::clear() {
 }
 
 void Air::update() {
-    // for (int x = 0; x < AIR_XRES; x++)
-    // for (int z = 0; z < AIR_ZRES; z++)
-    //     wall_map[(x + z * AIR_XRES * AIR_YRES + 2 * AIR_XRES) / 8] = 0xFF;
+    for (int x = 0; x < AIR_XRES; x++)
+        for (int z = 0; z < AIR_ZRES; z++)
+            wall_map[(x + z * AIR_XRES * AIR_YRES + 10 * AIR_XRES) / 8] = 0xFF;
 
     memcpy(ssbos_walls.get<uint8_t>(0), wall_map, sizeof(wall_map)); // TODO diff
 
@@ -99,10 +101,11 @@ void Air::update() {
     // Blur velocity and pressure fields
     // Can technically only blur pressure but spherical pressure waves have
     // less axis aligned artifacts when we also blur velocity (adds viscosity)
-    rlEnableShader(pressure_blur_shader.id());
-    for (const auto &ssbo : {std::ref(ssbos_pv), std::ref(ssbos_vx), std::ref(ssbos_vy), std::ref(ssbos_vz)}) {
+    rlEnableShader(pressure_blur_shader.id()); //
+    for (const auto &ssbo : {std::ref(ssbos_pv)}) {
         rlBindShaderBuffer(ssbo.get().getId(0), 0);
         rlBindShaderBuffer(ssbo.get().getId(1), 1);
+        rlBindShaderBuffer(ssbos_walls.getId(0), 2);
         dispatch_air_compute_shaders();
         ssbo.get().advance_cycle();
     }
@@ -149,30 +152,35 @@ void Air::upload() {
 
 void Air::explode(const coord_t x, const coord_t y, const coord_t z, float diff) {
     // TODO: remove??
-    vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
-    vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE + 1] += diff;
-    vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
-    vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE + 1][x / AIR_CELL_SIZE] += diff;
-    vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] -= diff;
-    vz[z / AIR_CELL_SIZE + 1][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] += diff;
+    pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] += diff;
 }
 
 void Air::solve_incompressibility() {
     rlEnableShader(divergence_shader.id());
+    rlBindShaderBuffer(ssbos_walls.getId(0), 6);
     rlBindShaderBuffer(ssbos_vx.getId(0), 0);
     rlBindShaderBuffer(ssbos_vy.getId(0), 1);
     rlBindShaderBuffer(ssbos_vz.getId(0), 2);
-    rlBindShaderBuffer(ssbos_walls.getId(0), 4);
+    rlBindShaderBuffer(ssbos_vx.getId(1), 3);
+    rlBindShaderBuffer(ssbos_vy.getId(1), 4);
+    rlBindShaderBuffer(ssbos_vz.getId(1), 5);
+
+    // TODO: actually implement red black gauss sieidel properly
 
     // util::GlTimeQuery query;
     constexpr int DIVERGENCE_REMOVING_ITERATIONS = 4;
     for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++) {
+
         glUniform1iv(iteration_uniform_loc, 1, &i);
         dispatch_air_compute_shaders();
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
     rlDisableShader();
     // std::cout << query.timeElapsedMs() << " ms (air sim)" << "\n";
+
+    // ssbos_vx.advance_cycle();
+    // ssbos_vy.advance_cycle();
+    // ssbos_vz.advance_cycle();
 }
 
 void Air::fill_edges_and_advect_velocities() {
@@ -185,6 +193,7 @@ void Air::fill_edges_and_advect_velocities() {
     rlBindShaderBuffer(ssbos_vz.getId(1), 6);
     rlBindShaderBuffer(ssbos_walls.getId(0), 7);
     rlBindShaderBuffer(ssbos_pv.getId(0), 8);
+    rlBindShaderBuffer(ssbos_pv.getId(1), 9);
 
     // util::GlTimeQuery query;
     dispatch_air_compute_shaders();
@@ -197,12 +206,12 @@ void Air::wait_and_get() {
     ssbos_vx.wait(1);
     ssbos_vy.wait(1);
     ssbos_vz.wait(1);
-    ssbos_pv.wait(0);
+    ssbos_pv.wait(1);
 
     memcpy(&vx[0], &ssbos_vx.get<float>(1)[0], sizeof(vx));
     memcpy(&vy[0], &ssbos_vy.get<float>(1)[0], sizeof(vy));
     memcpy(&vz[0], &ssbos_vz.get<float>(1)[0], sizeof(vz));
-    memcpy(&pv[0], &ssbos_pv.get<float>(0)[0], sizeof(pv));
+    memcpy(&pv[0], &ssbos_pv.get<float>(1)[0], sizeof(pv));
 
     ssbos_vx.advance_cycle();
     ssbos_vy.advance_cycle();

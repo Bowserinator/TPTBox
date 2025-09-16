@@ -1,45 +1,40 @@
 #include "Renderer.h"
-#include "raylib.h"
-#include "simulation/Simulation.h"
-#include "simulation/ElementClasses.h"
 #include "camera/camera.h"
 #include "constants.h"
 #include "graphics/gradient.h"
 #include "interface/settings/data/GraphicsSettingsData.h"
 #include "interface/settings/data/SettingsData.h"
+#include "raylib.h"
+#include "simulation/ElementClasses.h"
+#include "simulation/Simulation.h"
 
-#include "util/math.h"
 #include "util/graphics.h"
-#include "util/morton.h"
-#include "util/types/ubo.h"
-#include "util/string.h"
 #include "util/graphics/shader.h"
+#include "util/math.h"
+#include "util/morton.h"
+#include "util/string.h"
+#include "util/types/ubo.h"
 
 #include "rlgl.h"
 #include "stdint.h"
 #include <glad.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
-#include <algorithm>
 
 // Custom cube mesh generation:
 // a) shows only inside faces
 // b) texture UVs are cropped relative to largest dimension
 Mesh GenInvertedMeshCube(const float width, const float height, const float length) {
-    Mesh mesh = { 0 };
+    Mesh mesh = {0};
     float vertices[108]; // 3 points * 3 vertices * 12 triangles
     float texcoords[72]; // 2 points * 3 vertices * 12 triangles
 
-    const float dims[] = { width, height, length };
-    const float largestDim = std::max({ width, height, length });
+    const float dims[]     = {width, height, length};
+    const float largestDim = std::max({width, height, length});
 
-    constexpr float vertices2D[] = {
-        0, 0, 1, 1, 0, 1,
-        0, 0, 1, 0, 1, 1,
-        0, 0, 0, 1, 1, 1,
-        0, 0, 1, 1, 1, 0
-    };
+    constexpr float vertices2D[] = {0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0};
 
     int i = 0;
     int k = 0;
@@ -56,7 +51,8 @@ Mesh GenInvertedMeshCube(const float width, const float height, const float leng
                 // Flip y dim because render texture is flipped
                 if (k % 2 == 1) texcoords[k] = 1.0f - texcoords[k];
                 // Get x face to line up for some reason
-                else if (k % 2 == 0 && axis == 0) texcoords[k] = 1.0f - texcoords[k];
+                else if (k % 2 == 0 && axis == 0)
+                    texcoords[k] = 1.0f - texcoords[k];
                 k++;
             }
             i++;
@@ -69,14 +65,14 @@ Mesh GenInvertedMeshCube(const float width, const float height, const float leng
         vertices[i + 2] = (vertices[i + 2] - 0.5f) * length;
     }
 
-    mesh.vertices = (float*)malloc(sizeof(vertices));
-    mesh.texcoords = (float*)malloc(sizeof(texcoords));
+    mesh.vertices  = (float *)malloc(sizeof(vertices));
+    mesh.texcoords = (float *)malloc(sizeof(texcoords));
 
     memcpy(mesh.vertices, vertices, sizeof(vertices));
     memcpy(mesh.texcoords, texcoords, sizeof(texcoords));
 
     // Yeah I ain't dealing with indices enjoy your 12 triangles
-    mesh.vertexCount = sizeof(vertices) / sizeof(float) / 3;
+    mesh.vertexCount   = sizeof(vertices) / sizeof(float) / 3;
     mesh.triangleCount = mesh.vertexCount / 3;
 
     UploadMesh(&mesh, false);
@@ -116,74 +112,71 @@ void Renderer::_generate_render_textures() {
 
     base_tex = MultiTexture(GetScreenWidth() / downscaleRatio, GetScreenHeight() / downscaleRatio);
 
-    const unsigned int blur_width = GetScreenWidth() / blurDownscaleRatio;
+    const unsigned int blur_width  = GetScreenWidth() / blurDownscaleRatio;
     const unsigned int blur_height = GetScreenHeight() / blurDownscaleRatio;
-    blur1_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    blur2_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur1_tex    = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    blur2_tex    = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     blur_tmp_tex = util::load_render_texture_only_color(blur_width, blur_height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     vel_tex = DepthTexture(GetScreenWidth() / airDownscaleRatio, GetScreenHeight() / airDownscaleRatio);
 
     // Prevent blur from wrapping around
-    for (unsigned int texId : std::array<unsigned int, 5>({
-        blur_tmp_tex.texture.id,
-        blur1_tex.texture.id,
-        blur2_tex.texture.id,
-        base_tex.glowOnlyTexture,
-        base_tex.blurOnlyTexture
-    })) {
+    for (unsigned int texId :
+         std::array<unsigned int, 5>({blur_tmp_tex.texture.id, blur1_tex.texture.id, blur2_tex.texture.id,
+                                      base_tex.glowOnlyTexture, base_tex.blurOnlyTexture})) {
         rlTextureParameters(texId, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_MIRROR_REPEAT);
         rlTextureParameters(texId, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_MIRROR_REPEAT);
     }
 }
 
 void Renderer::init() {
-    #include "../../resources/shaders/generated/fullscreen.vs.h"
-    #include "../../resources/shaders/generated/part.fs.h"
-    #include "../../resources/shaders/generated/post.fs.h"
-    #include "../../resources/shaders/generated/blur.fs.h"
-    #include "../../resources/shaders/generated/grid.fs.h"
-    #include "../../resources/shaders/generated/air.fs.h"
-    #include "../../resources/shaders/generated/depth.fs.h"
+#include "../../resources/shaders/generated/air.fs.h"
+#include "../../resources/shaders/generated/blur.fs.h"
+#include "../../resources/shaders/generated/depth.fs.h"
+#include "../../resources/shaders/generated/fullscreen.vs.h"
+#include "../../resources/shaders/generated/grid.fs.h"
+#include "../../resources/shaders/generated/part.fs.h"
+#include "../../resources/shaders/generated/post.fs.h"
 
-    part_shader = LoadShaderFromMemory(fullscreen_vs_source, part_fs_source);
-    post_shader = LoadShaderFromMemory(fullscreen_vs_source, post_fs_source);
-    blur_shader = LoadShaderFromMemory(fullscreen_vs_source, blur_fs_source);
-    grid_shader = LoadShaderFromMemory(nullptr, grid_fs_source);
+    part_shader  = LoadShaderFromMemory(fullscreen_vs_source, part_fs_source);
+    post_shader  = LoadShaderFromMemory(fullscreen_vs_source, post_fs_source);
+    blur_shader  = LoadShaderFromMemory(fullscreen_vs_source, blur_fs_source);
+    grid_shader  = LoadShaderFromMemory(nullptr, grid_fs_source);
     depth_shader = LoadShaderFromMemory(fullscreen_vs_source, depth_fs_source);
-    air_shader  = LoadShaderFromMemory(fullscreen_vs_source, air_fs_source);
+    air_shader   = LoadShaderFromMemory(fullscreen_vs_source, air_fs_source);
 
     ao_data = new uint8_t[sim->graphics.ao_blocks.size()];
     _generate_render_textures();
 
-    grid_max_dim = std::max({ XRES, YRES, ZRES });
-    Mesh mesh = GenInvertedMeshCube((float)XRES, (float)YRES, (float)ZRES);
-    grid_model = LoadModelFromMesh(mesh);
-    grid_shader_locs = util::UniformManager{grid_shader};
+    grid_max_dim                   = std::max({XRES, YRES, ZRES});
+    Mesh mesh                      = GenInvertedMeshCube((float)XRES, (float)YRES, (float)ZRES);
+    grid_model                     = LoadModelFromMesh(mesh);
+    grid_shader_locs               = util::UniformManager{grid_shader};
     grid_model.materials[0].shader = grid_shader;
     set_grid_size(0.0);
 
     rlEnableShader(part_shader.id);
-        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
-        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragGlowOnly"), 1);
-        rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragBlurOnly"), 2);
+    rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragColor"), 0);
+    rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragGlowOnly"), 1);
+    rlSetUniformSampler(rlGetLocationUniform(part_shader.id, "FragBlurOnly"), 2);
     rlDisableShader();
 
     // Uniform values that may change per frame
-    part_shader_locs = util::UniformManager{part_shader};
-    post_shader_locs = util::UniformManager{post_shader};
-    blur_shader_locs = util::UniformManager{blur_shader};
+    part_shader_locs  = util::UniformManager{part_shader};
+    post_shader_locs  = util::UniformManager{post_shader};
+    blur_shader_locs  = util::UniformManager{blur_shader};
     depth_shader_locs = util::UniformManager{depth_shader};
-    air_shader_locs = util::UniformManager{air_shader};
+    air_shader_locs   = util::UniformManager{air_shader};
 
     // SSBOs for color & octree LOD data
-    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
-        XRES * YRES * ZRES * sizeof(uint32_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
-    flagBuf  = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
-        XRES * YRES * ZRES * sizeof(uint8_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
-    lodBuf   = util::PersistentBuffer<BUFFER_COUNT>(GL_SHADER_STORAGE_BUFFER,
-                sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]
-                * X_BLOCKS * Y_BLOCKS * Z_BLOCKS, util::PBFlags::WRITE);
+    colorBuf = util::PersistentBuffer<BUFFER_COUNT>(
+        GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint32_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
+    flagBuf = util::PersistentBuffer<BUFFER_COUNT>(
+        GL_SHADER_STORAGE_BUFFER, XRES * YRES * ZRES * sizeof(uint8_t) + COLOR_DATA_CHUNK_SIZE, util::PBFlags::WRITE);
+    lodBuf = util::PersistentBuffer<BUFFER_COUNT>(
+        GL_SHADER_STORAGE_BUFFER,
+        sizeof(uint8_t) * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1] * X_BLOCKS * Y_BLOCKS * Z_BLOCKS,
+        util::PBFlags::WRITE);
 
     // Ambient occlusion texture, uses texture for free linear filtering
     glGenTextures(BUFFER_COUNT, ao_tex);
@@ -191,8 +184,8 @@ void Renderer::init() {
         glBindTexture(GL_TEXTURE_3D, ao_tex[i]);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS,
-            0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, 0, GL_RED, GL_UNSIGNED_BYTE,
+                     NULL);
     }
 
     // Shadow texture
@@ -207,7 +200,7 @@ void Renderer::init() {
     // SSBO display mode
     {
         ssbo_display_mode = rlLoadShaderBuffer(sizeof(SSBO_DisplayMode_t), NULL, RL_STATIC_READ);
-        SSBO_DisplayMode_t data { .display_mode = static_cast<uint32_t>(sim->graphics.display_mode) };
+        SSBO_DisplayMode_t data{.display_mode = static_cast<uint32_t>(sim->graphics.display_mode)};
         rlUpdateShaderBuffer(ssbo_display_mode, &data, sizeof(data), 0);
     }
 
@@ -217,25 +210,26 @@ void Renderer::init() {
     // DO NOT USE ARRAYS IN UBOS unless you defined them as std140 and correctly
     // pad every array element to 16 bytes
     {
-    #ifdef DEBUG
+#ifdef DEBUG
         if (cam->camera.fovy == 0.0)
-            throw std::invalid_argument("Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
+            throw std::invalid_argument(
+                "Render camera fov should not be 0 (renderer should be initialized AFTER the camera)");
         if (HEAT_GRADIENT_STEPS != graphics::gradients::heat_gradient.size())
             throw std::invalid_argument("Heat gradient step count differs from expected constant");
-    #endif
+#endif
 
         ssbo_constants = rlLoadShaderBuffer(sizeof(SSBO_Constants_t), NULL, RL_STATIC_READ);
-        SSBO_Constants_t data {
-            .SIMRES{ (float)XRES, (float)YRES, (float)ZRES },
-            .NUM_LEVELS = OCTREE_BLOCK_DEPTH,
-            .FOV_DIV2 = cam->camera.fovy * DEG2RAD / 2.0f,
-            .MOD_MASK = (1 << OCTREE_BLOCK_DEPTH) - 1,
+        SSBO_Constants_t data{
+            .SIMRES{(float)XRES, (float)YRES, (float)ZRES},
+            .NUM_LEVELS    = OCTREE_BLOCK_DEPTH,
+            .FOV_DIV2      = cam->camera.fovy * DEG2RAD / 2.0f,
+            .MOD_MASK      = (1 << OCTREE_BLOCK_DEPTH) - 1,
             .AO_BLOCK_SIZE = AO_BLOCK_SIZE,
-            .OCTTREE_BLOCK_DIMS{ X_BLOCKS, Y_BLOCKS, Z_BLOCKS },
-            .AO_BLOCK_DIMS{ AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS }
+            .OCTTREE_BLOCK_DIMS{X_BLOCKS,    Y_BLOCKS,    Z_BLOCKS   },
+            .AO_BLOCK_DIMS{AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS}
         };
         memcpy(&data.LAYER_OFFSETS, &OctreeBlockMetadata::layer_offsets[0],
-            OctreeBlockMetadata::layer_offsets.size() * sizeof(unsigned int));
+               OctreeBlockMetadata::layer_offsets.size() * sizeof(unsigned int));
         memcpy(&data.MORTON_X_SHIFTS, &Morton::X_SHIFTS[0], sizeof(Morton::X_SHIFTS));
         memcpy(&data.MORTON_Y_SHIFTS, &Morton::Y_SHIFTS[0], sizeof(Morton::Y_SHIFTS));
         memcpy(&data.MORTON_Z_SHIFTS, &Morton::Z_SHIFTS[0], sizeof(Morton::Z_SHIFTS));
@@ -245,8 +239,8 @@ void Renderer::init() {
         rlUpdateShaderBuffer(ssbo_constants, &data, sizeof(data), 0);
     }
 
-    float VIEW_SLICE_BEGIN[] = { 0.0f, 0.0f, 0.0f };
-    float VIEW_SLICE_END[] = { (float)XRES, (float)YRES, (float)ZRES };
+    float VIEW_SLICE_BEGIN[] = {0.0f, 0.0f, 0.0f};
+    float VIEW_SLICE_END[]   = {(float)XRES, (float)YRES, (float)ZRES};
 
     // UBO: Air constants for air render
     {
@@ -255,8 +249,8 @@ void Renderer::init() {
         air_constants_writer = new UBOWriter(air_shader.id, air_ubo, "Constants");
         glBufferData(GL_UNIFORM_BUFFER, air_constants_writer->size(), NULL, GL_STATIC_DRAW);
 
-        int32_t AIRRES[] = { (int)AIR_XRES, (int)AIR_YRES, (int)AIR_ZRES };
-        float SIMRES[] = { (float)XRES, (float)YRES, (float)ZRES };
+        int32_t AIRRES[] = {(int)AIR_XRES, (int)AIR_YRES, (int)AIR_ZRES};
+        float SIMRES[]   = {(float)XRES, (float)YRES, (float)ZRES};
 
         air_constants_writer->write_member("AIRRES", AIRRES);
         air_constants_writer->write_member("SIMRES", SIMRES);
@@ -274,8 +268,8 @@ void Renderer::init() {
         settings_writer = new UBOWriter(part_shader.id, ubo_settings, "Settings");
         glBufferData(GL_UNIFORM_BUFFER, settings_writer->size(), NULL, GL_STATIC_DRAW);
 
-        float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
-        float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
+        float BG_COLOR[] = {background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f};
+        float SH_COLOR[] = {shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f};
 
         settings_writer->write_member("MAX_RAY_STEPS", 256 * 3);
         settings_writer->write_member("DEBUG_MODE", FragDebugMode::NODEBUG);
@@ -309,20 +303,20 @@ void Renderer::set_grid_size(float size) {
     util::set_shader_value(grid_shader, grid_shader_locs.get("scale"), size);
 }
 
-void Renderer::update_settings(settings::Graphics * settings) {
-    show_octree = settings->showOctree;
-    do_blur = settings->enableBlur;
-    do_glow = settings->enableGlow;
-    do_ao = settings->enableAO;
-    do_shadows = settings->enableShadows;
+void Renderer::update_settings(settings::Graphics *settings) {
+    show_octree    = settings->showOctree;
+    do_blur        = settings->enableBlur;
+    do_glow        = settings->enableGlow;
+    do_ao          = settings->enableAO;
+    do_shadows     = settings->enableShadows;
     downscaleRatio = blurDownscaleRatio = settings->renderDownscale;
-    background_color = settings->backgroundColor;
-    shadow_color = settings->shadowColor;
+    background_color                    = settings->backgroundColor;
+    shadow_color                        = settings->shadowColor;
 
     if (settings->fullScreen != IsWindowFullscreen()) {
         if (!IsWindowFullscreen()) { // To fullscreen
-            preFullscreenWindowRes = Vector2{ (float)GetScreenWidth(), (float)GetScreenHeight() };
-            const int monitor = GetCurrentMonitor();
+            preFullscreenWindowRes = Vector2{(float)GetScreenWidth(), (float)GetScreenHeight()};
+            const int monitor      = GetCurrentMonitor();
             SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
             ToggleFullscreen();
         } else {
@@ -335,10 +329,10 @@ void Renderer::update_settings(settings::Graphics * settings) {
     settings_writer->write_member("AO_STRENGTH", settings->aoStrength);
     settings_writer->write_member("SHADOW_STRENGTH", settings->shadowStrength);
 
-    float BG_COLOR[] = { background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f };
-    float SH_COLOR[] = { shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f };
-    float VIEW_SLICE_BEGIN[] = { settings->viewSliceBegin.x, settings->viewSliceBegin.y, settings->viewSliceBegin.z };
-    float VIEW_SLICE_END[] = { settings->viewSliceEnd.x, settings->viewSliceEnd.y, settings->viewSliceEnd.z };
+    float BG_COLOR[]         = {background_color.r / 255.0f, background_color.g / 255.0f, background_color.b / 255.0f};
+    float SH_COLOR[]         = {shadow_color.r / 255.0f, shadow_color.g / 255.0f, shadow_color.b / 255.0f};
+    float VIEW_SLICE_BEGIN[] = {settings->viewSliceBegin.x, settings->viewSliceBegin.y, settings->viewSliceBegin.z};
+    float VIEW_SLICE_END[]   = {settings->viewSliceEnd.x, settings->viewSliceEnd.y, settings->viewSliceEnd.z};
 
     settings_writer->write_member("BACKGROUND_COLOR", BG_COLOR);
     settings_writer->write_member("SHADOW_COLOR", SH_COLOR);
@@ -373,13 +367,11 @@ void Renderer::update_colors_and_lod() {
     for (std::size_t i = 0; i < COLOR_DATA_CHUNK_COUNT; i++) {
         if (sim->graphics.color_data_modified[i] & ssbo_bit) {
             std::size_t lastIdx = std::min((std::size_t)(XRES * YRES * ZRES), (i + 1) * COLOR_DATA_CHUNK_SIZE);
-            std::copy(&sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE],
-                &sim->graphics.color_data[lastIdx],
-                &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
+            std::copy(&sim->graphics.color_data[i * COLOR_DATA_CHUNK_SIZE], &sim->graphics.color_data[lastIdx],
+                      &colorBuf.get<uint32_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
-            std::copy(&sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE],
-                &sim->graphics.color_flags[lastIdx],
-                &flagBuf.get<uint8_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
+            std::copy(&sim->graphics.color_flags[i * COLOR_DATA_CHUNK_SIZE], &sim->graphics.color_flags[lastIdx],
+                      &flagBuf.get<uint8_t>(0)[i * COLOR_DATA_CHUNK_SIZE]);
 
             sim->graphics.color_data_modified[i] &= ~ssbo_bit;
         }
@@ -394,11 +386,9 @@ void Renderer::update_colors_and_lod() {
             // We do not upload the whole octree here, we upload all layers except
             // the last layer, since the last layer only stores info about the 1x1x1 voxel
             // data which we already have in the form of color_data
-            std::copy(
-                &sim->graphics.octree_blocks[i].data[0],
-                &sim->graphics.octree_blocks[i].data[OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]],
-                &lodBuf.get<uint8_t>(0)[i * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]]
-            );
+            std::copy(&sim->graphics.octree_blocks[i].data[0],
+                      &sim->graphics.octree_blocks[i].data[OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]],
+                      &lodBuf.get<uint8_t>(0)[i * OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - 1]]);
             sim->graphics.octree_blocks[i].modified &= ~ssbo_bit;
         }
     }
@@ -407,23 +397,23 @@ void Renderer::update_colors_and_lod() {
     if (do_ao) {
         glBindTexture(GL_TEXTURE_3D, ao_tex[ssbo_idx]);
         constexpr unsigned int AO_VOLUME = AO_BLOCK_SIZE * AO_BLOCK_SIZE * AO_BLOCK_SIZE;
-        #pragma omp simd
+#pragma omp simd
         for (std::size_t i = 0; i < sim->graphics.ao_blocks.size(); i++)
             ao_data[i] = 255 * sim->graphics.ao_blocks[i] / AO_VOLUME;
-        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS,
-            GL_RED, GL_UNSIGNED_BYTE, ao_data);
+        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, AO_X_BLOCKS, AO_Y_BLOCKS, AO_Z_BLOCKS, GL_RED, GL_UNSIGNED_BYTE,
+                        ao_data);
     }
 
     if (do_shadows) {
         glBindTexture(GL_TEXTURE_2D, shadow_tex[ssbo_idx]);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED,
-            GL_UNSIGNED_BYTE, sim->graphics.shadow_map);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SHADOW_MAP_X, SHADOW_MAP_Y, GL_RED, GL_UNSIGNED_BYTE,
+                        sim->graphics.shadow_map);
     }
 
     if (sim->graphics.display_mode != cached_display_mode) {
         cached_display_mode = sim->graphics.display_mode;
-        ssbo_display_mode = rlLoadShaderBuffer(sizeof(SSBO_DisplayMode_t), NULL, RL_STATIC_READ);
-        SSBO_DisplayMode_t data { .display_mode = static_cast<uint32_t>(sim->graphics.display_mode) };
+        ssbo_display_mode   = rlLoadShaderBuffer(sizeof(SSBO_DisplayMode_t), NULL, RL_STATIC_READ);
+        SSBO_DisplayMode_t data{.display_mode = static_cast<uint32_t>(sim->graphics.display_mode)};
         rlUpdateShaderBuffer(ssbo_display_mode, &data, sizeof(data), 0);
     }
 }
@@ -437,45 +427,45 @@ void Renderer::draw_octree_debug() {
         int blockZ = (i / X_BLOCKS / Y_BLOCKS);
 
         for (std::size_t layer = OCTREE_BLOCK_DEPTH - 3; layer <= OCTREE_BLOCK_DEPTH; layer++) {
-        for (std::size_t dz = 0; dz < (OCTREE_BLOCK_DIM >> layer); dz++) {
-        for (std::size_t dy = 0; dy < (OCTREE_BLOCK_DIM >> layer); dy++) {
-        for (std::size_t dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
-            unsigned int morton = util::morton_decode8(dx, dy, dz);
+            for (std::size_t dz = 0; dz < (OCTREE_BLOCK_DIM >> layer); dz++) {
+                for (std::size_t dy = 0; dy < (OCTREE_BLOCK_DIM >> layer); dy++) {
+                    for (std::size_t dx = 0; dx < (OCTREE_BLOCK_DIM >> layer); dx++) {
+                        unsigned int morton = util::morton_decode8(dx, dy, dz);
 
-            if (sim->graphics.octree_blocks[i].data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {
-                float trueX = static_cast<float>((dx << layer) + blockX * OCTREE_BLOCK_DIM);
-                float trueY = static_cast<float>((dy << layer) + blockY * OCTREE_BLOCK_DIM);
-                float trueZ = static_cast<float>((dz << layer) + blockZ * OCTREE_BLOCK_DIM);
-                int size = 1 << layer;
+                        if (sim->graphics.octree_blocks[i]
+                                .data[morton + OctreeBlockMetadata::layer_offsets[OCTREE_BLOCK_DEPTH - layer]] != 0) {
+                            float trueX = static_cast<float>((dx << layer) + blockX * OCTREE_BLOCK_DIM);
+                            float trueY = static_cast<float>((dy << layer) + blockY * OCTREE_BLOCK_DIM);
+                            float trueZ = static_cast<float>((dz << layer) + blockZ * OCTREE_BLOCK_DIM);
+                            int size    = 1 << layer;
 
-                DrawCubeWires(
-                    Vector3{ trueX + size / 2, trueY + size / 2, trueZ + size / 2 },
-                    size, size, size, Color{255, 255, 255, 50}
-                );
+                            DrawCubeWires(Vector3{trueX + size / 2, trueY + size / 2, trueZ + size / 2}, size, size,
+                                          size, Color{255, 255, 255, 50});
+                        }
+                    }
+                }
             }
-        }}}}
+        }
     }
     EndMode3D();
 }
 
 void Renderer::draw() {
-    if (IsWindowResized())
-        _generate_render_textures();
+    if (IsWindowResized()) _generate_render_textures();
 
     bool displayModeChanged = sim->graphics.display_mode != cached_display_mode;
     update_colors_and_lod();
-    if (show_octree)
-        draw_octree_debug();
+    if (show_octree) draw_octree_debug();
     sim->signs.update(sim, this);
 
 #pragma region uniforms
-    const Vector2 resolution{ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    const Vector2 virtual_resolution{ (float)GetScreenWidth() / downscaleRatio,
-        (float)GetScreenHeight() / downscaleRatio };
-    const Vector2 blur_resolution{ (float)GetScreenWidth() / blurDownscaleRatio,
-        (float)GetScreenHeight() / blurDownscaleRatio };
-    const Vector2 air_resolution{ (float)GetScreenWidth() / airDownscaleRatio,
-        (float)GetScreenHeight() / airDownscaleRatio };
+    const Vector2 resolution{(float)GetScreenWidth(), (float)GetScreenHeight()};
+    const Vector2 virtual_resolution{(float)GetScreenWidth() / downscaleRatio,
+                                     (float)GetScreenHeight() / downscaleRatio};
+    const Vector2 blur_resolution{(float)GetScreenWidth() / blurDownscaleRatio,
+                                  (float)GetScreenHeight() / blurDownscaleRatio};
+    const Vector2 air_resolution{(float)GetScreenWidth() / airDownscaleRatio,
+                                 (float)GetScreenHeight() / airDownscaleRatio};
 
     // Inverse camera rotation matrix
     auto transform_mat = MatrixLookAt(cam->camera.position, cam->camera.target, cam->camera.up);
@@ -483,7 +473,7 @@ void Renderer::draw() {
     const auto transform_matT = MatrixTranspose(transform_mat);
 
     const float aspect_ratio = resolution.x / resolution.y;
-    const auto look_ray = Vector3Normalize(cam->camera.target - cam->camera.position);
+    const auto look_ray      = Vector3Normalize(cam->camera.target - cam->camera.position);
 
     // Actual 3D vectors in world space that correspond to screen RIGHT (uv1) and screen UP (uv2)
     const Vector3 uv1 = Vector3Transform(Vector3{1.0, 0.0, 0.0} * aspect_ratio, transform_matT);
@@ -515,6 +505,7 @@ void Renderer::draw() {
     // First render everything to FBO
     // which contains multiple textures for glow, blur, base, depth, etc...
     bool isPersistentDisplay = sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_PERSISTENT;
+    bool isPressureDisplay   = sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_PRESSURE;
 
     glClearColor(0, 0, 0, 0);
     rlEnableFramebuffer(base_tex.frameBuffer);
@@ -526,20 +517,20 @@ void Renderer::draw() {
 
     BeginMode3D(cam->camera);
     BeginShaderMode(part_shader);
-        util::set_shader_value(part_shader, part_shader_locs.get("heatEnabled"), sim->heat_enabled() ? 1 : 0);
-        util::set_shader_value(part_shader, part_shader_locs.get("resolution"), virtual_resolution);
-        util::set_shader_value(part_shader, part_shader_locs.get("cameraPos"), cam->camera.position);
-        util::set_shader_value(part_shader, part_shader_locs.get("cameraDir"), look_ray);
-        util::set_shader_value(part_shader, part_shader_locs.get("uv1"), uv1);
-        util::set_shader_value(part_shader, part_shader_locs.get("uv2"), uv2);
-        util::draw_dummy_triangle();
+    util::set_shader_value(part_shader, part_shader_locs.get("heatEnabled"), sim->heat_enabled() ? 1 : 0);
+    util::set_shader_value(part_shader, part_shader_locs.get("resolution"), virtual_resolution);
+    util::set_shader_value(part_shader, part_shader_locs.get("cameraPos"), cam->camera.position);
+    util::set_shader_value(part_shader, part_shader_locs.get("cameraDir"), look_ray);
+    util::set_shader_value(part_shader, part_shader_locs.get("uv1"), uv1);
+    util::set_shader_value(part_shader, part_shader_locs.get("uv2"), uv2);
+    util::draw_dummy_triangle();
 
     EndShaderMode();
     EndMode3D();
     rlDisableFramebuffer();
 
-    auto glow_tex_id = base_tex.glowOnlyTexture;
-    auto blur_tex_id = base_tex.blurOnlyTexture;
+    auto glow_tex_id    = base_tex.glowOnlyTexture;
+    auto blur_tex_id    = base_tex.blurOnlyTexture;
     bool isFancyDisplay = sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_FANCY; // Check also in part.fs
 
     if (do_glow && isFancyDisplay) {
@@ -552,71 +543,73 @@ void Renderer::draw() {
     }
 
     // Draw other render textures
-    const bool render_air = sim->air_enabled() && sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY;
-    if (render_air) { // TODO: also pressure
+    const bool render_air = sim->air_enabled() && (sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_VELOCITY ||
+                                                   sim->graphics.display_mode == DisplayMode::DISPLAY_MODE_PRESSURE);
+    if (render_air) {
         BeginTextureMode(vel_tex.target);
-            ClearBackground(BLANK);
-            rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
-            rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
-            rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
+        ClearBackground(BLANK);
+        rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
+        rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
+        rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
+        rlBindShaderBuffer(sim->air.ssbos_pv.getId(0), 4);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
 
-            BeginMode3D(cam->camera);
-            BeginShaderMode(air_shader);
+        BeginMode3D(cam->camera);
+        BeginShaderMode(air_shader);
 
-                util::set_shader_value(air_shader, air_shader_locs.get("resolution"), air_resolution);
-                util::set_shader_value(air_shader, air_shader_locs.get("cameraPos"), cam->camera.position);
-                util::set_shader_value(air_shader, air_shader_locs.get("cameraDir"), look_ray);
-                util::set_shader_value(air_shader, air_shader_locs.get("uv1"), uv1);
-                util::set_shader_value(air_shader, air_shader_locs.get("uv2"), uv2);
-                util::draw_dummy_triangle();
+        util::set_shader_value(air_shader, air_shader_locs.get("resolution"), air_resolution);
+        util::set_shader_value(air_shader, air_shader_locs.get("cameraPos"), cam->camera.position);
+        util::set_shader_value(air_shader, air_shader_locs.get("cameraDir"), look_ray);
+        util::set_shader_value(air_shader, air_shader_locs.get("uv1"), uv1);
+        util::set_shader_value(air_shader, air_shader_locs.get("uv2"), uv2);
+        util::set_shader_value(air_shader, air_shader_locs.get("pressureView"), isPressureDisplay ? 1 : 0);
+        util::draw_dummy_triangle();
 
-            EndShaderMode();
-            EndMode3D();
+        EndShaderMode();
+        EndMode3D();
         EndTextureMode();
     }
 
     // Render the above textures with a post-processing shader for compositing
     BeginMode3D(cam->camera);
-        DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
-        BeginShaderMode(post_shader);
+    DrawModel(grid_model, Vector3{XRES / 2.0f, YRES / 2.0f, ZRES / 2.0f}, 1.0f, WHITE);
+    BeginShaderMode(post_shader);
 
-            rlEnableShader(post_shader.id);
-            rlSetUniformSampler(post_shader_locs.get("baseTexture"), base_tex.colorTexture);
-            rlSetUniformSampler(post_shader_locs.get("glowTexture"), glow_tex_id);
-            rlSetUniformSampler(post_shader_locs.get("blurTexture"), blur_tex_id);
-            rlSetUniformSampler(post_shader_locs.get("depthTexture"), base_tex.depthTexture);
-            util::set_shader_value(post_shader, post_shader_locs.get("resolution"), resolution);
+    rlEnableShader(post_shader.id);
+    rlSetUniformSampler(post_shader_locs.get("baseTexture"), base_tex.colorTexture);
+    rlSetUniformSampler(post_shader_locs.get("glowTexture"), glow_tex_id);
+    rlSetUniformSampler(post_shader_locs.get("blurTexture"), blur_tex_id);
+    rlSetUniformSampler(post_shader_locs.get("depthTexture"), base_tex.depthTexture);
+    util::set_shader_value(post_shader, post_shader_locs.get("resolution"), resolution);
 
-            util::draw_dummy_triangle();
-            glBindTexture(GL_TEXTURE_2D, 0);
-            rlDisableShader();
+    util::draw_dummy_triangle();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    rlDisableShader();
 
+    EndShaderMode();
+
+    sim->signs.draw(this);
+
+    if (render_air) {
+        BeginShaderMode(depth_shader);
+        rlEnableShader(depth_shader.id);
+        rlSetUniformSampler(depth_shader_locs.get("baseTexture"), vel_tex.colorTexture);
+        rlSetUniformSampler(depth_shader_locs.get("depthTexture"), vel_tex.depthTexture);
+        util::set_shader_value(depth_shader, depth_shader_locs.get("resolution"), resolution);
+
+        util::draw_dummy_triangle();
+        glBindTexture(GL_TEXTURE_2D, 0);
+        rlDisableShader();
         EndShaderMode();
-
-        sim->signs.draw(this);
-
-        if (render_air) {
-            BeginShaderMode(depth_shader);
-                rlEnableShader(depth_shader.id);
-                rlSetUniformSampler(depth_shader_locs.get("baseTexture"), vel_tex.colorTexture);
-                rlSetUniformSampler(depth_shader_locs.get("depthTexture"), vel_tex.depthTexture);
-                util::set_shader_value(depth_shader, depth_shader_locs.get("resolution"), resolution);
-
-                util::draw_dummy_triangle();
-                glBindTexture(GL_TEXTURE_2D, 0);
-                rlDisableShader();
-            EndShaderMode();
-        }
+    }
     EndMode3D();
 
     frame_count++;
 }
 
-
 /**
  * @brief Blur a render texture
- * 
+ *
  * @param textureInId ID of the input texture, if you use Texture2D pass texture.id
  * @param resolution Resolution of the texture
  * @param blur_tex Output texture blurred image is written to
@@ -632,10 +625,10 @@ void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 reso
         // Split into 2 subpasses: horizontal and vertical
         for (int i = 0; i < 2; i++) {
             BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
-                ClearBackground(BLANK);
-                util::set_shader_value(blur_shader, blur_shader_locs.get("direction"), Vector2{ float(i), float(1 - i) });
-                rlSetUniformSampler(blur_shader_locs.get("baseTexture"), i == 0 ? textureInId : blur_tmp_tex.texture.id);
-                util::draw_dummy_triangle();
+            ClearBackground(BLANK);
+            util::set_shader_value(blur_shader, blur_shader_locs.get("direction"), Vector2{float(i), float(1 - i)});
+            rlSetUniformSampler(blur_shader_locs.get("baseTexture"), i == 0 ? textureInId : blur_tmp_tex.texture.id);
+            util::draw_dummy_triangle();
             EndTextureMode();
         }
     }

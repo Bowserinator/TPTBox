@@ -25,17 +25,10 @@ void main() {
     uint x = gl_GlobalInvocationID.x + 1;
     uint y = gl_GlobalInvocationID.y + 1;
     uint z = gl_GlobalInvocationID.z + 1;
-
-    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1 || x < 1 || y < 1 || z < 1)
-        return;
-
     uint idx_here = idx(x, y, z);
 
-    // TODO
-    // if (bmap_blockair[y][x-1] || bmap_blockair[y][x] || bmap_blockair[y][x+1])
-    // 	vx[y][x] = 0;
-    // if (bmap_blockair[y-1][x] || bmap_blockair[y][x] || bmap_blockair[y+1][x])
-    // 	vy[y][x] = 0;
+    if (x > AIRRES.x - 1 || y > AIRRES.y - 1 || z > AIRRES.z - 1 || x < 1 || y < 1 || z < 1)
+        return;
 
     vx[idx(x, y, z)] *= AIR_VELOCITY_LOSS;
     vy[idx(x, y, z)] *= AIR_VELOCITY_LOSS;
@@ -48,5 +41,11 @@ void main() {
     vz[idx_here] += (pv[idx(x, y, z - 1)] - pressure_here) * dt * 0.5;
 
     // Negate velocities near walls
-    // TODO
+    bool here_not_empty = 0 == is_empty(x, y, z);
+    if (here_not_empty || 0 == is_empty(x - 1, y, z))
+        vx[idx_here] = 0;
+    if (here_not_empty || 0 == is_empty(x, y - 1, z))
+        vy[idx_here] = 0;
+    if (here_not_empty || 0 == is_empty(x, y, z - 1))
+        vz[idx_here] = 0;
 }

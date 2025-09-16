@@ -18,10 +18,12 @@ constexpr unsigned int AIR_XRES = XRES / AIR_CELL_SIZE;
 constexpr unsigned int AIR_YRES = YRES / AIR_CELL_SIZE;
 constexpr unsigned int AIR_ZRES = ZRES / AIR_CELL_SIZE;
 
-constexpr float AIR_ADVECTION_DT             = 5;
-constexpr float AIR_PRESSURE_VEL_COUPLING_DT = 0.1;
-constexpr float AIR_VELOCITY_LOSS            = 0.9999;
-constexpr float AIR_PRESSURE_LOSS            = 0.9999;
+constexpr float AIR_ADVECTION_DT             = 1;
+constexpr float AIR_PRESSURE_VEL_COUPLING_DT = 0.8;
+constexpr float AIR_VELOCITY_LOSS            = 0.99;
+constexpr float AIR_PRESSURE_LOSS            = 0.99;
+constexpr float MAX_AIR_VELOCITY             = 32;
+constexpr float MAX_AIR_PRESSURE             = 128;
 
 class Air {
 public:

@@ -3,6 +3,7 @@
 layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
+layout(std430, binding = 4) readonly restrict buffer PV { float pv[]; };
 
 layout(shared, binding = 3) uniform Constants {
     ivec4 AIRRES;
@@ -20,6 +21,7 @@ uniform vec3 cameraDir;   // Camera look dir (normalized)
 
 uniform vec3 uv1;         // "Up" direction on screen vector mapped to world space
 uniform vec3 uv2;         // "Right" direction on screen vector mapped to world space
+uniform int pressureView;
 
 layout (location = 0) out vec4 FragColor;
 
@@ -75,16 +77,25 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel, inout ivec3 firstVoxelPos) {
             ivec3 airGridPos = voxelPos;
             uint this_idx = airGridPos.x + AIRRES.x * airGridPos.y + AIRRES.x * AIRRES.y * airGridPos.z;
 
-            vec3 this_v = vec3(
-                vx[this_idx] + vx[1 + this_idx],
-                vy[this_idx] + vy[this_idx + AIRRES.x],
-                vz[this_idx] + vz[this_idx + AIRRES.x * AIRRES.y]
-            ) / 2.0;
+            vec3 this_v;
+            float this_a;
 
-            this_v = clamp(this_v, -vec3(MAX_VEL_SCALE), vec3(MAX_VEL_SCALE)) / (MAX_VEL_SCALE);
+            if (pressureView == 1) {
+                float pressure = clamp(abs(pv[this_idx] / 5), 0, 1);
+                this_v = pv[this_idx] < 0 ? vec3(0, 0, pressure) : vec3(pressure, 0, 0);
+                this_a = pressure;
+            } else {
+                this_v = vec3(
+                    vx[this_idx] + vx[1 + this_idx],
+                    vy[this_idx] + vy[this_idx + AIRRES.x],
+                    vz[this_idx] + vz[this_idx + AIRRES.x * AIRRES.y]
+                ) / 2.0;
+
+                this_v = clamp(this_v, -vec3(MAX_VEL_SCALE), vec3(MAX_VEL_SCALE)) / (MAX_VEL_SCALE);
+                this_a = clamp(length(this_v) / STRENGTH_SCALE, 0, 1);
+            }
+
             float forwardAlphaInv = 1.0 - color.a;
-            float this_a = clamp(length(this_v) / STRENGTH_SCALE, 0, 1);
-
             color.rgb += abs(this_v) * this_a * forwardAlphaInv;
             color.a = 1.0 - forwardAlphaInv * (1.0 - this_a);
 

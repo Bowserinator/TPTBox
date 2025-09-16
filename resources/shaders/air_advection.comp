@@ -13,7 +13,8 @@ layout(std430, binding = 4) writeonly restrict buffer NVX { float new_vx[]; };
 layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
 layout(std430, binding = 7) readonly restrict buffer Walls { uint walls[]; };
-layout(std430, binding = 8) writeonly restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 8) readonly restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 9) writeonly restrict buffer NPressure { float new_pv[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -29,8 +30,10 @@ float sample_field_bilinear(vec3 pos, int field) {
     float h1 = 1.0 / float(CELL_SIZE);
     float h = float(CELL_SIZE);
 
+    // TODO: use cursed shader macros to avoid branching
     vec3 delta = vec3(h / 2.0);
-    delta[field] = 0.0;
+    if (field < 3)
+        delta[field] = 0.0;
     pos = clamp(pos, vec3(h), vec3(h) * vec3(AIRRES.xyz));
 
     uvec3 MAX_COORD = uvec3(AIRRES.xyz) - uvec3(1);
@@ -50,11 +53,16 @@ float sample_field_bilinear(vec3 pos, int field) {
         c01 = vy[idx(top.x, top.y, bot.z)] * s.x + vy[idx(bot.x, top.y, bot.z)] * t.x;
         c10 = vy[idx(top.x, bot.y, top.z)] * s.x + vy[idx(bot.x, bot.y, top.z)] * t.x;
         c11 = vy[idx(top.x, bot.y, bot.z)] * s.x + vy[idx(bot.x, bot.y, bot.z)] * t.x;
-    } else { // vz
+    } else if (field == 2) { // vz
         c00 = vz[idx(top.x, top.y, top.z)] * s.x + vz[idx(bot.x, top.y, top.z)] * t.x;
         c01 = vz[idx(top.x, top.y, bot.z)] * s.x + vz[idx(bot.x, top.y, bot.z)] * t.x;
         c10 = vz[idx(top.x, bot.y, top.z)] * s.x + vz[idx(bot.x, bot.y, top.z)] * t.x;
         c11 = vz[idx(top.x, bot.y, bot.z)] * s.x + vz[idx(bot.x, bot.y, bot.z)] * t.x;
+    } else { // pressure
+        c00 = pv[idx(top.x, top.y, top.z)] * s.x + pv[idx(bot.x, top.y, top.z)] * t.x;
+        c01 = pv[idx(top.x, top.y, bot.z)] * s.x + pv[idx(bot.x, top.y, bot.z)] * t.x;
+        c10 = pv[idx(top.x, bot.y, top.z)] * s.x + pv[idx(bot.x, bot.y, top.z)] * t.x;
+        c11 = pv[idx(top.x, bot.y, bot.z)] * s.x + pv[idx(bot.x, bot.y, bot.z)] * t.x;
     }
 
     float c0 = c00 * s.y + c10 * t.y;
@@ -65,21 +73,22 @@ float sample_field_bilinear(vec3 pos, int field) {
 float sample_vx(vec3 pos) { return sample_field_bilinear(pos, 0); }
 float sample_vy(vec3 pos) { return sample_field_bilinear(pos, 1); }
 float sample_vz(vec3 pos) { return sample_field_bilinear(pos, 2); }
+float sample_pv(vec3 pos) { return sample_field_bilinear(pos, 3); }
 
-vec3 curl(vec3 pos2) {
-    uvec3 pos = uvec3(pos2);
-    float dz_y = vz[idx(pos.x, pos.y + 1, pos.z)] - vz[idx(pos.x, pos.y - 1, pos.z)]; // sample_vz(pos + vec3(0, 1, 0)) - sample_vz(pos - vec3(0, 1, 0));
-    float dy_z = vy[idx(pos.x, pos.y, pos.z + 1)] - vy[idx(pos.x, pos.y, pos.z - 1)]; // sample_vy(pos + vec3(0, 0, 1)) - sample_vy(pos - vec3(0, 0, 1));
-    float dx_z = vx[idx(pos.x, pos.y, pos.z + 1)] - vx[idx(pos.x, pos.y, pos.z - 1)]; // sample_vx(pos + vec3(0, 0, 1)) - sample_vx(pos - vec3(0, 0, 1));
-    float dz_x = vz[idx(pos.x + 1, pos.y, pos.z)] - vz[idx(pos.x - 1, pos.y, pos.z)]; // sample_vz(pos + vec3(1, 0, 0)) - sample_vz(pos - vec3(1, 0, 0));
-    float dy_x = vy[idx(pos.x + 1, pos.y, pos.z)] - vy[idx(pos.x - 1, pos.y, pos.z)]; // sample_vy(pos + vec3(1, 0, 0)) - sample_vy(pos - vec3(1, 0, 0));
-    float dx_y = vx[idx(pos.x, pos.y + 1, pos.z)] - vx[idx(pos.x, pos.y - 1, pos.z)]; // sample_vx(pos + vec3(0, 1, 0)) - sample_vx(pos - vec3(0, 1, 0));
-    return vec3(
-        dz_y - dy_z,
-        dx_z - dz_x,
-        dy_x - dx_y
-    );
-}
+// vec3 curl(vec3 pos2) {
+//     uvec3 pos = uvec3(pos2);
+//     float dz_y = vz[idx(pos.x, pos.y + 1, pos.z)] - vz[idx(pos.x, pos.y - 1, pos.z)]; // sample_vz(pos + vec3(0, 1, 0)) - sample_vz(pos - vec3(0, 1, 0));
+//     float dy_z = vy[idx(pos.x, pos.y, pos.z + 1)] - vy[idx(pos.x, pos.y, pos.z - 1)]; // sample_vy(pos + vec3(0, 0, 1)) - sample_vy(pos - vec3(0, 0, 1));
+//     float dx_z = vx[idx(pos.x, pos.y, pos.z + 1)] - vx[idx(pos.x, pos.y, pos.z - 1)]; // sample_vx(pos + vec3(0, 0, 1)) - sample_vx(pos - vec3(0, 0, 1));
+//     float dz_x = vz[idx(pos.x + 1, pos.y, pos.z)] - vz[idx(pos.x - 1, pos.y, pos.z)]; // sample_vz(pos + vec3(1, 0, 0)) - sample_vz(pos - vec3(1, 0, 0));
+//     float dy_x = vy[idx(pos.x + 1, pos.y, pos.z)] - vy[idx(pos.x - 1, pos.y, pos.z)]; // sample_vy(pos + vec3(1, 0, 0)) - sample_vy(pos - vec3(1, 0, 0));
+//     float dx_y = vx[idx(pos.x, pos.y + 1, pos.z)] - vx[idx(pos.x, pos.y - 1, pos.z)]; // sample_vx(pos + vec3(0, 1, 0)) - sample_vx(pos - vec3(0, 1, 0));
+//     return vec3(
+//         dz_y - dy_z,
+//         dx_z - dz_x,
+//         dy_x - dx_y
+//     );
+// }
 
 void main() {
     uint x = gl_GlobalInvocationID.x + 1;
@@ -101,9 +110,9 @@ void main() {
     // Nx *= len;
     // Ny *= len;
     // Nz *= len;
-
     // vec3 curl_here = curl(vec3(x, y, z));
 
+    float h2 = 0.5;
 
     // vx
     if (is_empty(x, y, z) == 1 && is_empty(x - 1, y, z) == 1 && y < AIRRES.y - 1 && z < AIRRES.z - 1) {
@@ -112,7 +121,7 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x - 1, y, z)] + vy[idx(x, y + 1, z)] + vy[idx(x - 1, y + 1, z)]),
             0.25 * (vz[idx_here] + vz[idx(x - 1, y, z)] + vz[idx(x, y, z + 1)] + vz[idx(x - 1, y, z + 1)])
         );
-        new_vx[idx_here] = sample_vx(vec3(x, y + 0.5, z + 0.5) * CELL_SIZE - dt * vel_here);
+        new_vx[idx_here] = clamp(sample_vx(vec3(x, y + h2, z + h2) * CELL_SIZE - dt * vel_here), -MAX_AIR_VELOCITY, MAX_AIR_VELOCITY);
             // + (Ny * curl_here.z - Nz * curl_here.y) * 0.05;
     }
 
@@ -123,7 +132,7 @@ void main() {
             vy[idx_here],
             0.25 * (vz[idx_here] + vz[idx(x, y, z + 1)] + vz[idx(x, y - 1, z)] + vz[idx(x, y - 1, z + 1)])
         );
-        new_vy[idx_here] = sample_vy(vec3(x + 0.5, y, z + 0.5) * CELL_SIZE - dt * vel_here);
+        new_vy[idx_here] = clamp(sample_vy(vec3(x + h2, y, z + h2) * CELL_SIZE - dt * vel_here), -MAX_AIR_VELOCITY, MAX_AIR_VELOCITY);
             // + (Nz * curl_here.x - Nx * curl_here.z) * 0.05;
     }
 
@@ -134,9 +143,18 @@ void main() {
             0.25 * (vy[idx_here] + vy[idx(x, y + 1, z)] + vy[idx(x, y, z - 1)] + vy[idx(x, y + 1, z - 1)]),
             vz[idx_here]
         );
-        new_vz[idx_here] = sample_vz(vec3(x + 0.5, y + 0.5, z) * CELL_SIZE - dt * vel_here) ;
+        new_vz[idx_here] = clamp(sample_vz(vec3(x + h2, y + h2, z) * CELL_SIZE - dt * vel_here), -MAX_AIR_VELOCITY, MAX_AIR_VELOCITY);
             // + (Nx * curl_here.y - Ny * curl_here.x) * 0.05;
     }
+
+    // pv
+    vel_here = vec3(
+        0.5 * (vx[idx_here] + vx[idx(x + 1, y, z)]),
+        0.5 * (vy[idx_here] + vy[idx(x, y + 1, z)]),
+        0.5 * (vz[idx_here] + vz[idx(x, y, z + 1)])
+    );
+    new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE - dt * vel_here), 
+        -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 
     const uint SCALE = 2;
 

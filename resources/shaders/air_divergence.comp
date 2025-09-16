@@ -8,8 +8,10 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 layout(std430, binding = 0) restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) restrict buffer VZ { float vz[]; };
-
-layout(std430, binding = 4) restrict buffer Walls { uint walls[]; };
+layout(std430, binding = 3) restrict writeonly buffer NVX { float new_vx[]; };
+layout(std430, binding = 4) restrict writeonly buffer NVY { float new_vy[]; };
+layout(std430, binding = 5) restrict writeonly buffer NVZ { float new_vz[]; };
+layout(std430, binding = 6) restrict readonly buffer Walls { uint walls[]; };
 
 uniform int iteration;
 
@@ -43,32 +45,31 @@ void main() {
     float s5 = is_empty(x, y, z - 1);
     float s6 = is_empty(x, y, z + 1);
 
-    // Yes this can overwrite cells but *most* of the
-    // time it seems fine? Significantly speeds up the code
-    // Red-black gauss seidel is like 2x slower so we ball
+    // Use red-black gauss-siedel
     float s = s1 + s2 + s3 + s4 + s5 + s6;
     if (s == 0) return;
 
     uint this_idx = idx(x, y, z);
+    uint idx_x1 = this_idx + 1;
     uint idx_y1 = idx(x, y + 1, z);
     uint idx_z1 = idx(x, y, z + 1);
 
     float divergence =
-        vx[this_idx + 1] - vx[this_idx] +
+        vx[idx_x1] - vx[this_idx] +
         vy[idx_y1] - vy[this_idx] +
         vz[idx_z1] - vz[this_idx];
     divergence /= CELL_SIZE;
     float p = -divergence / s * (OVER_RELAXATION);
 
-    vx[this_idx] -= s1 * p;
-    vx[this_idx + 1] += s2 * p;
-    vy[this_idx] -= s3 * p;
-    vy[idx_y1] += s4 * p;
-    vz[this_idx] -= s5 * p;
-    vz[idx_z1] += s6 * p;
+    vx[this_idx] = vx[this_idx] - s1 * p;
+    vx[idx_x1]   = vx[idx_x1]   + s2 * p;
+    vy[this_idx] = vy[this_idx] - s3 * p;
+    vy[idx_y1]   = vy[idx_y1]   + s4 * p;
+    vz[this_idx] = vz[this_idx] - s5 * p;
+    vz[idx_z1]   = vz[idx_z1]   + s6 * p;
 
     if (0 == s1) vx[this_idx] = 0.0;
-    if (0 == s2) vx[this_idx + 1] = 0.0;
+    if (0 == s2) vx[idx_x1] = 0.0;
     if (0 == s3) vy[this_idx] = 0.0;
     if (0 == s4) vy[idx_y1] = 0.0;
     if (0 == s5) vz[this_idx] = 0.0;

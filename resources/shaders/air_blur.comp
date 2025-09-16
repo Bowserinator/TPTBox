@@ -7,9 +7,15 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 
 layout(std430, binding = 0) restrict buffer FieldIn { float fieldIn[]; };
 layout(std430, binding = 1) restrict buffer FieldOu { float fieldOut[]; };
+layout(std430, binding = 2) readonly restrict buffer Walls { uint walls[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
+}
+
+// Also modify in air_divergence
+uint is_empty(uint id) {
+    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
 }
 
 void main() {
@@ -24,40 +30,40 @@ void main() {
     float averagedVal = 0;
 
     // Blur kernel: e^(2 * (dx^2 + dy^2 + dz^2)) where dx,dy,dz in [-1, 1]
-    averagedVal += fieldIn[currentIdx - 1] * 0.00120819;
-    averagedVal += fieldIn[currentIdx + 0] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00120819;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00120819 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.00892736 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00120819 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 0, z - 1);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 0] * 0.06596478;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00892736;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00892736 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.06596478 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00892736 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 1, z - 1);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00120819;
-    averagedVal += fieldIn[currentIdx + 0] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00120819;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00120819 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.00892736 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00120819 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y - 1, z + 0);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 0] * 0.06596478;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00892736;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00892736 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.06596478 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00892736 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 0, z + 0);
-    averagedVal += fieldIn[currentIdx - 1] * 0.06596478;
-    averagedVal += fieldIn[currentIdx + 0] * 0.48741747;
-    averagedVal += fieldIn[currentIdx + 1] * 0.06596478;
+    averagedVal += fieldIn[currentIdx - 1] * 0.06596478 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.48741747 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.06596478 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 1, z + 0);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 0] * 0.06596478;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00892736;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00892736 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.06596478 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00892736 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y - 1, z + 1);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00120819;
-    averagedVal += fieldIn[currentIdx + 0] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00120819;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00120819 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.00892736 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00120819 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 0, z + 1);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 0] * 0.06596478;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00892736;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00892736 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.06596478 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00892736 * is_empty(currentIdx + 1);
     currentIdx = idx(x, y + 1, z + 1);
-    averagedVal += fieldIn[currentIdx - 1] * 0.00120819;
-    averagedVal += fieldIn[currentIdx + 0] * 0.00892736;
-    averagedVal += fieldIn[currentIdx + 1] * 0.00120819;
+    averagedVal += fieldIn[currentIdx - 1] * 0.00120819 * is_empty(currentIdx - 1);
+    averagedVal += fieldIn[currentIdx + 0] * 0.00892736 * is_empty(currentIdx + 0);
+    averagedVal += fieldIn[currentIdx + 1] * 0.00120819 * is_empty(currentIdx + 1);
     fieldOut[idx(x, y, z)] = averagedVal;
 }
