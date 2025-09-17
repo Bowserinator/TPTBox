@@ -544,7 +544,7 @@ void Simulation::download_heat_from_gpu() {
         heat.reset_dirty_chunks();
 
         // Apply out-of-GPU heat updates
-        for (const auto &update : heat_updates)
+        for (const auto &update : heat.heat_updates)
             if (parts[update.id].type) {
                 auto &part        = parts[update.id];
                 p_temp[update.id] = util::clampf(update.newTemp, 0.0f, MAX_TEMP);
@@ -552,7 +552,7 @@ void Simulation::download_heat_from_gpu() {
                                         GetElements()[part.type].HeatConduct);
                 do_heat_conduct(part.rx, part.ry, part.rz, update.id);
             }
-        heat_updates.clear();
+        heat.heat_updates.clear();
     }
 }
 

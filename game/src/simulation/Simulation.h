@@ -24,11 +24,6 @@
 
 enum class GravityMode { VERTICAL = 0, ZERO_G = 1, RADIAL = 2, LAST };
 
-struct PartHeatDelta {
-    part_id id;
-    float newTemp;
-};
-
 namespace settings {
 class Sim;
 }
@@ -49,8 +44,6 @@ public:
     util::Spinlock ao_zyslice_lock[ZRES][YRES];
     util::Spinlock colordata_lock[ZRES / GRAPHICS_LOCK_BLOCK_SIZE + 1][YRES / GRAPHICS_LOCK_BLOCK_SIZE + 1]
                                  [XRES / GRAPHICS_LOCK_BLOCK_SIZE + 1];
-
-    std::vector<PartHeatDelta> heat_updates;
 
     Air air;
     SimulationGol gol;

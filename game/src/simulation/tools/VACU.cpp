@@ -16,5 +16,5 @@ void Tool::Tool_VACU() {
 };
 
 static void PerformFunc(PERFORM_FUNC_ARGS) {
-    sim.air.out_of_band_air_updates.emplace_back(x, y, z, -brushStrength);
+    sim.air.out_of_band_air_updates.emplace_back(x, y, z, -brushStrength * 0.01f);
 }

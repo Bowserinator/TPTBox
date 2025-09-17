@@ -1,6 +1,7 @@
 #include "Air.h"
 #include "rlgl.h"
 #include "util/graphics/shader.h"
+#include "util/math.h"
 #include "util/string.h"
 #include "util/types/gl_time_query.h"
 
@@ -241,5 +242,6 @@ void Air::upload() {
 }
 
 void Air::add_pv(const coord_t x, const coord_t y, const coord_t z, float diff) {
-    pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] += diff;
+    pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] = util::clampf(
+        pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] + diff, -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 }

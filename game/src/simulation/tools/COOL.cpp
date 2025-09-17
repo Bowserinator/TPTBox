@@ -17,7 +17,7 @@ void Tool::Tool_COOL() {
 
 static void PerformFunc(PERFORM_FUNC_ARGS) {
     if (parts[i].type)
-        sim.heat_updates.push_back(PartHeatDelta {
+        sim.heat.heat_updates.push_back(PartHeatDelta {
             .id = i,
             .newTemp = sim.p_temp[i] - brushStrength
         });
