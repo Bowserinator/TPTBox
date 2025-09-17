@@ -27,7 +27,8 @@ layout (location = 0) out vec4 FragColor;
 
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const int MAX_RAY_STEPS = 180;
-const float MAX_VEL_SCALE = 0.1;
+const float MAX_VEL_SCALE = 0.25;
+const float MAX_PRESSURE_SCALE = 32;
 const float STRENGTH_SCALE = 3.0;
 
 // Functions
@@ -81,7 +82,7 @@ vec4 raymarch(vec3 pos, vec3 dir, bool is_vel, inout ivec3 firstVoxelPos) {
             float this_a;
 
             if (pressureView == 1) {
-                float pressure = clamp(abs(pv[this_idx] / 5), 0, 1);
+                float pressure = clamp(abs(pv[this_idx] / MAX_PRESSURE_SCALE), 0, 1);
                 this_v = pv[this_idx] < 0 ? vec3(0, 0, pressure) : vec3(pressure, 0, 0);
                 this_a = pressure;
             } else {

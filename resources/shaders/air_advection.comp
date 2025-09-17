@@ -13,6 +13,7 @@ layout(std430, binding = 4) writeonly restrict buffer NVX { float new_vx[]; };
 layout(std430, binding = 5) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVZ { float new_vz[]; };
 layout(std430, binding = 7) readonly restrict buffer Walls { uint walls[]; };
+
 layout(std430, binding = 8) readonly restrict buffer Pressure { float pv[]; };
 layout(std430, binding = 9) writeonly restrict buffer NPressure { float new_pv[]; };
 
@@ -147,17 +148,15 @@ void main() {
             // + (Nx * curl_here.y - Ny * curl_here.x) * 0.05;
     }
 
-    // pv
+    // pv: note: we go against velocity to advect pressure!
     vel_here = vec3(
         0.5 * (vx[idx_here] + vx[idx(x + 1, y, z)]),
         0.5 * (vy[idx_here] + vy[idx(x, y + 1, z)]),
         0.5 * (vz[idx_here] + vz[idx(x, y, z + 1)])
     );
-    new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE - dt * vel_here), 
-        -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
+    new_pv[idx_here] =clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE + dt * vel_here), -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 
-    const uint SCALE = 2;
-
+    // const uint SCALE = 2;
     // if ((z >= 40 / SCALE && z <= 40  / SCALE) && (y > 40  / SCALE && y < 50  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {
     //     new_vx[idx(x,y,z)] = 0.0;
     //     new_vy[idx(x,y,z)] = 50.0;

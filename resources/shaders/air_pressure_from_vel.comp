@@ -8,7 +8,8 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
 layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
 layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
-layout(std430, binding = 3) restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 3) readonly restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 4) writeonly restrict buffer NewPressure { float new_pv[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -18,13 +19,13 @@ void main() {
     uint x = gl_GlobalInvocationID.x + 1;
     uint y = gl_GlobalInvocationID.y + 1;
     uint z = gl_GlobalInvocationID.z + 1;
+    uint idx_here = idx(x, y, z);
 
-    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1 || x < 1 || y < 1 || z < 1)
+    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1)
         return;
 
-    uint idx_here = idx(x, y, z);
     float dp = vx[idx_here] - vx[idx_here + 1];
     dp += vy[idx_here] - vy[idx(x, y + 1, z)];
     dp += vz[idx_here] - vz[idx(x, y, z + 1)];
-    pv[idx_here] = pv[idx_here] * AIR_PRESSURE_LOSS + dt * dp * 0.5;
+    new_pv[idx_here] = pv[idx_here] * AIR_PRESSURE_LOSS + dt * dp * 0.5;
 }

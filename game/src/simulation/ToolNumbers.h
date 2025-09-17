@@ -1,4 +1,4 @@
-// 3465768938
+// 1664834930
 // Do not modify the hash above, it is used for determining
 // if the tool list has changed
 
@@ -20,6 +20,8 @@
 TOOL_DEFINE(HEAT,1);
 TOOL_DEFINE(COOL,2);
 TOOL_DEFINE(GOL,3);
+TOOL_DEFINE(AIR,4);
+TOOL_DEFINE(VACU,5);
 
 
 #undef TOOL_DEFINE

@@ -3,6 +3,8 @@
 #include "ElementDefs.h"
 
 #include "graphics/gradient.h"
+#include "simulation/Air.h"
+#include "simulation/SimulationDef.h"
 #include "util/math.h"
 #include "util/profiler.h"
 #include "util/simd.h"
@@ -360,10 +362,29 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
         // Air acceleration
         simd_util::mul3f_ip(part.vx, part.vy, part.vz, el.Loss);
 
-        if (air_enabled() && el.Advection) {
-            part.vx += el.Advection * air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-            part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
-            part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+        if (air_enabled()) {
+            if (el.Advection) {
+                part.vx += el.Advection * air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+                part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+                part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
+            }
+
+            if (el.HighPressureTransition != Transition::NONE &&
+                air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] > el.HighPressure) {
+                auto toType =
+                    el.HighPressureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighPressureTransition;
+                toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
+                part_change_type(i, toType);
+                return;
+            }
+            if (el.LowPressureTransition != Transition::NONE &&
+                air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] < el.LowPressure) {
+                auto toType =
+                    el.LowPressureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowPressureTransition;
+                toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
+                part_change_type(i, toType);
+                return;
+            }
         }
         if (el.AirDrag) {
             part.vx += el.AirDrag * part.vx;
@@ -439,13 +460,14 @@ void Simulation::update() {
     recalc_free_particles();
     profiler::end(0);
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        air.explode(80, 60, 80, 10); // TODO
-        air.upload(); // TODO
-    }
+    // Air upload
+    for (const auto &update : air.out_of_band_air_updates)
+        air.add_pv(update.x, update.y, update.z, update.dpressure);
+    air.out_of_band_air_updates.clear();
+    if (air_enabled()) air.upload();
 
+    // Rest
     frame_count++;
-
     graphics.display_mode_force_update = false;
     heat.changed_while_paused          = false;
     paused_last_frame                  = paused;
@@ -470,17 +492,13 @@ void Simulation::download_heat_from_gpu() {
                 if (el.HighTemperatureTransition != Transition::NONE && p_temp[i] > el.HighTemperature) {
                     toType = el.HighTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype
                                                                                   : el.HighTemperatureTransition;
-                    if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
-                        toType = 0;
-
+                    toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
                     transition = true;
                     part_change_type(i, toType);
                 } else if (el.LowTemperatureTransition != Transition::NONE && p_temp[i] < el.LowTemperature) {
                     toType = el.LowTemperatureTransition == Transition::TO_CTYPE ? parts[i].ctype
                                                                                  : el.LowTemperatureTransition;
-                    if (toType >= ELEMENT_COUNT) [[unlikely]] // Illegal transitions get deleted
-                        toType = 0;
-
+                    toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
                     transition = true;
                     part_change_type(i, toType);
                 }

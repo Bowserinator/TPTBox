@@ -6,6 +6,7 @@
 #include "SimulationDef.h"
 #include "util/graphics/shader.h"
 #include "util/types/persistent_buffer.h"
+#include <atomic>
 
 class Simulation;
 
@@ -18,12 +19,17 @@ constexpr unsigned int AIR_XRES = XRES / AIR_CELL_SIZE;
 constexpr unsigned int AIR_YRES = YRES / AIR_CELL_SIZE;
 constexpr unsigned int AIR_ZRES = ZRES / AIR_CELL_SIZE;
 
-constexpr float AIR_ADVECTION_DT             = 1;
-constexpr float AIR_PRESSURE_VEL_COUPLING_DT = 0.8;
+constexpr float AIR_ADVECTION_DT             = 0.1;
+constexpr float AIR_PRESSURE_VEL_COUPLING_DT = 0.2;
 constexpr float AIR_VELOCITY_LOSS            = 0.99;
 constexpr float AIR_PRESSURE_LOSS            = 0.99;
 constexpr float MAX_AIR_VELOCITY             = 32;
 constexpr float MAX_AIR_PRESSURE             = 128;
+
+struct AirDelta {
+    coord_t x, y, z;
+    float dpressure;
+};
 
 class Air {
 public:
@@ -32,7 +38,7 @@ public:
     void update();
     void wait_and_get();
     void upload();
-    void explode(const coord_t x, const coord_t y, const coord_t z, float diff);
+    void add_pv(const coord_t x, const coord_t y, const coord_t z, float diff);
 
     Simulation &sim;
     explicit Air(Simulation &sim);
@@ -45,16 +51,19 @@ public:
 
     uint8_t wall_map[AIR_ZRES * AIR_YRES * AIR_XRES / 8 + 1];
 
-    util::PersistentBuffer<2> ssbos_vx;
-    util::PersistentBuffer<2> ssbos_vy;
-    util::PersistentBuffer<2> ssbos_vz;
-    util::PersistentBuffer<2> ssbos_pv;
+    static constexpr size_t SSBO_COUNT = 2;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_vx;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_vy;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_vz;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_pv;
 
-    util::PersistentBuffer<2> ssbos_vx2;
-    util::PersistentBuffer<2> ssbos_vy2;
-    util::PersistentBuffer<2> ssbos_vz2;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_new_vx;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_new_vy;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_new_vz;
+    util::PersistentBuffer<SSBO_COUNT> ssbos_new_pv;
 
     util::PersistentBuffer<1> ssbos_walls;
+    std::vector<AirDelta> out_of_band_air_updates;
 
 private:
     util::TPBComputeShader divergence_shader;

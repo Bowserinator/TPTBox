@@ -23,7 +23,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y + 1;
     uint z = gl_GlobalInvocationID.z + 1;
 
-    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1 || x < 1 || y < 1 || z < 1)
+    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1)
         return;
 
     uint currentIdx = idx(x, y - 1, z - 1);

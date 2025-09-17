@@ -5,11 +5,14 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 16) in;
 
 // CELL_SIZE, AIRRES, dt, AIR_VELOCITY_LOSS injected by shader loader
 
-layout(std430, binding = 0) restrict buffer VX { float vx[]; };
-layout(std430, binding = 1) restrict buffer VY { float vy[]; };
-layout(std430, binding = 2) restrict buffer VZ { float vz[]; };
+layout(std430, binding = 0) readonly restrict buffer VX { float vx[]; };
+layout(std430, binding = 1) readonly restrict buffer VY { float vy[]; };
+layout(std430, binding = 2) readonly restrict buffer VZ { float vz[]; };
 layout(std430, binding = 3) readonly restrict buffer Walls { uint walls[]; };
-layout(std430, binding = 4) restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 4) readonly restrict buffer Pressure { float pv[]; };
+layout(std430, binding = 5) writeonly restrict buffer NVX { float new_vx[]; };
+layout(std430, binding = 6) writeonly restrict buffer NVY { float new_vy[]; };
+layout(std430, binding = 7) writeonly restrict buffer NVZ { float new_vz[]; };
 
 uint idx(uint x, uint y, uint z) {
     return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
@@ -27,25 +30,21 @@ void main() {
     uint z = gl_GlobalInvocationID.z + 1;
     uint idx_here = idx(x, y, z);
 
-    if (x > AIRRES.x - 1 || y > AIRRES.y - 1 || z > AIRRES.z - 1 || x < 1 || y < 1 || z < 1)
+    if (x >= AIRRES.x - 1 || y >= AIRRES.y - 1 || z >= AIRRES.z - 1)
         return;
-
-    vx[idx(x, y, z)] *= AIR_VELOCITY_LOSS;
-    vy[idx(x, y, z)] *= AIR_VELOCITY_LOSS;
-    vz[idx(x, y, z)] *= AIR_VELOCITY_LOSS;
 
     // Note: vel is face centered
     float pressure_here = pv[idx_here];
-    vx[idx_here] += (pv[idx_here - 1] - pressure_here) * dt * 0.5;
-    vy[idx_here] += (pv[idx(x, y - 1, z)] - pressure_here) * dt * 0.5;
-    vz[idx_here] += (pv[idx(x, y, z - 1)] - pressure_here) * dt * 0.5;
+    new_vx[idx_here] = vx[idx_here] * AIR_VELOCITY_LOSS + (pv[idx_here - 1] - pressure_here) * dt * 0.5;
+    new_vy[idx_here] = vy[idx_here] * AIR_VELOCITY_LOSS + (pv[idx(x, y - 1, z)] - pressure_here) * dt * 0.5;
+    new_vz[idx_here] = vz[idx_here] * AIR_VELOCITY_LOSS + (pv[idx(x, y, z - 1)] - pressure_here) * dt * 0.5;
 
     // Negate velocities near walls
     bool here_not_empty = 0 == is_empty(x, y, z);
     if (here_not_empty || 0 == is_empty(x - 1, y, z))
-        vx[idx_here] = 0;
+        new_vx[idx_here] = 0;
     if (here_not_empty || 0 == is_empty(x, y - 1, z))
-        vy[idx_here] = 0;
+        new_vy[idx_here] = 0;
     if (here_not_empty || 0 == is_empty(x, y, z - 1))
-        vz[idx_here] = 0;
+        new_vz[idx_here] = 0;
 }

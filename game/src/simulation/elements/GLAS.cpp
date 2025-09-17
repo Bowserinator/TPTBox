@@ -19,5 +19,8 @@ void Element::Element_GLAS() {
     HighTemperature = 200.0_C;
     HighTemperatureTransition = PT_LAVA;
 
+    HighPressure = 1.5f;
+    HighPressureTransition = PT_DUST; // TODO
+
     Weight = 100;
 };
