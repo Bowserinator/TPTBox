@@ -2,6 +2,7 @@
 #include "rlgl.h"
 #include "util/graphics/shader.h"
 #include "util/math.h"
+#include "simulation/Simulation.h"
 #include "util/string.h"
 #include "util/types/gl_time_query.h"
 
@@ -67,37 +68,37 @@ void Air::init() {
 }
 
 void Air::clear() {
+    uploaded_once = false;
     memset(vx, 0.0f, sizeof(vx));
     memset(vy, 0.0f, sizeof(vy));
     memset(vz, 0.0f, sizeof(vz));
     memset(pv, 0.0f, sizeof(pv));
     memset(wall_map, 0, sizeof(wall_map));
 
-    for (auto i = 0; i < ssbos_vx.getBufferCount(); i++) {
+    for (auto i = 0; i < SSBO_COUNT; i++) {
         ssbos_vx.wait(i);
         ssbos_vy.wait(i);
         ssbos_vz.wait(i);
         ssbos_pv.wait(i);
-
         ssbos_new_vx.wait(i);
         ssbos_new_vy.wait(i);
         ssbos_new_vz.wait(i);
         ssbos_new_pv.wait(i);
 
-        std::fill(&ssbos_vx.get<float>(i)[0], &ssbos_vx.get<float>(i)[0] + (sizeof(vx) / sizeof(vz[0][0][0])), 0.0f);
-        std::fill(&ssbos_vy.get<float>(i)[0], &ssbos_vy.get<float>(i)[0] + (sizeof(vy) / sizeof(vy[0][0][0])), 0.0f);
-        std::fill(&ssbos_vz.get<float>(i)[0], &ssbos_vz.get<float>(i)[0] + (sizeof(vz) / sizeof(vz[0][0][0])), 0.0f);
-        std::fill(&ssbos_pv.get<float>(i)[0], &ssbos_pv.get<float>(i)[0] + (sizeof(pv) / sizeof(pv[0][0][0])), 0.0f);
-        std::fill(&ssbos_new_vx.get<float>(i)[0], &ssbos_new_vx.get<float>(i)[0] + (sizeof(vx) / sizeof(vz[0][0][0])), 0.0f);
-        std::fill(&ssbos_new_vy.get<float>(i)[0], &ssbos_new_vy.get<float>(i)[0] + (sizeof(vy) / sizeof(vy[0][0][0])), 0.0f);
-        std::fill(&ssbos_new_vz.get<float>(i)[0], &ssbos_new_vz.get<float>(i)[0] + (sizeof(vz) / sizeof(vz[0][0][0])), 0.0f);
-        std::fill(&ssbos_new_pv.get<float>(i)[0], &ssbos_new_pv.get<float>(i)[0] + (sizeof(pv) / sizeof(pv[0][0][0])), 0.0f);
+        constexpr auto VEL_SIZE = (sizeof(vx) / sizeof(vz[0][0][0]));
+        std::fill(&ssbos_vx.get<float>(i)[0], &ssbos_vx.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_vy.get<float>(i)[0], &ssbos_vy.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_vz.get<float>(i)[0], &ssbos_vz.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_pv.get<float>(i)[0], &ssbos_pv.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_new_vx.get<float>(i)[0], &ssbos_new_vx.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_new_vy.get<float>(i)[0], &ssbos_new_vy.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_new_vz.get<float>(i)[0], &ssbos_new_vz.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        std::fill(&ssbos_new_pv.get<float>(i)[0], &ssbos_new_pv.get<float>(i)[0] + VEL_SIZE, 0.0f);
 
         ssbos_vx.lock(i);
         ssbos_vy.lock(i);
         ssbos_vz.lock(i);
         ssbos_pv.lock(i);
-
         ssbos_new_vx.lock(i);
         ssbos_new_vy.lock(i);
         ssbos_new_vz.lock(i);
@@ -202,24 +203,27 @@ void Air::fill_edges_and_advect_velocities() {
 }
 
 void Air::wait_and_get() {
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    ssbos_new_vx.wait(1);
-    ssbos_new_vy.wait(1);
-    ssbos_new_vz.wait(1);
-    ssbos_new_pv.wait(1);
+    if (uploaded_once) {
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        ssbos_new_vx.wait(1);
+        ssbos_new_vy.wait(1);
+        ssbos_new_vz.wait(1);
+        ssbos_new_pv.wait(1);
 
-    memcpy(&vx[0], &ssbos_new_vx.get<float>(1)[0], sizeof(vx));
-    memcpy(&vy[0], &ssbos_new_vy.get<float>(1)[0], sizeof(vy));
-    memcpy(&vz[0], &ssbos_new_vz.get<float>(1)[0], sizeof(vz));
-    memcpy(&pv[0], &ssbos_new_pv.get<float>(1)[0], sizeof(pv));
+        memcpy(&vx[0], &ssbos_new_vx.get<float>(1)[0], sizeof(vx));
+        memcpy(&vy[0], &ssbos_new_vy.get<float>(1)[0], sizeof(vy));
+        memcpy(&vz[0], &ssbos_new_vz.get<float>(1)[0], sizeof(vz));
+        memcpy(&pv[0], &ssbos_new_pv.get<float>(1)[0], sizeof(pv));
 
-    ssbos_new_pv.advance_cycle();
-    ssbos_new_vx.advance_cycle();
-    ssbos_new_vy.advance_cycle();
-    ssbos_new_vz.advance_cycle();
+        ssbos_new_pv.advance_cycle();
+        ssbos_new_vx.advance_cycle();
+        ssbos_new_vy.advance_cycle();
+        ssbos_new_vz.advance_cycle();
+    }
 }
 
 void Air::upload() {
+    uploaded_once = true;
     ssbos_pv.advance_cycle();
     ssbos_vx.advance_cycle();
     ssbos_vy.advance_cycle();
@@ -244,4 +248,12 @@ void Air::upload() {
 void Air::add_pv(const coord_t x, const coord_t y, const coord_t z, float diff) {
     pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] = util::clampf(
         pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] + diff, -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
+}
+
+void Air::add_out_of_band_update(const coord_t x, const coord_t y, const coord_t z, float diff) {
+    out_of_band_air_updates.emplace_back(x, y, z, diff);
+    if (sim.paused) {
+        add_pv(x, y, z, diff);
+        changed_while_paused = true;
+    }
 }

@@ -38,7 +38,12 @@ float sample_field_bilinear(vec3 pos, int field) {
     pos = clamp(pos, vec3(h), vec3(h) * vec3(AIRRES.xyz));
 
     uvec3 MAX_COORD = uvec3(AIRRES.xyz) - uvec3(1);
-    uvec3 top = min(uvec3((pos - delta) * h1), MAX_COORD); // top left upper corner
+    uvec3 top = uvec3((pos - delta) * h1); // top left upper corner
+
+    // Out of bounds access
+    if (clamp(top, uvec3(2), MAX_COORD - uvec3(2)) != top)
+        return 0;
+
     uvec3 bot = min(top + uvec3(1), MAX_COORD);            // opposite corner
     vec3 t = ((pos - delta) - (vec3(top) * h)) * h1;
     vec3 s = vec3(1.0) - t;
@@ -149,13 +154,22 @@ void main() {
     }
 
     // pv (note: we go against velocity if negative)
-    vel_here = vec3(
-        0.5 * (vx[idx_here] + vx[idx(x + 1, y, z)]),
-        0.5 * (vy[idx_here] + vy[idx(x, y + 1, z)]),
-        0.5 * (vz[idx_here] + vz[idx(x, y, z + 1)])
-    );
-    new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE + (pv[idx_here] < 0 ? 1 : -1) * dt * vel_here),
-        -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
+
+    // float pressure_multi = (pv[idx_here] < 0 ? 1 : -1);
+    //  + pressure_multi * dt * vel_here * 0.5
+    // sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE)
+
+    // vel_here = vec3(
+    //     0.5 * (vx[idx_here] + vx[idx(x + 1, y, z)]),
+    //     0.5 * (vy[idx_here] + vy[idx(x, y + 1, z)]),
+    //     0.5 * (vz[idx_here] + vz[idx(x, y, z + 1)])
+    // );
+    // if (pv[idx_here] < 0) {
+       
+    //     new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE - dt * vel_here), -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
+    // } else
+        // new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE + dt * vel_here), -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
+    new_pv[idx_here] = clamp(pv[idx_here], -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 
     // const uint SCALE = 2;
     // if ((z >= 40 / SCALE && z <= 40  / SCALE) && (y > 40  / SCALE && y < 50  / SCALE) && (x >= 40 / SCALE && x <= 41  / SCALE)) {

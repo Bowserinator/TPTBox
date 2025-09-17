@@ -244,17 +244,21 @@ void HUD::draw(const HUDData &data) {
             }
         }
 
-        // TODO
+        // Air HUD
         {
-            const int x          = util::clamp(rx, 0, XRES);
-            const int y          = util::clamp(ry, 0, YRES);
-            const int z          = util::clamp(rz, 0, ZRES);
+            const int x = util::clamp(rx, 0, XRES);
+            const int y = util::clamp(ry, 0, YRES);
+            const int z = util::clamp(rz, 0, ZRES);
+            int air_rows_down = 1;
+            if (idx)
+                air_rows_down = debug ? 3 : 2;
+
             const char *air_data = TextFormat(
                 "%.2f / %.2f, %.2f, %.2f", sim->air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE],
                 sim->air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
                 sim->air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE,
                 sim->air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * AIR_CELL_SIZE);
-            drawTextRAlign(TextFormat("AIR: %s", air_data), GetScreenWidth() - RHUD_X_OFFSET, 20 + 3 * OFFSET, WHITE);
+            drawTextRAlign(TextFormat("AIR: %s", air_data), GetScreenWidth() - RHUD_X_OFFSET, 20 + air_rows_down * OFFSET, WHITE);
         }
 
         // Draw the nav cube

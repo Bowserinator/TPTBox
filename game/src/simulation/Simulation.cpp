@@ -35,7 +35,6 @@ Simulation::Simulation() : paused(false), air(*this) {
     frame_count        = 0;
     parts_count        = 0;
     gravity_mode       = GravityMode::VERTICAL;
-    heat.uploaded_once = false;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
 
@@ -93,6 +92,9 @@ void Simulation::update_settings(settings::Sim *settings) {
     gravity_mode = settings->gravityMode;
     sim_thread_count =
         settings->threadCount > 0 ? settings->threadCount : std::min(omp_get_max_threads(), MAX_SIM_THREADS);
+
+    if (!settings->enableAir)
+        air.clear();
 }
 
 void Simulation::_init_can_move() {
@@ -421,6 +423,10 @@ void Simulation::update() {
         if (heat.changed_while_paused) {
             heat.changed_while_paused = false;
             heat.upload(frame_count);
+        }
+        if (air.changed_while_paused) {
+            air.changed_while_paused = false;
+            air.upload();
         }
         paused_last_frame = paused;
         return;

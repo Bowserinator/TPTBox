@@ -28,7 +28,7 @@ layout (location = 0) out vec4 FragColor;
 const float SIMBOX_CAST_PAD = 0.999; // Casting directly on the surface of the sim box (pad=1.0) leads to "z-fighting"
 const int MAX_RAY_STEPS = 180;
 const float MAX_VEL_SCALE = 0.25;
-const float MAX_PRESSURE_SCALE = 32;
+const float MAX_PRESSURE_SCALE = 8;
 const float STRENGTH_SCALE = 3.0;
 
 // Functions
