@@ -618,15 +618,14 @@ void Renderer::_blur_render_texture(unsigned int textureInId, const Vector2 reso
     BeginShaderMode(blur_shader);
     util::set_shader_value(blur_shader, blur_shader_locs.get("resolution"), resolution);
 
-    for (int pass = 0; pass < 4; pass++) {
+    for (int pass = 0; pass < 2; pass++) {
         // First pass: use textureInId, rest use output of previous pass
         if (pass > 0) textureInId = blur_tex.texture.id;
 
-        // Split into 2 subpasses: horizontal and vertical
         for (int i = 0; i < 2; i++) {
             BeginTextureMode(i == 0 ? blur_tmp_tex : blur_tex);
             ClearBackground(BLANK);
-            util::set_shader_value(blur_shader, blur_shader_locs.get("direction"), Vector2{float(i), float(1 - i)});
+            util::set_shader_value(blur_shader, blur_shader_locs.get("iteration"), i + pass * 2);
             rlSetUniformSampler(blur_shader_locs.get("baseTexture"), i == 0 ? textureInId : blur_tmp_tex.texture.id);
             util::draw_dummy_triangle();
             EndTextureMode();
