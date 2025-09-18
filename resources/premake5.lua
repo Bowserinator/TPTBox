@@ -5,7 +5,40 @@ local function concatArray(a, b)
     return result
 end
 
+local function minifyShader(shader_code)
+    return shader_code
+        :gsub("\r\n", "\n")
+        :gsub("//[^\n\r]*", "") -- Remove comments
+        -- :gsub("[\n\r]", "") -- Condense all code to 1 line, removed for easier shader macro support
+        :gsub("\n%s*\n", "\n")
+        :gsub("  ", " ")
+        :gsub("%;[ ]+", ";") -- naive minification
+end
+
+local function importBlock(fpath, subblock)
+    local f = io.open(fpath, "r")
+    local shader_code = f:read("*all")
+    local expected = "#startblock " .. subblock
+    local in_block = false
+    local out = ""
+
+    for line in string.gmatch(shader_code,'[^\r\n]+') do
+        if line:sub(1, #expected) == expected then
+            in_block = true
+        elseif in_block and line ~= "#endblock" then
+            out = out .. line .. "\n"
+        elseif in_block and line == "#endblock" then
+            return minifyShader(out:gsub('[ \t]+%f[\r\n%z]', ''))
+        end
+    end
+    error("Unable to find " .. fpath .. ":" .. subblock)
+end
+
 local function generateEmbeddedShader(fpath)
+    if string.match(fpath, "/imports/") then -- imports, not standalone shaders
+        return
+    end
+
     local outpath = "shaders/generated/" .. path.getname(fpath) .. ".h"
     local var_name = path.getname(fpath):gsub("%.", "_") .. "_source"
 
@@ -25,13 +58,7 @@ local function generateEmbeddedShader(fpath)
     -- Regenerate shader header if changed
     if oldhash ~= newhash then
         print("Regenerating shader", fpath)
-        shader_code = shader_code
-            :gsub("\r\n", "\n")
-            :gsub("//[^\n\r]*", "") -- Remove comments
-            -- :gsub("[\n\r]", "") -- Condense all code to 1 line, removed for easier shader macro support
-            :gsub("\n%s*\n", "\n")
-            :gsub("  ", " ")
-            :gsub("%;[ ]+", ";") -- naive minification
+        shader_code = minifyShader(shader_code)
 
         symbols = { "{", "}", "(", ")", ",", "=", "<", ">", "<=", ">=", "!=", "==", "*", "/", "+", "-", "&", "<<", ">>", ">>=", "<<=", "^", "?" }
         for _, symbol in ipairs(symbols) do
@@ -42,14 +69,32 @@ local function generateEmbeddedShader(fpath)
             shader_code = shader_code:gsub("%#version " .. version, "#version " .. version .. "\n")
         end
 
+        -- Macro replacement
+        local to_replace = {}
+        local prefix = "#import "
+        for line in string.gmatch(shader_code,'[^\r\n]+') do
+            if line:sub(1, #prefix) == prefix then
+                to_replace[#to_replace + 1] = line:sub(#prefix + 1);
+            end
+        end
+
+        for _, import in ipairs(to_replace) do
+            local tokens = {}
+            for i in string.gmatch(import, "[^:]+") do
+                tokens[#tokens + 1] = i
+            end
+            imported = importBlock("shaders/imports/" .. tokens[1], tokens[2])
+            shader_code = shader_code:gsub("\n#import " .. import .. "\n", "\n" .. imported)
+        end
+
         shader_code = newhash .. "\n" ..
             "// This file is auto-generated! Your edits will not be saved\n" ..
             "#ifdef EMBED_SHADERS\n" ..
-            "util::TPBShaderSourceCode " .. var_name .. " = R\"(\n" ..
+            "util::TPBShaderSourceCode " .. var_name .. "{\"" .. fpath .. "\", R\"(\n" ..
             shader_code ..
-            ")\";\n" ..
+            ")\"};\n" ..
             "#else\n" ..
-            "util::TPBShaderSourceCode " .. var_name .. " = util::load_text_file(\"resources/" .. fpath .. "\");\n" ..
+            "util::TPBShaderSourceCode " .. var_name .. "{\"" .. fpath .. "\", util::load_text_file(\"resources/" .. fpath .. "\")};\n" ..
             "#endif\n"
 
         local f = io.open(outpath, "w")

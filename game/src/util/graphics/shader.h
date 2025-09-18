@@ -25,7 +25,7 @@ public:
     enum Restriction { NONE, READONLY, WRITEONLY };
     using glsl_base_t = std::variant<bool, int32_t, uint32_t, float, double>;
 
-    TPBShaderSourceCode(const std::string &src);
+    TPBShaderSourceCode(const std::string &fname, const std::string &src);
 
     /// @brief Update the internal code
     TPBShaderSourceCode &update();
@@ -58,6 +58,7 @@ public:
 
     [[nodiscard]] operator std::string() const { return m_code; }
     [[nodiscard]] operator const char *() const { return m_code.c_str(); }
+    [[nodiscard]] std::string fname() const { return m_fname; }
 
     /// @brief Get glsl type name for base type, ie `12.5f` -> `"float"`
     inline static const char *glsl_t_to_name(const glsl_base_t &val) {
@@ -69,6 +70,7 @@ public:
     }
 
 private:
+    std::string m_fname;
     std::string m_code;
     std::vector<std::string> m_more_lines;
 };

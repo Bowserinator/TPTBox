@@ -18,15 +18,8 @@ uniform int iteration;
 // omega < 2 to guarantee convergence
 const float OVER_RELAXATION = 1.97;
 
-uint idx(uint x, uint y, uint z) {
-    return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
-}
-
-// Also modify in air_advection
-uint is_empty(uint x, uint y, uint z) {
-    uint id = idx(x, y, z);
-    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
-}
+#import air.comp:air_idx
+#import air.comp:air_is_empty
 
 void main() {
     uint x = gl_GlobalInvocationID.x + 2;

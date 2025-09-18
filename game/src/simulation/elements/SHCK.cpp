@@ -46,7 +46,7 @@ static int update(UPDATE_FUNC_ARGS) {
                 if (!dx && !dy && !dz) continue;
                 r = sim.pmap[z + dz][y + dy][x + dx];
                 if (r && TYP(r) != PT_SHCK) {
-                    sim.air.add_pv(x, y, z, -15);
+                    sim.air.add_pv(x, y, z, 15);
                     sim.kill_part(i);
                     return -1;
                 }

@@ -17,15 +17,8 @@ layout(std430, binding = 7) readonly restrict buffer Walls { uint walls[]; };
 layout(std430, binding = 8) readonly restrict buffer Pressure { float pv[]; };
 layout(std430, binding = 9) writeonly restrict buffer NPressure { float new_pv[]; };
 
-uint idx(uint x, uint y, uint z) {
-    return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
-}
-
-// Also modify in air_divergence
-uint is_empty(uint x, uint y, uint z) {
-    uint id = idx(x, y, z);
-    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
-}
+#import air.comp:air_idx
+#import air.comp:air_is_empty
 
 float sample_field_bilinear(vec3 pos, int field) {
     float h1 = 1.0 / float(CELL_SIZE);
@@ -152,23 +145,6 @@ void main() {
         new_vz[idx_here] = clamp(sample_vz(vec3(x + h2, y + h2, z) * CELL_SIZE - dt * vel_here), -MAX_AIR_VELOCITY, MAX_AIR_VELOCITY);
             // + (Nx * curl_here.y - Ny * curl_here.x) * 0.05;
     }
-
-    // pv (note: we go against velocity if negative)
-
-    // float pressure_multi = (pv[idx_here] < 0 ? 1 : -1);
-    //  + pressure_multi * dt * vel_here * 0.5
-    // sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE)
-
-    // vel_here = vec3(
-    //     0.5 * (vx[idx_here] + vx[idx(x + 1, y, z)]),
-    //     0.5 * (vy[idx_here] + vy[idx(x, y + 1, z)]),
-    //     0.5 * (vz[idx_here] + vz[idx(x, y, z + 1)])
-    // );
-    // if (pv[idx_here] < 0) {
-       
-    //     new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE - dt * vel_here), -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
-    // } else
-        // new_pv[idx_here] = clamp(sample_pv(vec3(x + h2, y + h2, z + h2) * CELL_SIZE + dt * vel_here), -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
     new_pv[idx_here] = clamp(pv[idx_here], -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 
     // const uint SCALE = 2;
@@ -182,12 +158,4 @@ void main() {
     //     new_vy[idx(x,y,z)] = -50.0;
     //     new_vz[idx(x,y,z)] = 0.0;
     // }
-
-    // Lower velocity on edges
-    // if (x <= 1 || x >= AIRRES.x - 2)
-    //     new_vx[idx_here] = 0.0;
-    // if (y <= 1 || y >= AIRRES.y - 2)
-    //     new_vy[idx_here] = 0.0;
-    // if (z <= 1 || z >= AIRRES.z - 2)
-    //     new_vz[idx_here] = 0.0;
 }

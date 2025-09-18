@@ -10,7 +10,7 @@
 
 class Simulation;
 
-constexpr unsigned int AIR_CELL_SIZE = 4;
+constexpr unsigned int AIR_CELL_SIZE = 8;
 static_assert(XRES % AIR_CELL_SIZE == 0, "XRES must be divisible by AIR_CELL_SIZE");
 static_assert(YRES % AIR_CELL_SIZE == 0, "YRES must be divisible by AIR_CELL_SIZE");
 static_assert(ZRES % AIR_CELL_SIZE == 0, "ZRES must be divisible by AIR_CELL_SIZE");
@@ -59,7 +59,7 @@ public:
     uint8_t wall_map[AIR_ZRES * AIR_YRES * AIR_XRES / 8 + 1];
 
     // ssbos, public for renderer
-    static constexpr size_t SSBO_COUNT = 2;
+    static constexpr size_t SSBO_COUNT = 4;
     util::PersistentBuffer<SSBO_COUNT> ssbos_vx;
     util::PersistentBuffer<SSBO_COUNT> ssbos_vy;
     util::PersistentBuffer<SSBO_COUNT> ssbos_vz;

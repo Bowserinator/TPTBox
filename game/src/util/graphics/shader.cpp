@@ -3,8 +3,83 @@
 
 #include <sstream>
 #include <string>
+#ifndef EMBED_SHADERS
+#include "util/string.h"
+#include <set>
 
-util::TPBShaderSourceCode::TPBShaderSourceCode(const std::string &code) : m_code(code) {}
+#ifdef DEBUG
+#include <regex>
+#endif
+#endif
+
+util::TPBShaderSourceCode::TPBShaderSourceCode(const std::string &fname, const std::string &code)
+    : m_fname(fname), m_code(code) {
+#ifndef EMBED_SHADERS
+
+    std::istringstream ss(m_code);
+    std::string line, out;
+
+#ifdef DEBUG
+    std::smatch layout_match;
+    std::regex layout_regex("layout\\(.*?binding\\s*=\\s*(\\d+).*?\\)");
+    std::set<int> seen_bindings;
+#endif
+    std::map<std::string, std::set<std::string>> import_lines;
+
+    while (std::getline(ss, line)) {
+#ifdef DEBUG
+        // Check for duplicate binding= definitions
+        if (std::regex_search(line, layout_match, layout_regex)) {
+            int binding = std::stoi(layout_match[1]);
+            if (seen_bindings.contains(binding))
+                throw std::runtime_error(std::format("[{}]: Duplicate binding {}", m_fname, binding));
+            seen_bindings.insert(binding);
+        }
+#endif
+
+        // Check for #import
+        if (line.starts_with("#import ")) {
+            line                    = line.substr(line.find(' ') + 1);
+            auto colon              = line.find(':');
+            const std::string fname = line.substr(0, colon);
+            const std::string block = line.substr(colon + 1);
+            import_lines[fname].insert(block);
+        }
+    }
+
+    // Parse imports
+    for (const auto &[fname, blocks] : import_lines) {
+        std::map<std::string, std::string> block2code;
+        const std::string contents = util::load_text_file("resources/shaders/imports/" + fname);
+
+        std::istringstream ss(contents);
+        std::string line, code_block = "", current_block = "";
+        while (std::getline(ss, line)) {
+            if (line.starts_with("#startblock ")) {
+                current_block = line.substr(line.find(' ') + 1);
+            } else if (!current_block.empty()) {
+                if (line == "#endblock") {
+                    block2code[current_block] = code_block;
+                    current_block             = "";
+                    code_block                = "";
+                } else {
+                    code_block += line;
+                    code_block += '\n';
+                }
+            }
+        }
+
+        for (const auto &block : blocks) {
+            const auto import_line = std::format("#import {}:{}", fname, block);
+            size_t pos             = m_code.find(import_line);
+            while (pos != std::string::npos) {
+                m_code.replace(pos, import_line.size(), block2code.at(block));
+                pos = m_code.find(import_line, pos + import_line.size());
+            }
+        }
+    }
+#endif
+}
 
 auto util::TPBShaderSourceCode::update() -> TPBShaderSourceCode & {
     if (m_more_lines.empty()) return *this;
@@ -25,7 +100,7 @@ auto util::TPBShaderSourceCode::update() -> TPBShaderSourceCode & {
 }
 
 auto util::TPBShaderSourceCode::add_binding(unsigned int binding, const std::string &members, Restriction restrictions,
-                                        const std::string_view layout) -> TPBShaderSourceCode & {
+                                            const std::string_view layout) -> TPBShaderSourceCode & {
     std::string modifiers;
     switch (restrictions) {
     case NONE:      modifiers = ""; break;
@@ -52,13 +127,13 @@ util::TPBComputeShader::TPBComputeShader(const std::string &program) {
 
 int util::UniformManager::get(const std::string &name) {
     auto itr = m_uniform_locs.find(name);
-    if (itr != m_uniform_locs.end())
-        return itr->second;
+    if (itr != m_uniform_locs.end()) return itr->second;
     int res = GetShaderLocation(*m_shader, name.c_str());
-    #ifdef DEBUG
+#ifdef DEBUG
     if (res < 0)
-        throw std::out_of_range(std::format("Uniform = '{}' does not exist for shader id= '{}'", name, m_shader->get().id));
-    #endif
+        throw std::out_of_range(
+            std::format("Uniform = '{}' does not exist for shader id= '{}'", name, m_shader->get().id));
+#endif
     m_uniform_locs[name] = res;
     return res;
 }

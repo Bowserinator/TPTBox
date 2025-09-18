@@ -14,15 +14,8 @@ layout(std430, binding = 5) writeonly restrict buffer NVX { float new_vx[]; };
 layout(std430, binding = 6) writeonly restrict buffer NVY { float new_vy[]; };
 layout(std430, binding = 7) writeonly restrict buffer NVZ { float new_vz[]; };
 
-uint idx(uint x, uint y, uint z) {
-    return x + y * AIRRES.x + z * AIRRES.y * AIRRES.x;
-}
-
-// Also modify in air_divergence
-uint is_empty(uint x, uint y, uint z) {
-    uint id = idx(x, y, z);
-    return (walls[id >> 5] & (1 << (id & 31))) > 0 ? 0 : 1;
-}
+#import air.comp:air_idx
+#import air.comp:air_is_empty
 
 void main() {
     uint x = gl_GlobalInvocationID.x + 1;
