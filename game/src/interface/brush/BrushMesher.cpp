@@ -13,8 +13,11 @@
 
 BrushFaceModels BrushFaceModels::GenBrushModel(const Brush &brush, Vector3T<int> size) {
     if (!IsShaderReady(brush_model_shader)) {
-#include "../resources/shaders/generated/brush_clip.fs.h"
-#include "../resources/shaders/generated/brush_clip.vs.h"
+#include "../../resources/shaders/generated/brush_clip.fs.h"
+#include "../../resources/shaders/generated/brush_clip.vs.h"
+        brush_clip_vs_source.add_const("SIM_PADDING", SIM_PADDING | as<float>);
+        brush_clip_vs_source.update();
+
         brush_model_shader      = LoadShaderFromMemory(brush_clip_vs_source, brush_clip_fs_source);
         brush_model_shader_locs = util::UniformManager{brush_model_shader};
 

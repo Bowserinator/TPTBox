@@ -1,6 +1,7 @@
 #include "Brush.h"
 #include "simulation/Simulation.h"
 #include "../settings/data/SettingsData.h"
+#include "simulation/SimulationDef.h"
 #include "simulation/ToolClasses.h"
 #include "render/camera/camera.h"
 #include "render/Renderer.h"
@@ -122,9 +123,9 @@ void BrushRenderer::do_controls(Simulation * sim) {
 
             if (click_locations.size() == brush_shape_tool->points_required) {
                 for (auto &loc : click_locations) {
-                    loc.loc.x = util::clamp(loc.loc.x, 1, XRES - 2);
-                    loc.loc.y = util::clamp(loc.loc.y, 1, YRES - 2);
-                    loc.loc.z = util::clamp(loc.loc.z, 1, ZRES - 2);
+                    loc.loc.x = util::clamp(loc.loc.x, SIM_PADDING, XRES - SIM_PADDING - 1);
+                    loc.loc.y = util::clamp(loc.loc.y, SIM_PADDING, YRES - SIM_PADDING - 1);
+                    loc.loc.z = util::clamp(loc.loc.z, SIM_PADDING, ZRES - SIM_PADDING - 1);
                 }
                 brush_shape_tool->operation(click_locations, this, sim,
                     !(tool_mode || is_delete_mode()));
@@ -216,8 +217,8 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     // that's actually in the cube
     if (REVERSE_BOUNDS_CHECK(cx, cy, cz)) {
         const BoundingBox simulationBounds {
-            .min = Vector3{ 1.0f, 1.0f, 1.0f },
-            .max = Vector3{ XRES - 2.0f, YRES - 2.0f, ZRES - 2.0f }
+            .min = Vector3{ SIM_PADDING, SIM_PADDING, SIM_PADDING },
+            .max = Vector3{ XRES - SIM_PADDING - 1.0f, YRES - SIM_PADDING - 1.0f, ZRES - SIM_PADDING - 2.0f }
         };
         const auto collide = GetRayCollisionBox(ray, simulationBounds);
 

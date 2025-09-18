@@ -110,7 +110,7 @@ public:
     // Whether to figure out which faces collided with (true)
     // whether to return space before collision (false) or the position of the particle ray collided with (true)
     template <bool compute_faces, bool take_intersect>
-    bool raycast(const RaycastInput &in, RaycastOutput &out, const auto pmapOccupied) const;
+    bool raycast(const RaycastInput &in, RaycastOutput &out, auto&& pmapOccupied) const;
 
     [[nodiscard]] PartSwapBehavior eval_move(const part_id idx, const coord_t nx, const coord_t ny,
                                              const coord_t nz) const;
@@ -134,6 +134,7 @@ private:
     void _raycast_movement(const part_id idx, const coord_t x, const coord_t y, const coord_t z);
     void _force_update_all_shadows();
     void _set_default_properties(const part_id idx, const DefaultParticleProperties &def);
+    void _reset_y_ranges();
 };
 
 /**
@@ -151,7 +152,7 @@ private:
  * @return Whether it terminated because it hit a voxel (true if yes)
  */
 template <bool compute_faces = false, bool take_intersect = false>
-bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, const auto pmapOccupied) const {
+bool Simulation::raycast(const RaycastInput &in, RaycastOutput &out, auto&& pmapOccupied) const {
     // For raycasts that stop early, ie right on the next frame, we can simply check
     // if there's a particle in the direction of the greatest velocity. This saves
     // ~5ms per frame on a grid of 350k water particles

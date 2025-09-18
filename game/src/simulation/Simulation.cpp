@@ -26,15 +26,14 @@ Simulation::Simulation() : paused(false), air(*this) {
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
-    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
-    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
+    _reset_y_ranges();
     // std::fill(&parts[0], &parts[NPARTS], 0);
 
-    pfree              = 1;
-    maxId              = 0;
-    frame_count        = 0;
-    parts_count        = 0;
-    gravity_mode       = GravityMode::VERTICAL;
+    pfree        = 1;
+    maxId        = 0;
+    frame_count  = 0;
+    parts_count  = 0;
+    gravity_mode = GravityMode::VERTICAL;
 
     // gravity_mode = GravityMode::RADIAL; // TODO
 
@@ -69,8 +68,7 @@ void Simulation::reset() {
     memset(&pmap[0][0][0], 0, sizeof(pmap));
     memset(&photons[0][0][0], 0, sizeof(photons));
 
-    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
-    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
+    _reset_y_ranges();
     memset(reinterpret_cast<void *>(&parts), 0, sizeof(parts));
 
     pfree        = 1;
@@ -93,8 +91,7 @@ void Simulation::update_settings(settings::Sim *settings) {
     sim_thread_count =
         settings->threadCount > 0 ? settings->threadCount : std::min(omp_get_max_threads(), MAX_SIM_THREADS);
 
-    if (!settings->enableAir)
-        air.clear();
+    if (!settings->enableAir) air.clear();
 }
 
 void Simulation::_init_can_move() {
@@ -273,13 +270,13 @@ bool Simulation::part_change_type(const part_id i, const part_type new_type) {
 }
 
 void Simulation::update_zslice(const coord_t pz) {
-    if (pz < 1 || pz >= ZRES - 1) return;
+    if (pz < SIM_PADDING || pz >= ZRES - SIM_PADDING) return;
 
     // Dirty rect does not have any impact on performance
     // for these sizes of YRES / XRES (could slow/speed up by a factor of a few ns)
     coord_t y1, y2;
-    coord_t golz2 = (pz - 1) == 1 ? 0 : pz - 1;
-    coord_t golz3 = (pz + 1) == ZRES - 1 ? 0 : pz + 1; // TODO
+    coord_t golz2 = (pz - 1) == SIM_PADDING ? 0 : pz - 1;
+    coord_t golz3 = (pz + 1) == ZRES - SIM_PADDING ? 0 : pz + 1; // TODO
 
     // No GOL, can use smaller dirty rect
     if (!gol.z_slice_has_gol[pz] && !gol.z_slice_has_gol[golz2] && !gol.z_slice_has_gol[golz3]) {
@@ -289,13 +286,13 @@ void Simulation::update_zslice(const coord_t pz) {
         // Dirty rect is ignored to allow GOL to propagate
         // As GOL can wrap around this is the easiest way to prevent
         // synchronization errors with gol_map (Believe me I tried)
-        y1 = 1;
-        y2 = YRES - 1;
+        y1 = SIM_PADDING;
+        y2 = YRES - SIM_PADDING;
     }
 
     coord_t px, py;
     for (ReversibleRange r1(y1, y2, py, (frame_count >> 1) & 1); r1.has_next(); py = r1.next())
-        for (ReversibleRange r2(1, XRES - 1, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
+        for (ReversibleRange r2(SIM_PADDING, XRES - SIM_PADDING, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
             if (pmap[pz][py][px]) {
                 if (TYP(pmap[pz][py][px]) == PT_GOL) {
                     auto id = ID(pmap[pz][py][px]);
@@ -521,13 +518,14 @@ void Simulation::download_heat_from_gpu() {
 
         if (heat.get_download_dirty_ratio() < 0.02) {
 #pragma omp parallel for schedule(static)
-            for (auto z = 1; z < ZRES - 1; z++)
+            for (auto z = SIM_PADDING; z < ZRES - SIM_PADDING; z++)
                 for (auto by = 0; by < SIM_HEAT_YBLOCKS; by++) {
                     if (!heat.upload_download_dirty[z * SIM_HEAT_YBLOCKS + by]) continue;
 
                     int y_ = by * SIM_HEAT_DIRTY_BLOCK_SIZE; // Actual y value in [0, YRES)
-                    for (auto y = std::max(y_, 1); y < std::min(y_ + SIM_HEAT_DIRTY_BLOCK_SIZE, (int)(YRES - 1)); y++)
-                        for (auto x = 1; x < XRES - 1; x++) {
+                    for (auto y = std::max(y_, SIM_PADDING);
+                         y < std::min(y_ + SIM_HEAT_DIRTY_BLOCK_SIZE, (int)(YRES - SIM_PADDING)); y++)
+                        for (auto x = SIM_PADDING; x < XRES - SIM_PADDING; x++) {
                             if (heat.heat_map[z][y][x] < 0) continue;
                             if (pmap[z][y][x]) do_heat_conduct(x, y, z, ID(pmap[z][y][x]));
                             if (photons[z][y][x]) do_heat_conduct(x, y, z, ID(photons[z][y][x]));
@@ -566,8 +564,7 @@ void Simulation::recalc_free_particles() {
     parts_count      = 0;
     part_id newMaxId = 0;
 
-    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - 1);
-    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), 1);
+    _reset_y_ranges();
     memset(&graphics.shadow_map[0][0], 0, sizeof(graphics.shadow_map));
     graphics.ao_blocks.fill(0);
     gol.z_slice_has_gol.fill(false);
@@ -753,6 +750,11 @@ void Simulation::_set_color_data_at(const coord_t x, const coord_t y, const coor
         tree.insert(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
     else
         tree.remove(x & (OCTREE_BLOCK_DIM - 1), y & (OCTREE_BLOCK_DIM - 1), z & (OCTREE_BLOCK_DIM - 1));
+}
+
+void Simulation::_reset_y_ranges() {
+    std::fill(std::begin(max_y_per_zslice), std::end(max_y_per_zslice), YRES - SIM_PADDING);
+    std::fill(std::begin(min_y_per_zslice), std::end(min_y_per_zslice), SIM_PADDING);
 }
 
 void Simulation::_update_shadow_map(const coord_t x, const coord_t y, const coord_t z) {

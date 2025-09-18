@@ -1,31 +1,31 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "screens.h"
 #include "rlgl.h"
+#include "screens.h"
 #include <glad.h>
 
+#include "simulation/SimulationDef.h"
 #include "src/globals.h"
-#include "src/simulation/ElementClasses.h"
-#include "src/interface/brush/Preview.h"
 #include "src/interface/EventConsumer.h"
 #include "src/interface/FrameTimeAvg.h"
+#include "src/interface/brush/Preview.h"
 #include "src/interface/settings/data/SettingsData.h"
+#include "src/simulation/ElementClasses.h"
 
 #include <algorithm>
 
-static double simTime = 0.0f;
+static double simTime  = 0.0f;
 static double drawTime = 0.0f;
-static double fps = 1.0f;
+static double fps      = 1.0f;
 
 void ScreenGameplay::init() {
-    render_camera = RenderCamera(); // Definition required
+    render_camera                 = RenderCamera();                              // Definition required
     render_camera.camera.position = Vector3{XRES * 1.5f, YRES / 2, ZRES * 1.5f}; // Camera position
-    render_camera.camera.target = Vector3{XRES / 2, YRES / 2, ZRES / 2};      // Camera looking at point
-    render_camera.camera.up = Vector3{0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
-    render_camera.camera.fovy = 45.0f;
-    render_camera.setBounds(
-        Vector3{ -3.0f * XRES, -3.0f * YRES, -3.0f * ZRES },
-        Vector3{ 4.0f * XRES, 4.0f * YRES, 4.0f * ZRES });
+    render_camera.camera.target   = Vector3{XRES / 2, YRES / 2, ZRES / 2};       // Camera looking at point
+    render_camera.camera.up       = Vector3{0.0f, 1.0f, 0.0f}; // Camera up vector (rotation towards target)
+    render_camera.camera.fovy     = 45.0f;
+    render_camera.setBounds(Vector3{-3.0f * XRES, -3.0f * YRES, -3.0f * ZRES},
+                            Vector3{4.0f * XRES, 4.0f * YRES, 4.0f * ZRES});
 
     hud.init();
     hud.setState(HUDState::DEBUG_MODE);
@@ -38,19 +38,17 @@ void ScreenGameplay::init() {
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
 
-
-
     // Create staircase
-    // for (int x = 0; x < XRES; x++) 
+    // for (int x = 0; x < XRES; x++)
     // for (int z = 0; z < ZRES; z++)
     //     sim.create_part(x, 50 + (x / (XRES / 2)), z, 4);
 
-    // for (int x = 1; x < XRES / 2; x++) 
+    // for (int x = 1; x < XRES / 2; x++)
     // for (int z = 1; z < ZRES / 2; z++)
     // for (int y = 51; y < 70; y++)
     //     sim.create_part(x, y, z, 3);
 
-    // for (int x = 10; x < XRES - 1; x++) 
+    // for (int x = 10; x < XRES - 1; x++)
     // for (int z = 10; z < 15; z++)
     // for (int y = 51; y < 120; y++) {
     //     int i = sim.create_part(x, y, z, PT_PHOT);
@@ -58,19 +56,19 @@ void ScreenGameplay::init() {
     //     sim.parts[i].vx = sim.parts[i].vy = 0.0f;
     // }
 
-    for (int x = 1; x < XRES - 1; x++) 
-    for (int z = 1; z < ZRES - 1; z++)
-    for (int y = 1; y < 10; y++) {
-        // sim.create_part(x, y, z, PT_DUST);
-        sim.create_part(x, y, z, PT_WATR);
+    for (int x = SIM_PADDING; x < XRES - SIM_PADDING - 1; x++)
+        for (int z = SIM_PADDING; z < ZRES - SIM_PADDING - 1; z++)
+            for (int y = SIM_PADDING; y < 10 + SIM_PADDING - 1; y++) {
+                // sim.create_part(x, y, z, PT_DUST);
+                sim.create_part(x, y, z, PT_WATR);
 
-        sim.create_part(x, y + 50, z, PT_GLAS);
-    }
-    sim.create_part(10, 10, 11, PT_FIRE);
+                sim.create_part(x, y + 50, z, PT_GLAS);
+            }
+    // sim.create_part(10, 10, 11, PT_FIRE);
 
     // Demo -------------
     auto tmp = GenImageColor(200, 200, BLACK);
-    ImageDrawText(&tmp,  "THE POWDER BOX", 5.0f, 70.0f, 20.0f, WHITE);
+    ImageDrawText(&tmp, "THE POWDER BOX", 5.0f, 70.0f, 20.0f, WHITE);
 
     // for (int y = 0; y < YRES; y++) {
     //     for (int x = 0; x < XRES; x++) {
@@ -83,7 +81,7 @@ void ScreenGameplay::init() {
     sim.set_paused(true);
     // Demo end
 
-    // for (int x = 1; x < XRES - 1; x++) 
+    // for (int x = 1; x < XRES - 1; x++)
     // for (int z = 1; z < ZRES - 1; z++)
     // for (int y = 1; y < 20; y++) {
     //     if (x > XRES / 2 && y > 10) continue;
@@ -93,12 +91,11 @@ void ScreenGameplay::init() {
     //         sim.create_part(x, y, z, PT_WATR);
     // }
 
-
     for (auto z = 6; z < AIR_ZRES / 2; z++)
-    for (auto y = 6; y < AIR_YRES / 2; y++)
-    for (auto x = 6; x < AIR_XRES / 2; x++) {
-        // sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
-    }
+        for (auto y = 6; y < AIR_YRES / 2; y++)
+            for (auto x = 6; x < AIR_XRES / 2; x++) {
+                // sim.air.cells[z][y][x].data[PRESSURE_IDX] = 255.0f;
+            }
 
     // int i = sim.create_part(50, 50, 50, 5);
     // sim.parts[i].vx = 35.0f;
@@ -110,7 +107,6 @@ void ScreenGameplay::init() {
         for (int z = 0;z < 50; z++)
             for (int y = 1; y < 90; y++)
                 sim.create_part(x + 10, y, z + 10, 1);*/
-
 }
 
 void ScreenGameplay::update() {
@@ -134,9 +130,10 @@ void ScreenGameplay::draw() {
     ClearBackground(settings::data::ref()->graphics->backgroundColor);
 
     BeginMode3D(render_camera.camera);
-    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES, YRES, ZRES, Color{ 60, 60, 60, 255 });
+    DrawCubeWires({XRES / 2, YRES / 2, ZRES / 2}, XRES - 2 * SIM_PADDING + 1, YRES - 2 * SIM_PADDING + 1,
+                  ZRES - 2 * SIM_PADDING + 1, Color{60, 60, 60, 255});
 
-    auto t = GetTime();
+    auto t   = GetTime();
     drawTime = GetTime() - t;
 
     // Visualize air
@@ -147,10 +144,12 @@ void ScreenGameplay::draw() {
     //     auto alpha = (std::max(-m, std::min(m, sim.air.cells[z][y][x].data[PRESSURE_IDX])) * 255.0f / m);
 
     //     if (alpha > 1) {
-    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 255, .g = 0, .b = 0, .a = (unsigned char)alpha}); 
+    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE,
+    //         AIR_CELL_SIZE, Color { .r = 255, .g = 0, .b = 0, .a = (unsigned char)alpha});
     //     }
     //     else if (alpha < 1) {
-    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE, AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha}); 
+    //         DrawCube(Vector3{x * AIR_CELL_SIZE,y* AIR_CELL_SIZE,z* AIR_CELL_SIZE}, AIR_CELL_SIZE, AIR_CELL_SIZE,
+    //         AIR_CELL_SIZE, Color { .r = 0, .g = 0, .b = 255, .a = (unsigned char)-alpha});
     //     }
     // }
 
@@ -159,16 +158,12 @@ void ScreenGameplay::draw() {
     renderer.draw();
     brush_renderer.draw(&renderer);
 
-    hud.draw(HUDData {
-        .fps = (float)GetFPS(),
-        .sim_fps = (float)(1.0f / simTime),
-        .brush_renderer = &brush_renderer
-    });
+    hud.draw(HUDData{.fps = (float)GetFPS(), .sim_fps = (float)(1.0f / simTime), .brush_renderer = &brush_renderer});
     sim_ui.draw();
 
     fps = 1.0f / drawTime;
 }
 
-void ScreenGameplay::unload() {
-    
+void ScreenGameplay::unload(){
+
 };

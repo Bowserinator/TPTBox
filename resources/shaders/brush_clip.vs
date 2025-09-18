@@ -21,11 +21,11 @@ void main() {
 
     vec4 translatedPos = mv * vec4(vertexPosition, 1.0);
     bool outside =
-        (dot(translatedPos, vec4(1.0, 0.0, 0.0, -1.0)) < 0) ||
-        (dot(translatedPos, vec4(0.0, 1.0, 0.0, -1.0)) < 0) ||
-        (dot(translatedPos, vec4(0.0, 0.0, 1.0, -1.0)) < 0) ||
-        (dot(translatedPos, vec4(-1.0, 0.0, 0.0, simRes.x - 1.0)) < 0) ||
-        (dot(translatedPos, vec4(0.0, -1.0, 0.0, simRes.y - 1.0)) < 0) ||
-        (dot(translatedPos, vec4(0.0, 0.0, -1.0, simRes.z - 1.0)) < 0);
+        (dot(translatedPos, vec4(1.0, 0.0, 0.0, -SIM_PADDING)) < 0) ||
+        (dot(translatedPos, vec4(0.0, 1.0, 0.0, -SIM_PADDING)) < 0) ||
+        (dot(translatedPos, vec4(0.0, 0.0, 1.0, -SIM_PADDING)) < 0) ||
+        (dot(translatedPos, vec4(-1.0, 0.0, 0.0, simRes.x - SIM_PADDING)) < 0) ||
+        (dot(translatedPos, vec4(0.0, -1.0, 0.0, simRes.y - SIM_PADDING)) < 0) ||
+        (dot(translatedPos, vec4(0.0, 0.0, -1.0, simRes.z - SIM_PADDING)) < 0);
     gl_ClipDistance[0] = outside ? -1 : 1;
 }

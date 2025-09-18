@@ -112,12 +112,12 @@ namespace commands {
         }
 
         // Bounds check for location
-        if (prop_to_edit == PartProp::x && (val_uint == 0 || val_uint >= XRES - 1))
-            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(XRES - 2) + " inclusive";
-        if (prop_to_edit == PartProp::y && (val_uint == 0 || val_uint >= YRES - 1))
-            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(YRES - 2) + " inclusive";
-        if (prop_to_edit == PartProp::z && (val_uint == 0 || val_uint >= ZRES - 1))
-            return text_format::F_RED + "Error: x must be between 1 and " + std::to_string(ZRES - 2) + " inclusive";
+        if (prop_to_edit == PartProp::x && (val_uint < SIM_PADDING || val_uint >= XRES - SIM_PADDING))
+            return std::format("{} Error: x must be between {} and {} inclusive", text_format::F_RED, SIM_PADDING, XRES - 1 - SIM_PADDING);
+        if (prop_to_edit == PartProp::y && (val_uint < SIM_PADDING || val_uint >= YRES - SIM_PADDING))
+            return std::format("{} Error: y must be between {} and {} inclusive", text_format::F_RED, SIM_PADDING, YRES - 1 - SIM_PADDING);
+        if (prop_to_edit == PartProp::z && (val_uint < SIM_PADDING || val_uint >= ZRES - SIM_PADDING))
+            return std::format("{} Error: z must be between {} and {} inclusive", text_format::F_RED, SIM_PADDING, ZRES - 1 - SIM_PADDING);
 
         for (part_id i = 1; i <= sim->maxId; i++) {
             if (!sim->parts[i].type) continue;
