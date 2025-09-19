@@ -5,12 +5,12 @@
 #include <glad.h>
 
 #include "simulation/SimulationDef.h"
-#include "src/globals.h"
-#include "src/interface/EventConsumer.h"
-#include "src/interface/FrameTimeAvg.h"
-#include "src/interface/brush/Preview.h"
-#include "src/interface/settings/data/SettingsData.h"
-#include "src/simulation/ElementClasses.h"
+#include "globals.h"
+#include "interface/EventConsumer.h"
+#include "interface/FrameTimeAvg.h"
+#include "interface/brush/Preview.h"
+#include "interface/settings/data/SettingsData.h"
+#include "simulation/ElementClasses.h"
 
 #include <algorithm>
 

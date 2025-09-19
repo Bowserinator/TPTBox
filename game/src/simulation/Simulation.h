@@ -32,6 +32,7 @@ class Simulation {
 public:
     bool paused;
     bool paused_last_frame = false;
+    bool in_band = false; // in_band = direct updates will be properly uploaded to compute shader
     GravityMode gravity_mode;
 
     Particle parts[NPARTS];

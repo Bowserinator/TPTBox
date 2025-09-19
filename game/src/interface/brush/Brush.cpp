@@ -218,7 +218,7 @@ void BrushRenderer::do_raycast(Simulation * sim, RenderCamera * camera) {
     if (REVERSE_BOUNDS_CHECK(cx, cy, cz)) {
         const BoundingBox simulationBounds {
             .min = Vector3{ SIM_PADDING, SIM_PADDING, SIM_PADDING },
-            .max = Vector3{ XRES - SIM_PADDING - 1.0f, YRES - SIM_PADDING - 1.0f, ZRES - SIM_PADDING - 2.0f }
+            .max = Vector3{ XRES - SIM_PADDING - 1.0f, YRES - SIM_PADDING - 1.0f, ZRES - SIM_PADDING - 1.0f }
         };
         const auto collide = GetRayCollisionBox(ray, simulationBounds);
 

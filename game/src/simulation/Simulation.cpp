@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <omp.h>
 #include <utility>
@@ -292,7 +293,8 @@ void Simulation::update_zslice(const coord_t pz) {
 
     coord_t px, py;
     for (ReversibleRange r1(y1, y2, py, (frame_count >> 1) & 1); r1.has_next(); py = r1.next())
-        for (ReversibleRange r2(SIM_PADDING, XRES - SIM_PADDING, px, (frame_count >> 2) & 1); r2.has_next(); px = r2.next()) {
+        for (ReversibleRange r2(SIM_PADDING, XRES - SIM_PADDING, px, (frame_count >> 2) & 1); r2.has_next();
+             px = r2.next()) {
             if (pmap[pz][py][px]) {
                 if (TYP(pmap[pz][py][px]) == PT_GOL) {
                     auto id = ID(pmap[pz][py][px]);
@@ -367,9 +369,22 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
                 part.vy += el.Advection * air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
                 part.vz += el.Advection * air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE];
             }
+            if ((el.AirLoss < 1) | (el.AirDrag != 0.0f)) {
+                air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] =
+                    air.vx[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * el.AirLoss + part.vx * el.AirDrag;
+                air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] =
+                    air.vy[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * el.AirLoss + part.vy * el.AirDrag;
+                air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] =
+                    air.vz[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] * el.AirLoss + part.vz * el.AirDrag;
+            }
+           
+            coord_t pressure_x = x + rng().between(-1, 1);
+            coord_t pressure_y = y + rng().between(-1, 1);
+            coord_t pressure_z = z + rng().between(-1, 1);
 
             if (el.HighPressureTransition != Transition::NONE &&
-                air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] > el.HighPressure) {
+                air.pv[pressure_z / AIR_CELL_SIZE][pressure_y / AIR_CELL_SIZE][pressure_x / AIR_CELL_SIZE] >
+                    el.HighPressure) {
                 auto toType =
                     el.HighPressureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.HighPressureTransition;
                 toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
@@ -377,18 +392,14 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
                 return;
             }
             if (el.LowPressureTransition != Transition::NONE &&
-                air.pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] < el.LowPressure) {
+                air.pv[pressure_z / AIR_CELL_SIZE][pressure_y / AIR_CELL_SIZE][pressure_x / AIR_CELL_SIZE] <
+                    el.LowPressure) {
                 auto toType =
                     el.LowPressureTransition == Transition::TO_CTYPE ? parts[i].ctype : el.LowPressureTransition;
                 toType *= (toType < ELEMENT_COUNT); // Illegal transitions get deleted
                 part_change_type(i, toType);
                 return;
             }
-        }
-        if (el.AirDrag) {
-            part.vx += el.AirDrag * part.vx;
-            part.vy += el.AirDrag * part.vy;
-            part.vz += el.AirDrag * part.vz;
         }
 
         if (el.Update) {
@@ -436,6 +447,7 @@ void Simulation::update() {
 
     profiler::end(1);
     profiler::reset_and_start(0);
+    in_band = true;
 
 #pragma omp parallel num_threads(sim_thread_count)
     {
@@ -463,11 +475,10 @@ void Simulation::update() {
     recalc_free_particles();
     profiler::end(0);
 
-    // Air upload
+    // Apply out of band updates
     for (const auto &update : air.out_of_band_air_updates)
         air.add_pv(update.x, update.y, update.z, update.dpressure);
     air.out_of_band_air_updates.clear();
-    if (air_enabled()) air.upload();
 
     // Rest
     frame_count++;
@@ -693,10 +704,15 @@ void Simulation::defrag_parts() {
 }
 
 void Simulation::dispatch_compute_shaders() {
+    in_band = false;
+
     if (paused && paused_last_frame) return; // Pause event occurs after prev update() but before dispatch()
     if (gol.gol_count) gol.dispatch();
     if (heat_enabled()) heat.dispatch(frame_count);
-    if (air_enabled()) air.update();
+    if (air_enabled()) {
+        air.upload();
+        air.update();
+    }
 }
 
 void Simulation::force_graphics_update() {

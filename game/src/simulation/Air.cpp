@@ -246,6 +246,10 @@ void Air::upload() {
 }
 
 void Air::add_pv(const coord_t x, const coord_t y, const coord_t z, float diff) {
+#ifdef DEBUG
+    if (!sim.in_band) [[unlikely]]
+        throw std::runtime_error("add_pv() called but not in band update");
+#endif
     pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] = util::clampf(
         pv[z / AIR_CELL_SIZE][y / AIR_CELL_SIZE][x / AIR_CELL_SIZE] + diff, -MAX_AIR_PRESSURE, MAX_AIR_PRESSURE);
 }

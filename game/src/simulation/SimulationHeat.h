@@ -48,8 +48,8 @@ public:
     void flag_temp_update(const coord_t x, const coord_t y, const coord_t z);
     void reset_dirty_chunks();
 
-    inline unsigned int get_heat_in_ssbo() { return ssbosData.getId(0); }
-    inline double get_download_dirty_ratio() const { return downloadDirtyRatio; }
+    inline unsigned int get_heat_in_ssbo() { return ssbos_data.getId(0); }
+    inline double get_download_dirty_ratio() const { return download_dirty_ratio; }
 
     // Significantly faster than vector<bool>
     bool dirty_chunks[SIM_HEAT_ZBLOCKS][SIM_HEAT_YBLOCKS][SIM_HEAT_XBLOCKS];
@@ -58,12 +58,12 @@ public:
     std::vector<PartHeatDelta> heat_updates;
 
 private:
-    util::PersistentBuffer<2> ssbosData;
-    util::PersistentBuffer<1> ssbosUploadDownloadDirty;
-    util::PersistentBuffer<1> ssbosHeatConduct;
-    unsigned int ssboConstants;
+    util::PersistentBuffer<2> ssbos_data;
+    util::PersistentBuffer<1> ssbos_upload_download_dirty;
+    util::PersistentBuffer<1> ssbos_heat_conduct;
+    unsigned int ssbo_constants;
     HeatConstants constants;
 
-    util::TPBComputeShader heatShader;
-    double downloadDirtyRatio;
+    util::TPBComputeShader heat_shader;
+    double download_dirty_ratio;
 };

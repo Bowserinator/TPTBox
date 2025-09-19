@@ -39,7 +39,7 @@ public:
     void wait_and_get();
     void upload();
 
-    /// @brief Add pressure delta to (pixel) (x,y,z) coordinates
+    /// @brief Add pressure delta to (pixel) (x,y,z) coordinates, in band only
     void add_pv(const coord_t x, const coord_t y, const coord_t z, float diff);
 
     /// @brief Queue an out of band pressure diff (like add_pv), but run after sim.update()
