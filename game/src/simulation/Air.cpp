@@ -64,10 +64,14 @@ void Air::init() {
         util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(pv), util::PBFlags::READ_AND_WRITE);
 
     iteration_uniform_loc = glGetUniformLocation(divergence_shader.id(), "iteration");
+    initialized = true;
     clear();
 }
 
 void Air::clear() {
+    if (!initialized) [[unlikely]]
+        return;
+
     uploaded_once = false;
     memset(vx, 0.0f, sizeof(vx));
     memset(vy, 0.0f, sizeof(vy));
@@ -107,9 +111,9 @@ void Air::clear() {
 }
 
 void Air::update() {
-    for (int x = 0; x < AIR_XRES; x++)
-        for (int z = 0; z < AIR_ZRES; z++)
-            wall_map[(x + z * AIR_XRES * AIR_YRES + 10 * AIR_XRES) / 8] = 0xFF;
+    // for (int x = 0; x < AIR_XRES; x++)
+    //     for (int z = 0; z < AIR_ZRES; z++)
+    //         wall_map[(x + z * AIR_XRES * AIR_YRES + 10 * AIR_XRES) / 8] = 0xFF;
 
     // memcpy(ssbos_walls.get<uint8_t>(0), wall_map, sizeof(wall_map)); // TODO diff
 
@@ -167,7 +171,7 @@ void Air::solve_incompressibility() {
     // TODO: actually implement red black gauss sieidel properly
 
     // util::GlTimeQuery query;
-    constexpr int DIVERGENCE_REMOVING_ITERATIONS = 3; // TODO: should be even in future, temporary hack rn because not real red-black
+    constexpr int DIVERGENCE_REMOVING_ITERATIONS = 1; // TODO: should be even in future, temporary hack rn because not real red-black
     for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++) {
         rlBindShaderBuffer(ssbos_new_vx.getId(i & 1), 0);
         rlBindShaderBuffer(ssbos_new_vy.getId(i & 1), 1);

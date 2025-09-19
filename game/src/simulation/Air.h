@@ -84,6 +84,7 @@ private:
     std::vector<AirDelta> out_of_band_air_updates;
     GLint iteration_uniform_loc;
     bool uploaded_once = false;
+    bool initialized = false;
 
     friend Simulation;
 
