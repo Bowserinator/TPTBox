@@ -1,15 +1,12 @@
 #include "depthtexture.h"
-
-#include <stdexcept>
+#include "util/common.h"
 
 DepthTexture::DepthTexture(const unsigned int screenWidth, const unsigned int screenHeight):
         width(screenWidth), height(screenHeight), colorTexture(0), depthTexture(0) {
     target.id = rlLoadFramebuffer();
 
-#ifdef DEBUG
     if (!target.id)
-        throw std::runtime_error("Failed to create framebuffer");
-#endif
+        util::die(DEBUG_MSG("Failed to create framebuffer"));
 
     rlEnableFramebuffer(target.id);
 
@@ -40,10 +37,8 @@ DepthTexture::DepthTexture(const unsigned int screenWidth, const unsigned int sc
     // Make sure our framebuffer is complete.
     // NOTE: rlFramebufferComplete() automatically unbinds the framebuffer, so we don't have
     // to rlDisableFramebuffer() here.
-#ifdef DEBUG
     if (!rlFramebufferComplete(target.id))
-        throw std::runtime_error("Framebuffer is not complete");
-#endif
+        util::die(DEBUG_MSG("Framebuffer is not complete"));
 }
 
 DepthTexture::~DepthTexture() {

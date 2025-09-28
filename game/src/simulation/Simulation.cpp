@@ -128,7 +128,7 @@ void Simulation::cycle_gravity_mode() {
 part_id Simulation::create_part(const coord_t x, const coord_t y, const coord_t z, const ElementType type,
                                 const PartCreateMode mode) {
 #ifdef DEBUG
-    if (REVERSE_BOUNDS_CHECK(x, y, z))
+    if (REVERSE_BOUNDS_CHECK(x, y, z)) [[unlikely]]
         throw std::invalid_argument("Input to sim.create_part must be in bounds, got " + std::to_string(x) + ", " +
                                     std::to_string(y) + ", " + std::to_string(z));
 #endif
@@ -331,7 +331,7 @@ void Simulation::update_part(const part_id i, const bool consider_causality) {
     auto &part = parts[i];
 
 #ifdef DEBUG
-    if (!part.type)
+    if (!part.type) [[unlikely]]
         throw std::runtime_error("update_part() called on NONE type particle, id = " + std::to_string((int)i));
 #endif
 

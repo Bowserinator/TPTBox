@@ -13,7 +13,7 @@
 #include "util/math.h"
 #include "util/morton.h"
 #include "util/string.h"
-#include "util/types/ubo.h"
+#include "util/graphics/ubo.h"
 
 #include "rlgl.h"
 #include "stdint.h"
@@ -484,9 +484,9 @@ void Renderer::draw() {
     // First actual pass
     // --------------------------------------
     const unsigned int ssbo_idx = frame_count % BUFFER_COUNT;
-    rlBindShaderBuffer(colorBuf.getId(0), 0);
-    rlBindShaderBuffer(flagBuf.getId(0), 1);
-    rlBindShaderBuffer(lodBuf.getId(0), 2);
+    rlBindShaderBuffer(colorBuf.get_id(0), 0);
+    rlBindShaderBuffer(flagBuf.get_id(0), 1);
+    rlBindShaderBuffer(lodBuf.get_id(0), 2);
 
     colorBuf.advance_cycle();
     flagBuf.advance_cycle();
@@ -548,10 +548,10 @@ void Renderer::draw() {
     if (render_air) {
         BeginTextureMode(vel_tex.target);
         ClearBackground(BLANK);
-        rlBindShaderBuffer(sim->air.ssbos_vx.getId(0), 0);
-        rlBindShaderBuffer(sim->air.ssbos_vy.getId(0), 1);
-        rlBindShaderBuffer(sim->air.ssbos_vz.getId(0), 2);
-        rlBindShaderBuffer(sim->air.ssbos_pv.getId(0), 4);
+        rlBindShaderBuffer(sim->air.ssbos_vx.get_id(0), 0);
+        rlBindShaderBuffer(sim->air.ssbos_vy.get_id(0), 1);
+        rlBindShaderBuffer(sim->air.ssbos_vz.get_id(0), 2);
+        rlBindShaderBuffer(sim->air.ssbos_pv.get_id(0), 4);
         glBindBufferBase(GL_UNIFORM_BUFFER, 3, air_ubo);
 
         BeginMode3D(cam->camera);

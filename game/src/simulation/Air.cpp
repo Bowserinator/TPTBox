@@ -4,7 +4,7 @@
 #include "util/math.h"
 #include "simulation/Simulation.h"
 #include "util/string.h"
-#include "util/types/gl_time_query.h"
+#include "util/graphics/gl_time_query.h"
 
 #include <cmath>
 #include <cstring>
@@ -48,20 +48,20 @@ void Air::init() {
     vel_from_pressure_shader = util::TPBComputeShader{air_vel_from_pressure_comp_source};
     pressure_blur_shader     = util::TPBComputeShader{air_blur_comp_source};
 
-    ssbos_vx = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vx), util::PBFlags::READ_AND_WRITE);
-    ssbos_vy = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vy), util::PBFlags::READ_AND_WRITE);
-    ssbos_vz = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vz), util::PBFlags::READ_AND_WRITE);
-    ssbos_pv = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(pv), util::PBFlags::READ_AND_WRITE);
+    ssbos_vx = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vx), util::PBFlags::WRITE);
+    ssbos_vy = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vy), util::PBFlags::WRITE);
+    ssbos_vz = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vz), util::PBFlags::WRITE);
+    ssbos_pv = util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(pv), util::PBFlags::WRITE);
     ssbos_walls = util::PersistentBuffer<1>(GL_SHADER_STORAGE_BUFFER, sizeof(wall_map), util::PBFlags::WRITE);
 
     ssbos_new_vx =
-        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vx), util::PBFlags::READ_AND_WRITE);
+        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vx), util::PBFlags::READ);
     ssbos_new_vy =
-        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vy), util::PBFlags::READ_AND_WRITE);
+        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vy), util::PBFlags::READ);
     ssbos_new_vz =
-        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vz), util::PBFlags::READ_AND_WRITE);
+        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(vz), util::PBFlags::READ);
     ssbos_new_pv =
-        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(pv), util::PBFlags::READ_AND_WRITE);
+        util::PersistentBuffer<SSBO_COUNT>(GL_SHADER_STORAGE_BUFFER, sizeof(pv), util::PBFlags::READ);
 
     iteration_uniform_loc = glGetUniformLocation(divergence_shader.id(), "iteration");
     initialized = true;
@@ -94,10 +94,10 @@ void Air::clear() {
         std::fill(&ssbos_vy.get<float>(i)[0], &ssbos_vy.get<float>(i)[0] + VEL_SIZE, 0.0f);
         std::fill(&ssbos_vz.get<float>(i)[0], &ssbos_vz.get<float>(i)[0] + VEL_SIZE, 0.0f);
         std::fill(&ssbos_pv.get<float>(i)[0], &ssbos_pv.get<float>(i)[0] + VEL_SIZE, 0.0f);
-        std::fill(&ssbos_new_vx.get<float>(i)[0], &ssbos_new_vx.get<float>(i)[0] + VEL_SIZE, 0.0f);
-        std::fill(&ssbos_new_vy.get<float>(i)[0], &ssbos_new_vy.get<float>(i)[0] + VEL_SIZE, 0.0f);
-        std::fill(&ssbos_new_vz.get<float>(i)[0], &ssbos_new_vz.get<float>(i)[0] + VEL_SIZE, 0.0f);
-        std::fill(&ssbos_new_pv.get<float>(i)[0], &ssbos_new_pv.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        // std::fill(&ssbos_new_vx.get<float>(i)[0], &ssbos_new_vx.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        // std::fill(&ssbos_new_vy.get<float>(i)[0], &ssbos_new_vy.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        // std::fill(&ssbos_new_vz.get<float>(i)[0], &ssbos_new_vz.get<float>(i)[0] + VEL_SIZE, 0.0f);
+        // std::fill(&ssbos_new_pv.get<float>(i)[0], &ssbos_new_pv.get<float>(i)[0] + VEL_SIZE, 0.0f);
 
         ssbos_vx.lock(i);
         ssbos_vy.lock(i);
@@ -119,11 +119,11 @@ void Air::update() {
 
     // Pressure update
     rlEnableShader(pressure_from_vel_shader.id());
-    rlBindShaderBuffer(ssbos_vx.getId(0), 0);
-    rlBindShaderBuffer(ssbos_vy.getId(0), 1);
-    rlBindShaderBuffer(ssbos_vz.getId(0), 2);
-    rlBindShaderBuffer(ssbos_pv.getId(0), 3);
-    rlBindShaderBuffer(ssbos_new_pv.getId(0), 4);
+    rlBindShaderBuffer(ssbos_vx.get_id(0), 0);
+    rlBindShaderBuffer(ssbos_vy.get_id(0), 1);
+    rlBindShaderBuffer(ssbos_vz.get_id(0), 2);
+    rlBindShaderBuffer(ssbos_pv.get_id(0), 3);
+    rlBindShaderBuffer(ssbos_new_pv.get_id(0), 4);
     dispatch_air_compute_shaders();
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     rlDisableShader();
@@ -131,9 +131,9 @@ void Air::update() {
     // Blur pressure
     // rlEnableShader(pressure_blur_shader.id()); //
     // for (const auto &ssbo : {std::ref(ssbos_new_pv)}) {
-    //     rlBindShaderBuffer(ssbo.get().getId(1), 0);
-    //     rlBindShaderBuffer(ssbo.get().getId(0), 1);
-    //     rlBindShaderBuffer(ssbos_walls.getId(0), 2);
+    //     rlBindShaderBuffer(ssbo.get().get_id(1), 0);
+    //     rlBindShaderBuffer(ssbo.get().get_id(0), 1);
+    //     rlBindShaderBuffer(ssbos_walls.get_id(0), 2);
     //     dispatch_air_compute_shaders(); // Note: if uncomment, make ssbo id correct
     // }
     // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -141,14 +141,14 @@ void Air::update() {
 
     // Vel update
     rlEnableShader(vel_from_pressure_shader.id());
-    rlBindShaderBuffer(ssbos_vx.getId(0), 0);
-    rlBindShaderBuffer(ssbos_vy.getId(0), 1);
-    rlBindShaderBuffer(ssbos_vz.getId(0), 2);
-    rlBindShaderBuffer(ssbos_walls.getId(0), 3);
-    rlBindShaderBuffer(ssbos_new_pv.getId(0), 4);
-    rlBindShaderBuffer(ssbos_new_vx.getId(0), 5);
-    rlBindShaderBuffer(ssbos_new_vy.getId(0), 6);
-    rlBindShaderBuffer(ssbos_new_vz.getId(0), 7);
+    rlBindShaderBuffer(ssbos_vx.get_id(0), 0);
+    rlBindShaderBuffer(ssbos_vy.get_id(0), 1);
+    rlBindShaderBuffer(ssbos_vz.get_id(0), 2);
+    rlBindShaderBuffer(ssbos_walls.get_id(0), 3);
+    rlBindShaderBuffer(ssbos_new_pv.get_id(0), 4);
+    rlBindShaderBuffer(ssbos_new_vx.get_id(0), 5);
+    rlBindShaderBuffer(ssbos_new_vy.get_id(0), 6);
+    rlBindShaderBuffer(ssbos_new_vz.get_id(0), 7);
 
     dispatch_air_compute_shaders();
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -166,44 +166,44 @@ void Air::update() {
 
 void Air::solve_incompressibility() {
     rlEnableShader(divergence_shader.id());
-    rlBindShaderBuffer(ssbos_walls.getId(0), 6);
+    rlBindShaderBuffer(ssbos_walls.get_id(0), 6);
 
     // TODO: actually implement red black gauss sieidel properly
 
     // util::GlTimeQuery query;
     constexpr int DIVERGENCE_REMOVING_ITERATIONS = 1; // TODO: should be even in future, temporary hack rn because not real red-black
     for (int i = 0; i < DIVERGENCE_REMOVING_ITERATIONS; i++) {
-        rlBindShaderBuffer(ssbos_new_vx.getId(i & 1), 0);
-        rlBindShaderBuffer(ssbos_new_vy.getId(i & 1), 1);
-        rlBindShaderBuffer(ssbos_new_vz.getId(i & 1), 2);
-        rlBindShaderBuffer(ssbos_new_vx.getId(1 - (i & 1)), 3);
-        rlBindShaderBuffer(ssbos_new_vy.getId(1 - (i & 1)), 4);
-        rlBindShaderBuffer(ssbos_new_vz.getId(1 - (i & 1)), 5);
+        rlBindShaderBuffer(ssbos_new_vx.get_id(i & 1), 0);
+        rlBindShaderBuffer(ssbos_new_vy.get_id(i & 1), 1);
+        rlBindShaderBuffer(ssbos_new_vz.get_id(i & 1), 2);
+        rlBindShaderBuffer(ssbos_new_vx.get_id(1 - (i & 1)), 3);
+        rlBindShaderBuffer(ssbos_new_vy.get_id(1 - (i & 1)), 4);
+        rlBindShaderBuffer(ssbos_new_vz.get_id(1 - (i & 1)), 5);
 
         glUniform1iv(iteration_uniform_loc, 1, &i);
         dispatch_air_compute_shaders();
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
     rlDisableShader();
-    // std::cout << query.timeElapsedMs() << " ms (air sim)" << "\n";
+    // std::cout << query.time_elapsed_ms() << " ms (air sim)" << "\n";
 }
 
 void Air::fill_edges_and_advect_velocities() {
     rlEnableShader(advection_shader.id());
-    rlBindShaderBuffer(ssbos_new_vx.getId(0), 0);
-    rlBindShaderBuffer(ssbos_new_vy.getId(0), 1);
-    rlBindShaderBuffer(ssbos_new_vz.getId(0), 2);
-    rlBindShaderBuffer(ssbos_new_vx.getId(1), 4);
-    rlBindShaderBuffer(ssbos_new_vy.getId(1), 5);
-    rlBindShaderBuffer(ssbos_new_vz.getId(1), 6);
-    rlBindShaderBuffer(ssbos_walls.getId(0), 7);
-    rlBindShaderBuffer(ssbos_new_pv.getId(0), 8);
-    rlBindShaderBuffer(ssbos_new_pv.getId(1), 9);
+    rlBindShaderBuffer(ssbos_new_vx.get_id(0), 0);
+    rlBindShaderBuffer(ssbos_new_vy.get_id(0), 1);
+    rlBindShaderBuffer(ssbos_new_vz.get_id(0), 2);
+    rlBindShaderBuffer(ssbos_new_vx.get_id(1), 4);
+    rlBindShaderBuffer(ssbos_new_vy.get_id(1), 5);
+    rlBindShaderBuffer(ssbos_new_vz.get_id(1), 6);
+    rlBindShaderBuffer(ssbos_walls.get_id(0), 7);
+    rlBindShaderBuffer(ssbos_new_pv.get_id(0), 8);
+    rlBindShaderBuffer(ssbos_new_pv.get_id(1), 9);
 
     // util::GlTimeQuery query;
     dispatch_air_compute_shaders();
     rlDisableShader();
-    // std::cout << query.timeElapsedMs() << " ms (air sim - advection)" << "\n";
+    // std::cout << query.time_elapsed_ms() << " ms (air sim - advection)" << "\n";
 }
 
 void Air::wait_and_get() {

@@ -8,7 +8,7 @@
 #include "render/types/multitexture.h"
 #include "render/types/depthtexture.h"
 #include "render/types/octree.h"
-#include "util/types/persistent_buffer.h"
+#include "util/graphics/persistent_buffer.h"
 #include "util/graphics/shader.h"
 #include "constants.h"
 

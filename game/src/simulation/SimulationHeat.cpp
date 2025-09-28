@@ -1,9 +1,10 @@
 #include "SimulationHeat.h"
 #include "Simulation.h"
 #include "render/constants.h"
+#include "util/common.h"
 #include "util/graphics/shader.h"
 #include "util/string.h"
-#include "util/types/gl_time_query.h"
+#include "util/graphics/gl_time_query.h"
 
 #include <cstring>
 #include <glad.h>
@@ -28,8 +29,8 @@ void SimulationHeat::init() {
 void SimulationHeat::reset() {
     uploaded_once = false;
 
-    std::fill(&heat_map[0][0][0], &heat_map[0][0][0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
-    for (int i = 0; i < ssbos_data.getBufferCount(); i++) {
+    std::fill(util::t3d_begin(heat_map), util::t3d_end(heat_map), -1.0f);
+    for (int i = 0; i < ssbos_data.get_buffer_count(); i++) {
         ssbos_data.wait(i);
         std::fill(&ssbos_data.get<float>(i)[0],
                   &ssbos_data.get<float>(i)[0] + (sizeof(heat_map) / sizeof(heat_map[0][0][0])), -1.0f);
@@ -87,15 +88,15 @@ void SimulationHeat::dispatch(const uint32_t frame_count) {
     // util::GlTimeQuery query;
 
     rlEnableShader(heat_shader.id());
-    rlBindShaderBuffer(ssbos_data.getId(0), 0);
-    rlBindShaderBuffer(ssbos_data.getId(1), 1);
+    rlBindShaderBuffer(ssbos_data.get_id(0), 0);
+    rlBindShaderBuffer(ssbos_data.get_id(1), 1);
     rlBindShaderBuffer(ssbo_constants, 2);
-    rlBindShaderBuffer(ssbos_upload_download_dirty.getId(0), 3);
-    rlBindShaderBuffer(ssbos_heat_conduct.getId(0), 4);
+    rlBindShaderBuffer(ssbos_upload_download_dirty.get_id(0), 3);
+    rlBindShaderBuffer(ssbos_heat_conduct.get_id(0), 4);
     rlComputeShaderDispatch(constants.DIRTY_INDEX_COUNT, 1, 1);
     rlDisableShader();
 
-    // std::cout << query.timeElapsedMs() << " ms (heat sim)" << "\n";
+    // std::cout << query.time_elapsed_ms() << " ms (heat sim)" << "\n";
 
     ssbos_data.lock(1);
 }

@@ -22,7 +22,7 @@ make config=debug_x64
 make config=release_x64
 ```
 
-Executables will be in the `_bin` folder. Note that you will need to have a compiler that supports `OpenMP`, `C++20` as well as `opengl4.3`. If make fails to detect your compiler, try specifying the compiler directly, ie `make CC=g++`.
+Executables will be in the `bin` folder. Note that you will need to have a compiler that supports `OpenMP`, `C++20` as well as `opengl4.3`. If make fails to detect your compiler, try specifying the compiler directly, ie `make CC=g++`.
 
 
 ## Licenses & Credits

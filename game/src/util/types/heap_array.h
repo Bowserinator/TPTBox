@@ -1,5 +1,4 @@
-#ifndef UTIL_TYPES_HEAP_ARRAY_H_
-#define UTIL_TYPES_HEAP_ARRAY_H_
+#pragma once
 
 #include <cstddef>
 #include <stdexcept>
@@ -84,5 +83,3 @@ namespace util {
         }
     };
 }
-
-#endif // UTIL_TYPES_HEAP_ARRAY_H_

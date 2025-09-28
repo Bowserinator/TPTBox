@@ -1,5 +1,13 @@
 #pragma once
 
+// Always include rlgl.h before raylib.h
+// clang-format off
+#include "rlgl.h"
+#include "raylib.h"
+// clang-format on
+#include <exception>
+#include <format>
+#include <string>
 #include <variant>
 
 template <class... Ts> struct overloaded : Ts... {
@@ -39,3 +47,25 @@ template <class... Ts, class T> constexpr decltype(auto) operator|(std::variant<
     return std::get<T>(v);
 }
 template <class T, class U> constexpr decltype(auto) operator|(const T &v, as_operator<U>) { return static_cast<U>(v); }
+
+#define DEBUG_MSG(msg) std::format("[{}:{}] {}", __FILE__, __LINE__, msg)
+
+namespace util {
+/// 3d array begin() and end()
+template <typename T, size_t N1, size_t N2, size_t N3> T *t3d_begin(T (&arr)[N1][N2][N3]) {
+    return reinterpret_cast<T *>(arr);
+}
+template <typename T, size_t N1, size_t N2, size_t N3> T *t3d_end(T (&arr)[N1][N2][N3]) {
+    return reinterpret_cast<T *>(arr) + N1 * N2 * N3;
+}
+
+/// Terminate program with fatal error
+inline void die(const std::string &reason) {
+#ifdef DEBUG
+    throw std::runtime_error(reason);
+#else
+    TraceLog(LOG_ERROR, reason.c_str());
+    std::terminate();
+#endif
+}
+} // namespace util

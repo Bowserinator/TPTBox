@@ -45,18 +45,18 @@ all: $(PROJECTS)
 raylib:
 ifneq (,$(raylib_config))
 	@echo "==== Building raylib ($(raylib_config)) ===="
-	@${MAKE} --no-print-directory -C _build -f raylib.make config=$(raylib_config)
+	@${MAKE} --no-print-directory -C build -f raylib.make config=$(raylib_config)
 endif
 
 TPTBox: raylib
 ifneq (,$(TPTBox_config))
 	@echo "==== Building TPTBox ($(TPTBox_config)) ===="
-	@${MAKE} --no-print-directory -C _build -f TPTBox.make config=$(TPTBox_config)
+	@${MAKE} --no-print-directory -C build -f TPTBox.make config=$(TPTBox_config)
 endif
 
 clean:
-	@${MAKE} --no-print-directory -C _build -f raylib.make clean
-	@${MAKE} --no-print-directory -C _build -f TPTBox.make clean
+	@${MAKE} --no-print-directory -C build -f raylib.make clean
+	@${MAKE} --no-print-directory -C build -f TPTBox.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"

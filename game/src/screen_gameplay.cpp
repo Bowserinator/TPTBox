@@ -12,8 +12,6 @@
 #include "interface/settings/data/SettingsData.h"
 #include "simulation/ElementClasses.h"
 
-#include <algorithm>
-
 static double simTime  = 0.0f;
 static double drawTime = 0.0f;
 static double fps      = 1.0f;

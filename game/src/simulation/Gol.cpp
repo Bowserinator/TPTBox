@@ -2,10 +2,11 @@
 #include "rlgl.h"
 
 #include "render/constants.h"
+#include "util/common.h"
 #include "util/graphics.h"
 #include "util/graphics/shader.h"
 #include "util/string.h"
-#include "util/types/gl_time_query.h"
+#include "util/graphics/gl_time_query.h"
 #include "util/vector_op.h"
 
 #include <cstring>
@@ -82,7 +83,7 @@ void SimulationGol::init() {
 }
 
 void SimulationGol::reset() {
-    for (std::size_t i = 0; i < ssbos_data.getBufferCount(); i++) {
+    for (std::size_t i = 0; i < ssbos_data.get_buffer_count(); i++) {
         ssbos_data.wait(i);
         std::fill(&ssbos_data.get<gol_map_t>(i)[0],
                   &ssbos_data.get<gol_map_t>(i)[0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])), 0);
@@ -93,8 +94,7 @@ void SimulationGol::reset() {
 
 void SimulationGol::dispatch() {
     ssbos_data.wait(0);
-    std::copy(&gol_map[0][0][0], &gol_map[0][0][0] + (sizeof(gol_map) / sizeof(gol_map[0][0][0])),
-              &ssbos_data.get<gol_map_t>(0)[0]);
+    std::copy(util::t3d_begin(gol_map), util::t3d_end(gol_map), &ssbos_data.get<gol_map_t>(0)[0]);
     ssbos_data.lock(0);
 
     // Uncomment the two lines for timing the shader dispatch
@@ -102,13 +102,13 @@ void SimulationGol::dispatch() {
 
     rlEnableShader(gol_shader.id());
     rlBindShaderBuffer(ssbos_rules, 0);
-    rlBindShaderBuffer(ssbos_data.getId(0), 1);
-    rlBindShaderBuffer(ssbos_data.getId(1), 2);
+    rlBindShaderBuffer(ssbos_data.get_id(0), 1);
+    rlBindShaderBuffer(ssbos_data.get_id(1), 2);
     // X is 4x as much since each invocation iterates 4 x values
     rlComputeShaderDispatch(std::ceil(XRES / 64.0), std::ceil(YRES / 8.0), std::ceil(ZRES / 8.0));
     rlDisableShader();
 
-    // std::cout << query.timeElapsedMs() << " ms (gol)" << "\n";
+    // std::cout << query.time_elapsed_ms() << " ms (gol)" << "\n";
 
     ssbos_data.lock(1);
 }

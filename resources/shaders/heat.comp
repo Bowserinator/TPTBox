@@ -75,7 +75,7 @@ void main() {
     tmp = heatIn[baseIdx - 1];
         if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x - 1, y, z, baseIdx - 1)) { count++; total += tmp; } // +- x
     tmp = heatIn[baseIdx + 1];
-    if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x + 1, y, z, baseIdx + 1)) { count++; total += tmp; }
+        if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x + 1, y, z, baseIdx + 1)) { count++; total += tmp; }
     tmp = heatIn[baseIdx - SIMRES.x];
         if (tmp >= 0.0f && HEAT_CONDUCT_CHANCE(x, y - 1, z, baseIdx - SIMRES.x)) { count++; total += tmp; } // +- y 
     tmp = heatIn[baseIdx + SIMRES.x];

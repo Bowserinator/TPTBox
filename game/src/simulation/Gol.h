@@ -3,7 +3,7 @@
 #include "SimulationDef.h"
 #include "graphics/color.h"
 #include "util/graphics/shader.h"
-#include "util/types/persistent_buffer.h"
+#include "util/graphics/persistent_buffer.h"
 
 #include <array>
 #include <atomic>

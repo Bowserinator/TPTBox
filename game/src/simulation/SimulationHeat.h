@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "util/graphics/shader.h"
-#include "util/types/persistent_buffer.h"
+#include "util/graphics/persistent_buffer.h"
 
 #include <array>
 #include <cmath>
@@ -48,7 +48,7 @@ public:
     void flag_temp_update(const coord_t x, const coord_t y, const coord_t z);
     void reset_dirty_chunks();
 
-    inline unsigned int get_heat_in_ssbo() { return ssbos_data.getId(0); }
+    inline unsigned int get_heat_in_ssbo() { return ssbos_data.get_id(0); }
     inline double get_download_dirty_ratio() const { return download_dirty_ratio; }
 
     // Significantly faster than vector<bool>
